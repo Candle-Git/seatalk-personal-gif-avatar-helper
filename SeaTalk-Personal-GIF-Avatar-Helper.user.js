@@ -2,8 +2,8 @@
 // @name         SeaTalk 个人 GIF 头像助手
 // @name:en      SeaTalk Personal GIF Avatar Helper
 // @namespace    https://seatalkweb.com/
-// @version      3.0.1
-// @description  自动识别 SeaTalk 当前头像更新入口，把聊天 GIF 表情设为个人头像，并提供分阶段诊断与上传兜底。
+// @version      3.0.2
+// @description  自动识别 SeaTalk 当前头像更新入口，把聊天 GIF 表情设为个人头像，并提供分阶段诊断。
 // @description:en Set a GIF from your SeaTalk chat as your animated personal avatar, with automatic compatibility checks and diagnostics.
 // @author       Yixin.Zhong × Codex
 // @match        https://seatalkweb.com/*
@@ -22,12 +22,12 @@
    * 2. 点击右下角“GIF头像助手”。
    * 3. 点击“抓取最近发送的表情”，选择刚发送的那张表情。
    * 4. 等待面板显示“直接更新入口已就绪”，再点击“直接应用 GIF 头像”。
-   * 5. 如果 SeaTalk 更新后暂时无法自动识别，脚本才会退回资料卡 Edit 上传方式。
+   * 5. 如果 SeaTalk 暂时没有加载完成，脚本会自动等待并允许一键重新检查。
    *
    * 重要说明：
    * - 本脚本不会修改别人头像。
    * - 自动入口可用时，本脚本不会上传新文件，而是调用 SeaTalk 当前页面自己的 updateUserInfo 服务。
-   * - 自动入口不可用时，仍可通过 SeaTalk 原生头像上传流程，把上传结果里的 avatar/FileName 替换为 GIF ID。
+   * - 脚本不会要求用户手动上传普通 PNG/JPG 图片作为中间步骤。
    * - 每次刷新都会重新发现当前 chunk 文件并自检；如果前端结构变化，面板会显示具体失败阶段。
    */
 
@@ -147,6 +147,12 @@
       scanCurrentChat: "抓取当前聊天最近的 GIF",
       scanSuccess: "已从当前聊天找到 {count} 个 GIF，并选中最新一个。",
       scanEmpty: "当前聊天没有找到 GIF。请先发送一个 GIF，并关闭表情面板后重试。",
+      scanSuccessFiltered: "找到 {count} 个可用 GIF 表情，已忽略 {skipped} 个普通 GIF 图片文件。",
+      scanEmptyFiltered: "发现 {skipped} 个普通 GIF 图片文件，但头像只支持 SeaTalk 表情。请用表情按钮发送 GIF 后重试。",
+      unsupportedGif: "这个资源不是 SeaTalk GIF 表情，不能用于动态头像。",
+      waitingForSeaTalk: "正在等待 SeaTalk 加载，请勿重复点击...",
+      compatibilityAlert: "SeaTalk 还没准备好。请刷新页面，或点击下方按钮重新检查。",
+      retryDirect: "重新检查并应用",
       selectedTitle: "准备换成",
       selectedFromChat: "当前聊天里的 GIF",
       selectedSample: "示例 GIF",
@@ -182,7 +188,7 @@
       successClose: "好耶！",
       toggleLabel: "语言",
       helperToggle: "GIF头像助手",
-      fallbackOpenProfile: "自动入口不可用，点击后将打开个人资料卡继续。",
+      dragHint: "可拖动到不挡操作的位置",
       credit: "Yixin.Zhong × Codex 制作",
       diagnosticSuccessGeneric: "技术检查通过。",
       diagnosticErrorGeneric: "检测到技术问题，请重试或把截图发给 Yixin.Zhong。",
@@ -206,6 +212,12 @@
       scanCurrentChat: "Capture GIFs from this chat",
       scanSuccess: "Found {count} GIFs in this chat and selected the latest one.",
       scanEmpty: "No GIF was found in this chat. Send one, close the emoji panel, and try again.",
+      scanSuccessFiltered: "Found {count} usable GIF stickers and ignored {skipped} regular GIF image files.",
+      scanEmptyFiltered: "Found {skipped} regular GIF image files, but only SeaTalk stickers can be used. Send a GIF with the sticker button and try again.",
+      unsupportedGif: "This item is not a SeaTalk GIF sticker and cannot be used as an animated avatar.",
+      waitingForSeaTalk: "Waiting for SeaTalk to load. No need to click again...",
+      compatibilityAlert: "SeaTalk is not ready yet. Refresh the page or try the check again below.",
+      retryDirect: "Check again and apply",
       selectedTitle: "READY TO USE",
       selectedFromChat: "GIF from this chat",
       selectedSample: "Sample GIF",
@@ -241,7 +253,7 @@
       successClose: "Love it!",
       toggleLabel: "Language",
       helperToggle: "GIF Avatar",
-      fallbackOpenProfile: "Direct update is unavailable. The profile card will open as a fallback.",
+      dragHint: "Drag this button anywhere convenient",
       credit: "Made by Yixin.Zhong × Codex",
       diagnosticSuccessGeneric: "Technical check passed.",
       diagnosticErrorGeneric: "A technical issue was detected. Retry or share a screenshot with Yixin.Zhong.",
@@ -283,6 +295,9 @@
     loadingTimer: null,
     apiConfirmedGifId: "",
     activeAction: "",
+    filteredImageCount: 0,
+    directUpdaterFailed: false,
+    togglePosition: null,
   };
 
   function addDiagnostic(message, level = "info") {
@@ -319,12 +334,23 @@
         state.locale = saved.locale;
       }
 
-      if (saved.selected && isValidGifId(saved.selected.gifId)) {
+      if (saved.selected && isCustomGifStickerId(saved.selected.gifId)) {
         state.selected = {
           label: String(saved.selected.label || "上次选择的 GIF"),
           gifId: saved.selected.gifId,
           previewUrl: saved.selected.previewUrl || buildPreviewUrl(saved.selected.gifId),
           source: saved.selected.source || "saved",
+        };
+      }
+
+      if (
+        saved.togglePosition &&
+        Number.isFinite(saved.togglePosition.right) &&
+        Number.isFinite(saved.togglePosition.bottom)
+      ) {
+        state.togglePosition = {
+          right: saved.togglePosition.right,
+          bottom: saved.togglePosition.bottom,
         };
       }
     } catch (error) {
@@ -338,6 +364,7 @@
         enabled: state.enabled,
         selected: state.selected,
         locale: state.locale,
+        togglePosition: state.togglePosition,
       });
     } catch (error) {
       console.warn("[SeaTalk GIF Avatar Helper] 保存本地设置失败：", error);
@@ -346,6 +373,13 @@
 
   function isValidGifId(value) {
     return /^[a-zA-Z0-9]{32,}$/.test(String(value || ""));
+  }
+
+  // SeaTalk 资源 ID 的第 34 位之后包含资源类型。当前自定义 GIF 表情使用 b0705，
+  // 普通聊天图片通常是 b0101，后者提交给头像接口会返回 SERVER_ERROR。
+  function isCustomGifStickerId(value) {
+    const gifId = String(value || "");
+    return isValidGifId(gifId) && gifId.slice(33, 38).toLowerCase() === "b0705";
   }
 
   function buildPreviewUrl(gifId) {
@@ -463,7 +497,16 @@
 
   function isLikelyStickerPickerNode(node) {
     const text = getAncestorText(node);
-    return /emoji|emoticon|sticker|picker|popover|panel|reaction|favorite|收藏|表情/.test(text);
+    return /emoji|emoticon|picker|popover|sticker-panel|stickers-panel|sticker-nav|reaction|favorite|收藏/.test(text);
+  }
+
+  function isChatStickerMessageNode(node) {
+    const text = getAncestorText(node);
+    return (
+      text.includes("messages-message-list-item-sticker-content") ||
+      text.includes("content-component-wrapper sticker.c") ||
+      text.includes("navigation-message-list-item sticker_c")
+    );
   }
 
   function getNearbyHaiserveImageCount(node) {
@@ -543,6 +586,7 @@
 
     const nodes = Array.from(document.querySelectorAll(selector));
     const candidatesById = new Map();
+    const filteredImageIds = new Set();
 
     nodes.forEach((node, index) => {
       if (!isVisibleCandidateNode(node)) {
@@ -557,6 +601,15 @@
 
         const gifId = extractGifId(url);
         if (!gifId) {
+          continue;
+        }
+
+        // 只接受聊天消息中的“自定义 GIF 表情”。普通 GIF 图片也使用 haiserve 地址，
+        // 但资源类型和消息容器不同，误用它会让 ContactUpdateUserInfo 返回 SERVER_ERROR。
+        if (!isCustomGifStickerId(gifId) || !isChatStickerMessageNode(node) || isLikelyStickerPickerNode(node)) {
+          if (!isCustomGifStickerId(gifId) && getAncestorText(node).includes("message-list-item")) {
+            filteredImageIds.add(gifId);
+          }
           continue;
         }
 
@@ -583,6 +636,8 @@
       }
     });
 
+    state.filteredImageCount = filteredImageIds.size;
+
     // 优先选择更像“聊天消息里的大表情”的候选，而不是表情面板里的小图标。
     return Array.from(candidatesById.values())
       .sort((a, b) => b.score - a.score || b.bottom - a.bottom || b.right - a.right || b.index - a.index)
@@ -590,8 +645,11 @@
   }
 
   function selectCandidate(candidate) {
-    if (!candidate || !isValidGifId(candidate.gifId)) {
-      setStatus("选中的表情 ID 无效。");
+    if (!candidate || !isCustomGifStickerId(candidate.gifId)) {
+      setStatus(t("unsupportedGif"));
+      addDiagnostic(t("unsupportedGif"), "error");
+      state.diagnosticsOpen = true;
+      renderPanel();
       return;
     }
 
@@ -615,6 +673,170 @@
     }
   }
 
+  function getDefaultTogglePosition() {
+    return window.innerWidth <= 520
+      ? { right: 12, bottom: 82 }
+      : { right: 18, bottom: 88 };
+  }
+
+  function clampTogglePosition(position) {
+    const toggle = document.getElementById(TOGGLE_ID);
+    const width = toggle?.offsetWidth || 128;
+    const height = toggle?.offsetHeight || 42;
+    const margin = 10;
+    return {
+      right: Math.min(
+        Math.max(margin, Number(position?.right) || margin),
+        Math.max(margin, window.innerWidth - width - margin)
+      ),
+      bottom: Math.min(
+        Math.max(margin, Number(position?.bottom) || margin),
+        Math.max(margin, window.innerHeight - height - margin)
+      ),
+    };
+  }
+
+  function positionPanelNearToggle() {
+    const toggle = document.getElementById(TOGGLE_ID);
+    const panel = document.getElementById(PANEL_ID);
+    if (!toggle || !panel || !panel.classList.contains("spga-open")) {
+      return;
+    }
+
+    const margin = 10;
+    const gap = 10;
+    const toggleRect = toggle.getBoundingClientRect();
+    const panelWidth = Math.min(390, window.innerWidth - margin * 2);
+    const availableHeight = Math.max(220, window.innerHeight - margin * 2);
+
+    panel.style.width = `${panelWidth}px`;
+    panel.style.maxHeight = `${availableHeight}px`;
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
+
+    const panelHeight = Math.min(panel.scrollHeight || 720, availableHeight);
+    const left = Math.min(
+      Math.max(margin, toggleRect.right - panelWidth),
+      window.innerWidth - panelWidth - margin
+    );
+    const spaceAbove = toggleRect.top - margin - gap;
+    const preferredTop = spaceAbove >= Math.min(panelHeight, 320)
+      ? toggleRect.top - panelHeight - gap
+      : toggleRect.bottom + gap;
+    const top = Math.min(
+      Math.max(margin, preferredTop),
+      Math.max(margin, window.innerHeight - panelHeight - margin)
+    );
+
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
+  }
+
+  function applyFloatingPosition({ persist = false } = {}) {
+    const toggle = document.getElementById(TOGGLE_ID);
+    if (!toggle) {
+      return;
+    }
+
+    const position = clampTogglePosition(state.togglePosition || getDefaultTogglePosition());
+    state.togglePosition = position;
+    toggle.style.left = "auto";
+    toggle.style.top = "auto";
+    toggle.style.right = `${position.right}px`;
+    toggle.style.bottom = `${position.bottom}px`;
+    positionPanelNearToggle();
+
+    if (persist) {
+      saveState();
+    }
+  }
+
+  function bindToggleDrag(toggle) {
+    let dragState = null;
+    let suppressClick = false;
+
+    toggle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) {
+        return;
+      }
+      const rect = toggle.getBoundingClientRect();
+      dragState = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        left: rect.left,
+        top: rect.top,
+        moved: false,
+      };
+      toggle.classList.add("spga-dragging");
+      toggle.setPointerCapture?.(event.pointerId);
+    });
+
+    toggle.addEventListener("pointermove", (event) => {
+      if (!dragState || dragState.pointerId !== event.pointerId) {
+        return;
+      }
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
+      if (!dragState.moved && Math.hypot(deltaX, deltaY) < 5) {
+        return;
+      }
+
+      dragState.moved = true;
+      suppressClick = true;
+      const margin = 10;
+      const left = Math.min(
+        Math.max(margin, dragState.left + deltaX),
+        window.innerWidth - toggle.offsetWidth - margin
+      );
+      const top = Math.min(
+        Math.max(margin, dragState.top + deltaY),
+        window.innerHeight - toggle.offsetHeight - margin
+      );
+      toggle.style.right = "auto";
+      toggle.style.bottom = "auto";
+      toggle.style.left = `${left}px`;
+      toggle.style.top = `${top}px`;
+      positionPanelNearToggle();
+      event.preventDefault();
+    });
+
+    const finishDrag = (event) => {
+      if (!dragState || dragState.pointerId !== event.pointerId) {
+        return;
+      }
+      const moved = dragState.moved;
+      dragState = null;
+      toggle.releasePointerCapture?.(event.pointerId);
+      toggle.classList.remove("spga-dragging");
+
+      if (moved) {
+        const rect = toggle.getBoundingClientRect();
+        state.togglePosition = clampTogglePosition({
+          right: window.innerWidth - rect.right,
+          bottom: window.innerHeight - rect.bottom,
+        });
+        applyFloatingPosition({ persist: true });
+        window.setTimeout(() => {
+          suppressClick = false;
+        }, 0);
+      }
+    };
+
+    toggle.addEventListener("pointerup", finishDrag);
+    toggle.addEventListener("pointercancel", finishDrag);
+    toggle.addEventListener("click", (event) => {
+      if (suppressClick) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      const panel = document.getElementById(PANEL_ID);
+      panel?.classList.toggle("spga-open");
+      positionPanelNearToggle();
+    });
+  }
+
   function injectStyles() {
     if (document.getElementById(STYLE_ID)) {
       return;
@@ -626,7 +848,7 @@
       #${TOGGLE_ID} {
         position: fixed;
         right: 18px;
-        bottom: 18px;
+        bottom: 88px;
         z-index: 2147483646;
         height: 42px;
         padding: 0 14px;
@@ -638,12 +860,19 @@
         font-weight: 700;
         box-shadow: 0 12px 30px rgba(15, 23, 42, 0.28);
         cursor: pointer;
+        touch-action: none;
+        user-select: none;
+      }
+
+      #${TOGGLE_ID}:active,
+      #${TOGGLE_ID}.spga-dragging {
+        cursor: grabbing;
       }
 
       #${PANEL_ID} {
         position: fixed;
         right: 18px;
-        bottom: 72px;
+        bottom: 140px;
         z-index: 2147483646;
         width: min(390px, calc(100vw - 36px));
         max-height: min(720px, calc(100vh - 96px));
@@ -804,6 +1033,18 @@
         color: #667085;
         font-size: 12px;
         line-height: 18px;
+      }
+
+      #${PANEL_ID} .spga-compatibility-alert {
+        margin: 0;
+        padding: 12px 14px;
+        border: 1px solid #fdba74;
+        border-radius: 8px;
+        background: #fff7ed;
+        color: #9a3412;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.55;
       }
 
       #${PANEL_ID} .spga-diagnostics {
@@ -1137,12 +1378,12 @@
       @media (max-width: 520px) {
         #${TOGGLE_ID} {
           right: 12px;
-          bottom: 12px;
+          bottom: 82px;
         }
 
         #${PANEL_ID} {
           right: 10px;
-          bottom: 64px;
+          bottom: 134px;
           width: calc(100vw - 20px);
           max-height: calc(100vh - 76px);
         }
@@ -1553,8 +1794,14 @@
     if (!state.selected) {
       return t("applyDisabled");
     }
+    if (state.enabled && !state.directUpdaterReady && !state.directUpdaterFailed) {
+      return t("waitingForSeaTalk");
+    }
     if (state.enabled && state.showDelayedLoading) {
       return t("applyLoading");
+    }
+    if (state.directUpdaterFailed) {
+      return t("retryDirect");
     }
     return t("apply");
   }
@@ -1654,6 +1901,8 @@
     const toggle = document.getElementById(TOGGLE_ID);
     if (toggle) {
       toggle.textContent = t("helperToggle");
+      toggle.title = t("dragHint");
+      toggle.setAttribute("aria-label", `${t("helperToggle")}，${t("dragHint")}`);
     }
 
     const header = createElement("header", { className: "spga-header" });
@@ -1669,7 +1918,7 @@
       "random-apply",
       "spga-button-soft"
     );
-    randomButton.disabled = !state.directUpdaterReady || state.enabled;
+    randomButton.disabled = state.enabled;
     const quickCard = createPathCard({
       eyebrow: t("quickEyebrow"),
       title: t("quickTitle"),
@@ -1692,6 +1941,15 @@
     });
 
     const body = createElement("div", { className: "spga-body" });
+    if (state.directUpdaterFailed) {
+      body.append(
+        createElement("div", {
+          className: "spga-compatibility-alert",
+          textContent: t("compatibilityAlert"),
+          attributes: { role: "alert" },
+        })
+      );
+    }
     body.append(quickCard, ownCard, createSelectedView());
     if (state.recentCandidates.length) {
       body.append(
@@ -1714,7 +1972,7 @@
       attributes: { "data-role": "status" },
     });
     const applyButton = createButton(getEnableButtonText(), "enable", "spga-button-primary spga-apply-button");
-    applyButton.disabled = !state.selected || (state.enabled && state.directUpdaterReady);
+    applyButton.disabled = !state.selected || (state.enabled && !state.directUpdaterFailed);
     footer.append(
       status,
       applyButton,
@@ -1722,6 +1980,7 @@
     );
 
     panel.append(header, body, footer);
+    window.requestAnimationFrame(positionPanelNearToggle);
   }
 
   function buildStatusText() {
@@ -2173,13 +2432,25 @@
   }
 
   function startAvatarApply(actionSource = "selected") {
-    if (!state.selected || !isValidGifId(state.selected.gifId)) {
-      setStatus(t("applyDisabled"));
+    if (!state.selected || !isCustomGifStickerId(state.selected.gifId)) {
+      setStatus(state.selected ? t("unsupportedGif") : t("applyDisabled"));
+      if (state.selected) {
+        addDiagnostic(t("unsupportedGif"), "error");
+        state.diagnosticsOpen = true;
+        renderPanel();
+      }
       return;
     }
 
-    if (state.enabled && state.directUpdaterReady) {
+    if (state.enabled && !state.directUpdaterFailed) {
       return;
+    }
+
+    // 失败后的再次点击只重新检查自动入口，不再要求用户上传普通 PNG 图片。
+    if (state.directUpdaterFailed) {
+      state.directUpdaterFailed = false;
+      state.diagnosticsOpen = false;
+      addDiagnostic("用户已重新检查自动更新入口。", "info");
     }
 
     state.enabled = true;
@@ -2188,32 +2459,19 @@
     state.successModalShownForGifId = "";
     state.hookStatus = state.directUpdaterReady
       ? "正在通过自动发现的 SeaTalk 更新入口提交 GIF 头像。"
-      : "自动入口不可用，正在准备 Edit 上传兜底。";
+      : "SeaTalk 页面模块仍在加载，正在自动等待更新入口。";
     addDiagnostic(
       state.directUpdaterReady
         ? "开始直接提交 GIF 头像。"
-        : "直接入口不可用，启动 Edit 上传兜底。"
+        : "更新入口尚未就绪，正在等待页面模块加载。"
     );
     saveState();
     sendHookConfig();
     startPendingTimeout();
     startDelayedLoading();
 
-    if (state.directUpdaterReady) {
-      startAvatarVerification(state.selected.gifId);
-      sendHookConfig("apply-direct");
-    } else {
-      // 自动入口不可用时，才按照 SeaTalk 的原生操作顺序使用上传兜底。
-      const opened = openPersonalProfileAndAvatarEditor();
-      if (!opened) {
-        state.hookStatus = "没有找到左上角个人头像。请手动打开个人资料卡后，再点击主按钮。";
-        addDiagnostic("未找到左上角个人头像入口。", "error");
-        state.diagnosticsOpen = true;
-        clearDelayedLoading();
-        saveState();
-        sendHookConfig();
-      }
-    }
+    startAvatarVerification(state.selected.gifId);
+    sendHookConfig("apply-direct");
 
     renderPanel();
   }
@@ -2241,7 +2499,7 @@
       }
 
       if (action === "random-apply") {
-        if (!state.directUpdaterReady || state.enabled || !LOCAL_GIF_PRESETS.length) {
+        if (state.enabled || !LOCAL_GIF_PRESETS.length) {
           return;
         }
         const alternatives = LOCAL_GIF_PRESETS.filter((item) => item.gifId !== state.selected?.gifId);
@@ -2257,10 +2515,21 @@
         if (state.recentCandidates.length) {
           state.candidatesOpen = true;
           selectCandidate(state.recentCandidates[0]);
-          setStatus(t("scanSuccess", { count: state.recentCandidates.length }));
+          setStatus(
+            state.filteredImageCount
+              ? t("scanSuccessFiltered", {
+                  count: state.recentCandidates.length,
+                  skipped: state.filteredImageCount,
+                })
+              : t("scanSuccess", { count: state.recentCandidates.length })
+          );
         } else {
           renderPanel();
-          setStatus(t("scanEmpty"));
+          setStatus(
+            state.filteredImageCount
+              ? t("scanEmptyFiltered", { skipped: state.filteredImageCount })
+              : t("scanEmpty")
+          );
         }
         return;
       }
@@ -2331,15 +2600,13 @@
         attributes: {
           id: TOGGLE_ID,
           type: "button",
+          title: t("dragHint"),
         },
       });
-
-      toggle.addEventListener("click", () => {
-        const panel = document.getElementById(PANEL_ID);
-        panel?.classList.toggle("spga-open");
-      });
-
       document.body.appendChild(toggle);
+      bindToggleDrag(toggle);
+      applyFloatingPosition();
+      window.addEventListener("resize", () => applyFloatingPosition());
     }
 
     renderPanel();
@@ -2366,6 +2633,7 @@
         if (detail.mode === "esm-direct") {
           const wasReady = state.directUpdaterReady;
           state.directUpdaterReady = true;
+          state.directUpdaterFailed = false;
           state.diagnosticsOpen = false;
           state.chunkName = detail.chunkName || "";
           state.hookStatus = `直接更新入口已就绪${state.chunkName ? `：${state.chunkName}` : ""}。`;
@@ -2409,6 +2677,12 @@
         sendHookConfig();
       } else if (detail.type === "compatibility-error") {
         state.directUpdaterReady = false;
+        state.directUpdaterFailed = true;
+        state.enabled = false;
+        clearPendingTimeout();
+        clearVerificationTimer();
+        clearDelayedLoading();
+        state.activeAction = "";
         state.chunkName = detail.chunkName || state.chunkName;
         state.hookStatus = detail.message || "没有找到可用的直接更新入口。";
         addDiagnostic(state.hookStatus, "error");
@@ -2422,7 +2696,8 @@
         addDiagnostic(state.hookStatus, "error");
         if (detail.fallbackAvailable) {
           state.directUpdaterReady = false;
-          addDiagnostic("已切换到 Edit 上传兜底；再次点击蓝色按钮即可继续。", "info");
+          state.directUpdaterFailed = true;
+          addDiagnostic("自动入口确认不可用；可刷新页面或点击主按钮重新检查。", "info");
         }
         state.enabled = false;
         clearPendingTimeout();
@@ -2478,6 +2753,7 @@
       esmChunkUrl: "",
       esmDiscoveryPromise: null,
       esmDiscoveryFailedFor: "",
+      directApplyPromise: null,
       avatarFileSelectedAt: 0,
     };
 
@@ -2549,7 +2825,7 @@
       return 0;
     }
 
-    async function discoverEsmUpdater() {
+    async function discoverEsmUpdater({ reportFailure = true } = {}) {
       if (runtime.esmUpdater) {
         return true;
       }
@@ -2562,8 +2838,10 @@
         const chunkUrls = getMainChunkStylesUrls();
         if (!chunkUrls.length) {
           emit({
-            type: "compatibility-error",
-            message: "启动自检失败：页面尚未发现主站 chunk-styles 文件。可打开个人资料卡后重试。",
+            type: reportFailure ? "compatibility-error" : "waiting",
+            message: reportFailure
+              ? "启动自检失败：等待后仍未发现主站 chunk-styles 文件。请刷新页面或重新检查。"
+              : "SeaTalk 页面仍在加载，正在等待主站更新模块。",
           });
           return false;
         }
@@ -2574,11 +2852,13 @@
             moduleNamespace = await import(chunkUrl);
           } catch (error) {
             runtime.esmDiscoveryFailedFor = chunkUrl;
-            emit({
-              type: "stage",
-              level: "error",
-              message: `自检无法导入 ${chunkUrl.split("/").pop() || "chunk-styles"}：${String(error?.message || error).slice(0, 180)}`,
-            });
+            if (reportFailure) {
+              emit({
+                type: "stage",
+                level: "error",
+                message: `自检无法导入 ${chunkUrl.split("/").pop() || "chunk-styles"}：${String(error?.message || error).slice(0, 180)}`,
+              });
+            }
             continue;
           }
 
@@ -2622,9 +2902,11 @@
 
         const failedChunkName = chunkUrls[0]?.split("/").pop() || "chunk-styles";
         emit({
-          type: "compatibility-error",
+          type: reportFailure ? "compatibility-error" : "waiting",
           chunkName: failedChunkName,
-          message: `启动自检失败：${failedChunkName} 中没有识别到用户资料 updateUserInfo 服务。SeaTalk 前端结构可能已变化。`,
+          message: reportFailure
+            ? `启动自检失败：${failedChunkName} 中没有识别到用户资料 updateUserInfo 服务。SeaTalk 前端结构可能已变化。`
+            : `已发现 ${failedChunkName}，正在等待用户资料服务完成加载。`,
         });
         return false;
       })();
@@ -2636,6 +2918,23 @@
       }
     }
 
+    async function waitForEsmUpdater(timeoutMs = 5000) {
+      const deadline = Date.now() + timeoutMs;
+      emit({
+        type: "waiting",
+        message: "正在等待 SeaTalk 用户资料更新模块加载，期间无需重复点击。",
+      });
+
+      while (Date.now() < deadline) {
+        if (runtime.esmUpdater || (await discoverEsmUpdater({ reportFailure: false }))) {
+          return true;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 500));
+      }
+
+      return discoverEsmUpdater({ reportFailure: true });
+    }
+
     async function applyDirectAvatar() {
       if (!runtime.enabled || !isValidGifId(runtime.gifId)) {
         emit({
@@ -2645,22 +2944,24 @@
         return;
       }
 
-      const ready = await discoverEsmUpdater();
+      const ready = await waitForEsmUpdater();
       if (!ready || !runtime.esmUpdater) {
+        runtime.enabled = false;
         emit({
           type: "error",
-          fallbackAvailable: true,
-          message: "直接更新失败：没有找到 SeaTalk 用户资料更新服务，请改用 Edit 上传兜底。",
+          fallbackAvailable: false,
+          message: "直接更新失败：没有找到 SeaTalk 用户资料更新服务。请刷新页面或重新检查。",
         });
         return;
       }
 
       const userId = findCurrentUserId();
       if (!userId) {
+        runtime.enabled = false;
         emit({
           type: "error",
-          fallbackAvailable: true,
-          message: "直接更新失败：没有识别到当前账号 ID。请打开任意含图片的聊天或个人资料卡后重试。",
+          fallbackAvailable: false,
+          message: "直接更新失败：没有识别到当前账号 ID。请刷新页面后重试。",
         });
         return;
       }
@@ -2686,7 +2987,7 @@
         runtime.enabled = false;
         emit({
           type: "error",
-          fallbackAvailable: true,
+          fallbackAvailable: false,
           message: `SeaTalk 直接更新失败：${String(error?.message || error || "未知错误").slice(0, 240)}`,
         });
       }
@@ -3536,7 +3837,11 @@
       }
 
       if (detail.command === "apply-direct") {
-        applyDirectAvatar();
+        if (!runtime.directApplyPromise) {
+          runtime.directApplyPromise = applyDirectAvatar().finally(() => {
+            runtime.directApplyPromise = null;
+          });
+        }
       }
 
       if (!runtime.enabled) {
@@ -3547,7 +3852,7 @@
 
       scanWebpackModules();
       installNetworkHooks();
-      discoverEsmUpdater();
+      discoverEsmUpdater({ reportFailure: false });
     });
 
     window.addEventListener("unhandledrejection", (event) => {
@@ -3573,11 +3878,11 @@
     // 定时扫描可以在模块后加载时自动补上 hook。
     scanWebpackModules();
     installNetworkHooks();
-    discoverEsmUpdater();
+    discoverEsmUpdater({ reportFailure: false });
     window.setInterval(scanWebpackModules, 1800);
     window.setInterval(() => {
       if (!runtime.esmUpdater) {
-        discoverEsmUpdater();
+        discoverEsmUpdater({ reportFailure: false });
       }
     }, 5000);
   }

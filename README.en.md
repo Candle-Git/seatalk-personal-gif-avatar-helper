@@ -29,7 +29,7 @@ After installing Tampermonkey, complete the following authorization first:
 5. If **Allow User Scripts** is not available yet, enable **Developer mode** in the top-right corner of the extensions page.
 6. Refresh SeaTalk after completing this step, then continue with this userscript installation.
 
-Open or refresh SeaTalk after installation. The authorization and script installation are both successful only when the **GIF Avatar** button appears in the bottom-right corner.
+Open or refresh SeaTalk after installation. The authorization and script installation are both successful only when the **GIF Avatar** button appears on the right side. You can drag the button, and its position is saved automatically.
 
 ### Step 2: Install the GIF Avatar Helper
 
@@ -37,21 +37,21 @@ Open or refresh SeaTalk after installation. The authorization and script install
 2. Click "Install this script".
 3. Tampermonkey will open a confirmation page. Click "Install".
 4. Open or refresh [SeaTalk Web](https://seatalkweb.com/).
-5. Installation is complete when the "GIF Avatar" button appears in the bottom-right corner.
+5. Installation is complete when the "GIF Avatar" button appears on the right side.
 
 ## How to use
 
 ### Quick try without your own GIF
 
 1. Open SeaTalk Web.
-2. Click "GIF Avatar" in the bottom-right corner.
+2. Click "GIF Avatar" on the right side. Drag it elsewhere if it covers a SeaTalk control.
 3. Click "Try a random GIF avatar".
 4. After the success message appears, refresh the page to confirm the new avatar.
 
 ### Use your own GIF
 
-1. Send the GIF you want in the current SeaTalk chat.
-2. Click "GIF Avatar" in the bottom-right corner.
+1. Send the GIF you want through SeaTalk's sticker button in the current chat. Do not drag it into the chat as a regular image file.
+2. Click "GIF Avatar" on the right side.
 3. Click "Capture GIFs from this chat". This action only checks the currently open chat.
 4. Select one of the 3 most recent detected GIFs.
 5. Click "Use this GIF as my avatar" at the bottom of the panel.
@@ -59,8 +59,10 @@ Open or refresh SeaTalk after installation. The authorization and script install
 ## Features
 
 - Apply a random built-in sample when you do not have a GIF ready.
-- Capture the 3 most recent GIFs from the current chat and choose one to use.
+- Capture the 3 most recent GIF stickers from the current chat while ignoring unsupported regular GIF image files.
+- Drag the floating button away from SeaTalk controls and keep its saved position.
 - Find the current `chunk-styles-*.js` and avatar update entry point on every launch.
+- Wait automatically when SeaTalk's update module is still loading, with no repeated clicking required.
 - Chinese and English interface with a saved manual language preference.
 - Stage-by-stage diagnostics when a SeaTalk frontend change causes a compatibility issue.
 - Immediate success feedback after the SeaTalk API confirms the update, without false failures caused by cached avatar URLs.
@@ -85,10 +87,13 @@ Check that you completed the **Allow User Scripts** authorization above. Open Ta
 This is usually a SeaTalk page cache. Refresh the page and check again.
 
 **The avatar update entry point cannot be found.**  
-SeaTalk may have just changed its frontend code. Expand "Status and diagnostics", keep a screenshot, and report the issue through GitHub Issues.
+Allow the automatic check to run for 5 seconds. If it still fails, click "Check again and apply" or refresh SeaTalk; no regular PNG/JPG upload is needed. If the problem continues, expand "Status and diagnostics", keep a screenshot, and report it through GitHub Issues.
 
 **Where does "Capture GIFs" look?**  
-It only checks the currently open chat and shows the 3 most recent GIF candidates it can detect.
+It only checks the currently open chat and shows the 3 most recent GIF sticker candidates. GIFs sent as regular image files are ignored because SeaTalk's avatar API does not accept that resource type.
+
+**What if the "GIF Avatar" button covers a SeaTalk control?**
+Drag the helper button somewhere else. The script saves the new position and restores it after a refresh.
 
 **How do I disable or uninstall the script?**  
 Open the Tampermonkey dashboard and turn off this script to disable it, or delete it to uninstall it.
@@ -98,10 +103,11 @@ Open the Tampermonkey dashboard and turn off this script to disable it, or delet
 - Tampermonkey checks for updates from the script source. You can also check manually in the Tampermonkey dashboard.
 - When reporting a problem, include the SeaTalk page state, script diagnostics, and reproduction steps in [GitHub Issues](../../issues).
 - Never post passwords, cookies, work chat content, or other sensitive information in a public issue.
+- See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
 
 ## Notes
 
-- Current version: `3.0.0`
+- Current version: `3.0.2`
 - Supported page: SeaTalk Web
 - This is an unofficial helper and is not affiliated with, endorsed by, or maintained by SeaTalk.
 - A future SeaTalk frontend update may temporarily affect compatibility. Check the diagnostics panel for details.
