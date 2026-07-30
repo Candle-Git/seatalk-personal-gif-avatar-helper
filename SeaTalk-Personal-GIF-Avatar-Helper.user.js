@@ -1408,22 +1408,57 @@
     return t("selectedSaved");
   }
 
+  /**
+   * 创建一个不会请求外部图片的 GIF 占位卡片。
+   *
+   * 内置示例保存的是 SeaTalk 的图片 ID，而不是可长期公开访问的图片 URL。
+   * 如果直接把 ID 拼成下载地址，资源过期或服务端策略变化时浏览器会显示破图图标。
+   * 因此，内置示例统一使用这个占位卡片；真正从当前聊天抓到的 GIF 仍然显示原图预览。
+   */
+  function createGifPreviewPlaceholder() {
+    return createElement("div", {
+      className: "spga-empty-preview spga-unavailable-preview",
+      textContent: "GIF",
+      attributes: { "aria-hidden": "true" },
+    });
+  }
+
+  /**
+   * 为聊天 GIF 创建预览，并在聊天资源地址失效时自动移除破图。
+   *
+   * @param {{ source?: string, previewUrl?: string, gifId?: string }} candidate GIF 候选项
+   * @param {string} alt 图片替代文字
+   * @returns {HTMLElement} GIF 图片或稳定的占位卡片
+   */
+  function createGifPreview(candidate, alt) {
+    // 内置示例没有稳定、可公开访问的缩略图地址，避免发起已知会失败的图片请求。
+    if (!candidate || candidate.source === "local") {
+      return createGifPreviewPlaceholder();
+    }
+
+    const image = createElement("img", {
+      attributes: {
+        alt,
+        src: candidate.previewUrl || buildPreviewUrl(candidate.gifId),
+      },
+    });
+
+    // 聊天消息的临时图片链接可能在页面刷新后失效；失败时以占位卡片替换图片，
+    // 不让浏览器把破图图标和 alt 文字直接暴露在界面中。
+    image.addEventListener("error", () => {
+      image.replaceWith(createGifPreviewPlaceholder());
+    }, { once: true });
+
+    return image;
+  }
+
   function createSelectedView() {
     const wrapper = createElement("div", {
       className: `spga-selected${state.selected ? "" : " spga-selected-empty"}`,
     });
     const preview = state.selected
-      ? createElement("img", {
-          attributes: {
-            alt: getSelectedDisplayName(),
-            src: state.selected.previewUrl || buildPreviewUrl(state.selected.gifId),
-          },
-        })
-      : createElement("div", {
-          className: "spga-empty-preview",
-          textContent: "GIF",
-          attributes: { "aria-hidden": "true" },
-        });
+      ? createGifPreview(state.selected, getSelectedDisplayName())
+      : createGifPreviewPlaceholder();
     const info = createElement("div", { className: "spga-selected-copy" });
     const eyebrow = createElement("div", {
       className: "spga-selected-eyebrow",
@@ -1460,12 +1495,10 @@
 
     state.recentCandidates.forEach((candidate, index) => {
       const card = createElement("div", { className: "spga-card" });
-      const image = createElement("img", {
-        attributes: {
-          alt: index === 0 ? t("candidateLatest") : t("candidateEarlier", { number: index + 1 }),
-          src: candidate.previewUrl || buildPreviewUrl(candidate.gifId),
-        },
-      });
+      const image = createGifPreview(
+        candidate,
+        index === 0 ? t("candidateLatest") : t("candidateEarlier", { number: index + 1 })
+      );
       const title = createElement("div", {
         className: "spga-card-title",
         textContent: index === 0 ? t("candidateLatest") : t("candidateEarlier", { number: index + 1 }),
