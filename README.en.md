@@ -14,6 +14,23 @@ Set a GIF from your SeaTalk chat as your animated personal avatar. The userscrip
 2. Choose your browser and install the extension.
 3. Make sure Tampermonkey is enabled.
 
+### Required for first-time installation: allow Tampermonkey to run userscripts
+
+> **If you skip this step, the script may show as installed but will not run on SeaTalk.**
+
+After installing Tampermonkey, complete the following authorization first:
+
+1. Open one of these pages in your browser:
+   - Chrome: `chrome://extensions`
+   - Edge: `edge://extensions`
+2. Find **Tampermonkey** and make sure the extension is enabled.
+3. Select **Details**, or right-click the Tampermonkey icon and choose **Manage extension**.
+4. Find and enable **Allow User Scripts**.
+5. If **Allow User Scripts** is not available yet, enable **Developer mode** in the top-right corner of the extensions page.
+6. Refresh SeaTalk after completing this step, then continue with this userscript installation.
+
+Open or refresh SeaTalk after installation. The authorization and script installation are both successful only when the **GIF Avatar** button appears in the bottom-right corner.
+
 ### Step 2: Install the GIF Avatar Helper
 
 1. Open the [Greasy Fork script page](https://greasyfork.org/en/scripts/588931).
@@ -60,6 +77,9 @@ Set a GIF from your SeaTalk chat as your animated personal avatar. The userscrip
 
 **The button does not appear after installation. What should I do?**  
 Make sure both Tampermonkey and this userscript are enabled, then refresh SeaTalk Web.
+
+**The script is installed, but the “GIF Avatar” button still does not appear on SeaTalk. What should I do?**
+Check that you completed the **Allow User Scripts** authorization above. Open Tampermonkey details in `chrome://extensions` or `edge://extensions` and enable **Allow User Scripts**. If that option is unavailable, enable **Developer mode** in the top-right corner of the extensions page, then refresh SeaTalk.
 
 **The update succeeded, but the old avatar is still visible.**  
 This is usually a SeaTalk page cache. Refresh the page and check again.

@@ -14,6 +14,23 @@
 2. 选择你的浏览器并完成插件安装。
 3. 确认 Tampermonkey 已启用。
 
+### 首次安装必须授权：允许 Tampermonkey 运行用户脚本
+
+> **如果跳过这一步，脚本即使显示“已安装”，也不会在 SeaTalk 页面运行。**
+
+安装 Tampermonkey 后，请先完成以下授权：
+
+1. 在浏览器地址栏打开：
+   - Chrome：`chrome://extensions`
+   - Edge：`edge://extensions`
+2. 找到 **Tampermonkey**，确认扩展处于“已启用”状态。
+3. 点击“详细信息”，或右键 Tampermonkey 图标后选择“管理扩展”。
+4. 找到并开启 **“允许用户脚本”**（Allow User Scripts）。
+5. 如果暂时没有“允许用户脚本”选项，请在扩展页右上角开启 **“开发者模式”**。
+6. 完成后刷新 SeaTalk 网页，再继续安装本脚本。
+
+安装后打开或刷新 SeaTalk 网页；页面右下角出现“GIF头像助手”按钮，才表示授权和脚本安装都成功。
+
 ### 第二步：安装 GIF 头像助手脚本
 
 1. 打开 [Greasy Fork 脚本页面](https://greasyfork.org/zh-CN/scripts/588931)。
@@ -60,6 +77,9 @@
 
 **安装后没有看到按钮怎么办？**  
 请确认 Tampermonkey 和本脚本都已启用，然后刷新 SeaTalk 网页。
+
+**脚本已安装，但 SeaTalk 页面右下角仍没有“GIF头像助手”按钮怎么办？**
+请检查是否已完成上方的“允许用户脚本”授权：在 `chrome://extensions` 或 `edge://extensions` 中打开 Tampermonkey 详情，开启“允许用户脚本”。如果浏览器没有该选项，请开启扩展页右上角的“开发者模式”，然后刷新 SeaTalk 网页。
 
 **提示成功，但页面仍显示旧头像怎么办？**  
 通常是 SeaTalk 页面缓存。刷新页面后再查看即可。
