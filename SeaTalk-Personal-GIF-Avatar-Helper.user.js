@@ -2,7 +2,7 @@
 // @name         SeaTalk 个人 GIF 头像助手
 // @name:en      SeaTalk Personal GIF Avatar Helper
 // @namespace    https://seatalkweb.com/
-// @version      3.0.0
+// @version      3.0.1
 // @description  自动识别 SeaTalk 当前头像更新入口，把聊天 GIF 表情设为个人头像，并提供分阶段诊断与上传兜底。
 // @description:en Set a GIF from your SeaTalk chat as your animated personal avatar, with automatic compatibility checks and diagnostics.
 // @author       Yixin.Zhong × Codex
