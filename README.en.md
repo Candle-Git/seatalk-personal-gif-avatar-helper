@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.png" alt="SeaTalk Personal GIF Avatar Helper" width="100%">
+  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.en.png" alt="SeaTalk Personal GIF Avatar Helper" width="100%">
 </p>
 
 <p align="center">
