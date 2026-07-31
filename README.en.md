@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.en.png" alt="SeaTalk Personal GIF Avatar Helper" width="100%">
+  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.dark.en.png" alt="SeaTalk Personal GIF Avatar Helper" width="100%">
 </p>
 
 <p align="center">
@@ -20,24 +20,31 @@
 
 > The extension, permission, and userscript only need to be set up once. After that, open the helper whenever you want to change your GIF avatar.
 
-![Install in three steps](docs/images/install-in-3-steps.en.png)
+![Install in three steps](docs/images/install-in-3-steps.dark.en.png)
 
 1. **Install Tampermonkey**: Open the [official Tampermonkey website](https://www.tampermonkey.net/) in Chrome or Edge, then install and enable the extension.
 
-2. **Enable “Allow User Scripts”**: Open `chrome://extensions` or `edge://extensions`, select Tampermonkey **Details**, and enable **Allow User Scripts**.
+2. **First-time permission: enable “Allow User Scripts”**: Right-click the Tampermonkey icon in the browser toolbar, select **Manage extension**, then enable **Allow User Scripts**.
 
 3. **Install GIF Avatar Helper**: Open the [Greasy Fork script page](https://greasyfork.org/en/scripts/588931), click **Install this script**, then refresh [SeaTalk Web](https://seatalkweb.com/).
 
 > [!IMPORTANT]
 > Setup is complete only when the **GIF Avatar** button appears on the right side of SeaTalk.
 
+### First-time permission details (once only)
+
+> [!WARNING]
+> Use the **right mouse button** on the Tampermonkey toolbar icon. If this permission is not enabled, the userscript may appear installed but will not run on SeaTalk.
+
+![Allow User Scripts permission guide](docs/images/allow-user-scripts.dark.en.png)
+
 <details>
 <summary><strong>“Allow User Scripts” is missing</strong></summary>
 
-1. Open `chrome://extensions` or `edge://extensions`.
-2. Enable **Developer mode** in the top-right corner.
-3. Find Tampermonkey and open **Details**.
-4. Enable **Allow User Scripts**.
+1. Right-click the Tampermonkey icon in the browser toolbar.
+2. Select **Manage extension**.
+3. Enable **Allow User Scripts** on the extension details page.
+4. If the option is missing, open `chrome://extensions` or `edge://extensions` and enable **Developer mode** in the top-right corner.
 5. Return to SeaTalk and refresh the page.
 
 </details>

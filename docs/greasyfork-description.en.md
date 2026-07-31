@@ -1,4 +1,4 @@
-![SeaTalk GIF Avatar Helper](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.en.png)
+![SeaTalk GIF Avatar Helper](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.dark.en.png)
 
 # SeaTalk Personal GIF Avatar Helper
 
@@ -8,13 +8,19 @@ Turn a GIF sticker from your SeaTalk chat into an animated avatar. No bundle sea
 
 ## First-time setup: only 3 steps
 
-![Install in three steps](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-in-3-steps.en.png)
+![Install in three steps](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-in-3-steps.dark.en.png)
 
 1. Install and enable Tampermonkey from the [official website](https://www.tampermonkey.net/).
-2. Open the Tampermonkey extension details and enable **Allow User Scripts**. If the option is missing, enable Developer mode first.
+2. Right-click the Tampermonkey toolbar icon, select **Manage extension**, and enable **Allow User Scripts**.
 3. Click **Install this script** above, then refresh [SeaTalk Web](https://seatalkweb.com/).
 
 Setup is complete when the **GIF Avatar** button appears on the right side of SeaTalk.
+
+### First-time permission details (once only)
+
+Use the **right mouse button** on the Tampermonkey toolbar icon. If this permission is not enabled, the userscript may appear installed but will not run on SeaTalk.
+
+![Allow User Scripts permission guide](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.en.png)
 
 ## Quick start
 

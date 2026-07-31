@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.png" alt="SeaTalk GIF 头像助手" width="100%">
+  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.dark.png" alt="SeaTalk GIF 头像助手" width="100%">
 </p>
 
 <p align="center">
@@ -20,24 +20,31 @@
 
 > 安装插件、开启授权、安装脚本只需要做一次。以后更换 GIF 头像时，直接打开助手即可。
 
-![首次安装三步图](docs/images/install-in-3-steps.png)
+![首次安装三步图](docs/images/install-in-3-steps.dark.png)
 
 1. **安装 Tampermonkey**：使用 Chrome 或 Edge 打开 [Tampermonkey 官方网站](https://www.tampermonkey.net/)，安装并启用浏览器插件。
 
-2. **开启“允许用户脚本”**：打开 `chrome://extensions` 或 `edge://extensions`，进入 Tampermonkey 的“详细信息”，开启 **允许用户脚本**。
+2. **首次授权：开启“允许运行用户脚本”**：用鼠标右键点击浏览器右上角的 Tampermonkey（油猴）图标，点击 **管理扩展程序**，再开启 **允许运行用户脚本**。
 
 3. **安装 GIF 头像助手**：打开 [Greasy Fork 脚本页面](https://greasyfork.org/zh-CN/scripts/588931)，点击 **安装此脚本**，然后刷新 [SeaTalk Web](https://seatalkweb.com/)。
 
 > [!IMPORTANT]
 > SeaTalk 页面右侧出现“GIF头像助手”按钮，才表示插件、授权和脚本都已准备完成。
 
-<details>
-<summary><strong>没有看到“允许用户脚本”选项？点这里展开</strong></summary>
+### 首次授权详图（只需一次）
 
-1. 在浏览器地址栏打开 `chrome://extensions` 或 `edge://extensions`。
-2. 在扩展页右上角开启 **开发者模式**。
-3. 找到 Tampermonkey，点击 **详细信息**。
-4. 开启 **允许用户脚本**（Allow User Scripts）。
+> [!WARNING]
+> 请使用 **鼠标右键** 点击浏览器右上角的 Tampermonkey（油猴）图标。没有完成这次授权时，脚本即使显示已安装，也不会在 SeaTalk 页面运行。
+
+![首次授权操作图](docs/images/allow-user-scripts.dark.png)
+
+<details>
+<summary><strong>没有看到“允许运行用户脚本”选项？点这里展开</strong></summary>
+
+1. 用鼠标右键点击浏览器右上角的 Tampermonkey（油猴）图标。
+2. 点击 **管理扩展程序**。
+3. 在扩展详情页开启 **允许运行用户脚本**（Allow User Scripts）。
+4. 如果没有这个选项，打开 `chrome://extensions` 或 `edge://extensions`，在扩展页右上角开启 **开发者模式**。
 5. 回到 SeaTalk 并刷新页面。
 
 </details>
@@ -83,7 +90,7 @@ SeaTalk 接口确认成功后，助手会立即显示成功提醒。页面头像
 <details>
 <summary><strong>安装后没有看到“GIF头像助手”按钮</strong></summary>
 
-确认 Tampermonkey 和本脚本都已启用，并检查是否开启了 **允许用户脚本**。完成后刷新 SeaTalk。
+确认 Tampermonkey 和本脚本都已启用，并检查是否开启了 **允许运行用户脚本**。完成后刷新 SeaTalk。
 
 </details>
 

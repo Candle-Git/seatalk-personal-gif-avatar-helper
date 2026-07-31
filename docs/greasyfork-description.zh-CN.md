@@ -1,4 +1,4 @@
-![SeaTalk GIF 头像助手](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.png)
+![SeaTalk GIF 头像助手](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.dark.png)
 
 # SeaTalk 个人 GIF 头像助手
 
@@ -8,13 +8,19 @@
 
 ## 首次安装：只需 3 步
 
-![首次安装三步图](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-in-3-steps.png)
+![首次安装三步图](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-in-3-steps.dark.png)
 
 1. 从 [Tampermonkey 官网](https://www.tampermonkey.net/) 安装并启用浏览器插件。
-2. 在 Tampermonkey 扩展详情页开启 **允许用户脚本**。看不到该选项时，先开启扩展页的开发者模式。
+2. 用鼠标右键点击 Tampermonkey（油猴）图标，点击 **管理扩展程序**，再开启 **允许运行用户脚本**。
 3. 点击本页面上方的 **安装此脚本**，然后刷新 [SeaTalk Web](https://seatalkweb.com/)。
 
 SeaTalk 页面右侧出现“GIF头像助手”，就表示全部安装成功。
+
+### 首次授权详图（只需一次）
+
+请使用 **鼠标右键** 点击浏览器右上角的 Tampermonkey（油猴）图标。没有完成授权时，脚本即使显示已安装，也不会在 SeaTalk 页面运行。
+
+![首次授权操作图](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.png)
 
 ## 最简单的使用方法
 
