@@ -1,109 +1,126 @@
-# SeaTalk 个人 GIF 头像助手
+<p align="center">
+  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.png" alt="SeaTalk GIF 头像助手" width="100%">
+</p>
 
-[中文说明](README.md) | [English](README.en.md)
+<p align="center">
+  <strong>把聊天里的 GIF 表情变成 SeaTalk 个人动态头像，不需要找前端文件，也不需要设置断点。</strong>
+</p>
 
-把聊天里的 GIF 表情设为 SeaTalk 个人动态头像。脚本会自动寻找当前版本的头像更新入口，不需要手动搜索前端文件，也不需要设置断点。
+<p align="center">
+  <a href="https://greasyfork.org/zh-CN/scripts/588931">安装脚本</a>
+  ·
+  <a href="https://seatalkweb.com/">打开 SeaTalk Web</a>
+  ·
+  <a href="https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues">反馈问题</a>
+  ·
+  <a href="README.en.md">English</a>
+</p>
 
-> 安装顺序很重要：**先安装 Tampermonkey 浏览器插件，再安装本脚本。**
+## 首次安装：只需 3 步
 
-## 安装方法
+> 安装插件、开启授权、安装脚本只需要做一次。以后更换 GIF 头像时，直接打开助手即可。
 
-### 第一步：安装 Tampermonkey 插件
+![首次安装三步图](docs/images/install-in-3-steps.png)
 
-1. 使用 Chrome 或 Edge 打开 [Tampermonkey 官方网站](https://www.tampermonkey.net/)。
-2. 选择你的浏览器并完成插件安装。
-3. 确认 Tampermonkey 已启用。
+1. **安装 Tampermonkey**：使用 Chrome 或 Edge 打开 [Tampermonkey 官方网站](https://www.tampermonkey.net/)，安装并启用浏览器插件。
 
-### 首次安装必须授权：允许 Tampermonkey 运行用户脚本
+2. **开启“允许用户脚本”**：打开 `chrome://extensions` 或 `edge://extensions`，进入 Tampermonkey 的“详细信息”，开启 **允许用户脚本**。
 
-> **如果跳过这一步，脚本即使显示“已安装”，也不会在 SeaTalk 页面运行。**
+3. **安装 GIF 头像助手**：打开 [Greasy Fork 脚本页面](https://greasyfork.org/zh-CN/scripts/588931)，点击 **安装此脚本**，然后刷新 [SeaTalk Web](https://seatalkweb.com/)。
 
-安装 Tampermonkey 后，请先完成以下授权：
+> [!IMPORTANT]
+> SeaTalk 页面右侧出现“GIF头像助手”按钮，才表示插件、授权和脚本都已准备完成。
 
-1. 在浏览器地址栏打开：
-   - Chrome：`chrome://extensions`
-   - Edge：`edge://extensions`
-2. 找到 **Tampermonkey**，确认扩展处于“已启用”状态。
-3. 点击“详细信息”，或右键 Tampermonkey 图标后选择“管理扩展”。
-4. 找到并开启 **“允许用户脚本”**（Allow User Scripts）。
-5. 如果暂时没有“允许用户脚本”选项，请在扩展页右上角开启 **“开发者模式”**。
-6. 完成后刷新 SeaTalk 网页，再继续安装本脚本。
+<details>
+<summary><strong>没有看到“允许用户脚本”选项？点这里展开</strong></summary>
 
-安装后打开或刷新 SeaTalk 网页；页面右侧出现“GIF头像助手”按钮，才表示授权和脚本安装都成功。按钮可以拖动，位置会自动保存。
+1. 在浏览器地址栏打开 `chrome://extensions` 或 `edge://extensions`。
+2. 在扩展页右上角开启 **开发者模式**。
+3. 找到 Tampermonkey，点击 **详细信息**。
+4. 开启 **允许用户脚本**（Allow User Scripts）。
+5. 回到 SeaTalk 并刷新页面。
 
-### 第二步：安装 GIF 头像助手脚本
+</details>
 
-1. 打开 [Greasy Fork 脚本页面](https://greasyfork.org/zh-CN/scripts/588931)。
-2. 点击页面上的“安装此脚本”。
-3. Tampermonkey 会打开安装确认页，点击“安装”。
-4. 打开或刷新 [SeaTalk 网页版](https://seatalkweb.com/)。
-5. 页面右侧出现“GIF头像助手”按钮，即表示安装成功。
+## 开始使用
 
-## 使用方法
+### 没有准备 GIF：随机体验
 
-### 没有准备 GIF：快速体验
-
-1. 打开 SeaTalk 网页版。
-2. 点击页面右侧的“GIF头像助手”。如果按钮挡住操作区域，可以直接拖到其他位置。
-3. 点击“随机换一个 GIF 头像”。
-4. 看到成功提醒后，刷新页面即可确认新头像。
+1. 登录 [SeaTalk Web](https://seatalkweb.com/)。
+2. 点击页面右侧的 **GIF头像助手**。
+3. 点击 **随机换一个 GIF 头像**。
 
 ### 使用自己的 GIF
 
-1. 在当前 SeaTalk 聊天窗口通过“表情”按钮发送一个想用作头像的 GIF 表情。请勿把 GIF 作为普通图片文件拖入聊天窗口。
-2. 点击页面右侧的“GIF头像助手”。
-3. 点击“抓取当前聊天最近的 GIF”。此功能只会查看当前打开的聊天窗口。
-4. 在最近的 3 个 GIF 中选择一个。
-5. 点击底部的“换成这个 GIF 头像”。
+1. 在当前聊天窗口通过 **表情** 按钮发送想用的 GIF 表情。不要把 GIF 当作普通图片文件拖入聊天。
+2. 打开 **GIF头像助手**，点击 **抓取当前聊天最近的 GIF**。
+3. 选择喜欢的表情，点击 **换成这个 GIF 头像**。
+
+SeaTalk 接口确认成功后，助手会立即显示成功提醒。页面头像如果暂时没有变化，刷新一次即可。
 
 ## 主要功能
 
-- 手头没有 GIF 时，可随机应用内置示例快速体验。
-- 抓取当前聊天最近出现的 3 个 GIF 表情，并自动忽略不受支持的普通 GIF 图片文件。
-- 浮动按钮默认避开发送区，可以拖动并记住位置。
-- 每次启动自动查找当前 `chunk-styles-*.js` 和头像更新入口。
-- 页面首次加载较慢时自动等待更新模块，不需要连续点击按钮。
-- 支持中文和英文界面，并记住手动选择的语言。
-- 显示分阶段运行诊断，SeaTalk 前端发生变化时更容易定位问题。
-- SeaTalk 接口确认成功后立即显示强提醒，避免页面缓存造成误报。
+- 随机应用内置 GIF，安装后可以立即体验。
+- 抓取当前聊天最近的 3 个 SeaTalk GIF 表情。
+- 自动忽略头像接口不支持的普通 GIF 图片文件。
+- 自动查找当前 `chunk-styles-*.js` 和头像更新入口。
+- SeaTalk 加载较慢时自动等待，无需重复点击。
+- 浮动按钮可以拖动，并记住上次位置。
+- 支持中文和英文界面。
+- 提供分阶段诊断和接口成功确认。
 
 ## 隐私与安全
 
-- 脚本只在 `seatalkweb.com` 页面运行。
+- 只在 `seatalkweb.com` 页面运行。
 - 不收集或上传账号、聊天内容、密码、Cookie 等个人信息。
-- 不包含独立的数据统计或用户追踪服务。
-- 只调用当前 SeaTalk 页面已有的个人头像更新能力，不会修改其他人的头像。
-- 语言等偏好只保存在 Tampermonkey 的本地存储中。
+- 不包含独立统计或用户追踪服务。
+- 只调用当前 SeaTalk 页面已有的个人头像更新能力。
+- 只修改当前用户自己的头像。
+- 语言和按钮位置等偏好只保存在 Tampermonkey 本地存储中。
 
 ## 常见问题
 
-**安装后没有看到按钮怎么办？**  
-请确认 Tampermonkey 和本脚本都已启用，然后刷新 SeaTalk 网页。
+<details>
+<summary><strong>安装后没有看到“GIF头像助手”按钮</strong></summary>
 
-**脚本已安装，但 SeaTalk 页面右下角仍没有“GIF头像助手”按钮怎么办？**
-请检查是否已完成上方的“允许用户脚本”授权：在 `chrome://extensions` 或 `edge://extensions` 中打开 Tampermonkey 详情，开启“允许用户脚本”。如果浏览器没有该选项，请开启扩展页右上角的“开发者模式”，然后刷新 SeaTalk 网页。
+确认 Tampermonkey 和本脚本都已启用，并检查是否开启了 **允许用户脚本**。完成后刷新 SeaTalk。
 
-**提示成功，但页面仍显示旧头像怎么办？**  
+</details>
+
+<details>
+<summary><strong>提示成功，但页面仍显示旧头像</strong></summary>
+
 通常是 SeaTalk 页面缓存。刷新页面后再查看即可。
 
-**提示找不到头像更新入口怎么办？**  
-先等待脚本自动检查 5 秒。如果仍失败，可点击“重新检查并应用”或刷新 SeaTalk；不需要手动上传普通 PNG/JPG 图片。持续失败时，请展开“运行状态与调试信息”，保留截图并通过 GitHub Issues 反馈。
+</details>
 
-**“抓取最近 GIF”会查看哪里？**  
-只查看你当前打开的聊天窗口，并显示最近识别到的 3 个 GIF 表情候选。作为普通图片文件发送的 GIF 会被自动忽略，因为 SeaTalk 头像接口不接受这类资源。
+<details>
+<summary><strong>提示找不到头像更新入口</strong></summary>
 
-**“GIF头像助手”按钮挡住 SeaTalk 的按钮怎么办？**
-按住助手按钮拖到其他位置即可。脚本会记住新位置，下次刷新后仍然保留。
+等待自动检查运行 5 秒。如果仍失败，点击 **重新检查并应用** 或刷新 SeaTalk。持续失败时，请展开助手里的“运行状态与调试信息”，保留截图并通过 [GitHub Issues](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues) 反馈。
 
-**如何暂时停用或彻底卸载？**  
-打开 Tampermonkey 管理面板，找到本脚本后关闭开关即可停用；点击删除即可卸载。
+</details>
+
+<details>
+<summary><strong>抓取不到刚发送的 GIF</strong></summary>
+
+请确认 GIF 是通过 SeaTalk 的 **表情** 按钮发送，而不是作为普通图片文件上传。助手只检查当前打开的聊天窗口。
+
+</details>
+
+<details>
+<summary><strong>按钮挡住 SeaTalk 操作区域</strong></summary>
+
+按住“GIF头像助手”按钮拖到其他位置即可。脚本会保存新位置。
+
+</details>
 
 ## 更新与反馈
 
-- Tampermonkey 会按照脚本来源检查更新，也可以在 Tampermonkey 管理面板中手动检查。
-- 遇到问题时，请附上 SeaTalk 页面状态、脚本诊断信息和复现步骤，并通过 [GitHub Issues](../../issues) 反馈。
+- Tampermonkey 会从 Greasy Fork 检查脚本更新，也可以在管理面板中手动检查。
+- 完整版本记录见 [CHANGELOG.md](CHANGELOG.md)。
+- 报告问题时请提供复现步骤和助手诊断信息。
 - 请勿在公开 Issue 中上传密码、Cookie、工作聊天内容或其他敏感信息。
-- 完整版本记录请查看 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 说明
 
@@ -112,4 +129,4 @@
 - 本项目为非官方辅助工具，与 SeaTalk 官方无隶属、合作或认可关系。
 - SeaTalk 前端更新可能暂时影响脚本兼容性，请以诊断面板提示为准。
 
-Yixin.Zhong × Codex 制作
+<p align="center">Yixin.Zhong × Codex 制作</p>

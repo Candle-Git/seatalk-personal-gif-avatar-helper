@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SeaTalk GIF 头像助手 - 三步安装</title>
+    <style>
+      :root {
+        --teal: #109b92;
+        --teal-soft: #e7f7f5;
+        --coral: #f35f54;
+        --coral-soft: #fff0ee;
+        --yellow: #f4b728;
+        --yellow-soft: #fff8df;
+        --ink: #17202d;
+        --muted: #667085;
+        --line: #dce3e8;
+        --paper: #ffffff;
+        --canvas: #f5f7f8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1600px;
+        height: 900px;
+        margin: 0;
+        overflow: hidden;
+        background: var(--canvas);
+        color: var(--ink);
+        font-family: "Microsoft YaHei", "Noto Sans SC", sans-serif;
+        letter-spacing: 0;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+      }
+
+      main {
+        position: relative;
+        width: 1536px;
+        height: 836px;
+        padding: 66px 72px 58px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        box-shadow: 0 22px 55px rgba(23, 32, 45, 0.1);
+      }
+
+      header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 48px;
+        margin-bottom: 48px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--teal);
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 56px;
+        line-height: 1.12;
+        text-wrap: pretty;
+      }
+
+      .header-note {
+        width: 430px;
+        margin: 0 0 4px;
+        color: var(--muted);
+        font-size: 22px;
+        line-height: 1.55;
+        text-align: right;
+      }
+
+      .steps {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 26px;
+      }
+
+      .connector {
+        position: absolute;
+        top: 64px;
+        right: 29.6%;
+        left: 29.6%;
+        height: 3px;
+        background: var(--line);
+      }
+
+      .step {
+        position: relative;
+        min-height: 390px;
+        padding: 32px 30px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+      }
+
+      .step-number {
+        position: absolute;
+        top: 28px;
+        right: 28px;
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--ink);
+        color: white;
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      .visual {
+        display: grid;
+        width: 112px;
+        height: 112px;
+        margin-bottom: 30px;
+        place-items: center;
+        border-radius: 8px;
+      }
+
+      .step:nth-child(2) .visual {
+        background: var(--teal-soft);
+        color: var(--teal);
+      }
+
+      .step:nth-child(3) .visual {
+        background: var(--yellow-soft);
+        color: #a96f00;
+      }
+
+      .step:nth-child(4) .visual {
+        background: var(--coral-soft);
+        color: var(--coral);
+      }
+
+      .tm-mark {
+        font-size: 42px;
+        font-weight: 900;
+      }
+
+      .toggle-mark {
+        position: relative;
+        width: 70px;
+        height: 38px;
+        border-radius: 24px;
+        background: var(--yellow);
+      }
+
+      .toggle-mark::after {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: white;
+        content: "";
+        box-shadow: 0 2px 8px rgba(23, 32, 45, 0.18);
+      }
+
+      .script-mark {
+        font-family: Consolas, monospace;
+        font-size: 38px;
+        font-weight: 800;
+      }
+
+      .step-label {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      h2 {
+        margin: 0 0 18px;
+        font-size: 30px;
+        line-height: 1.25;
+      }
+
+      .step p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 20px;
+        line-height: 1.62;
+        text-wrap: pretty;
+      }
+
+      .step strong {
+        color: var(--ink);
+      }
+
+      footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 28px;
+        margin-top: 34px;
+        padding: 22px 28px;
+        border: 1px solid #a9dcd7;
+        border-radius: 8px;
+        background: var(--teal-soft);
+      }
+
+      .success-copy {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 23px;
+        font-weight: 800;
+      }
+
+      .check {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--teal);
+        color: white;
+        font-size: 24px;
+      }
+
+      .helper-button {
+        flex: 0 0 auto;
+        padding: 14px 22px;
+        border-radius: 24px;
+        background: var(--teal);
+        color: white;
+        font-size: 20px;
+        font-weight: 800;
+        box-shadow: 0 8px 18px rgba(16, 155, 146, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">首次安装只做一次</p>
+          <h1>准备工作只有 3 步</h1>
+        </div>
+        <p class="header-note">按顺序完成插件、授权和脚本安装，之后更换 GIF 头像只需打开助手即可。</p>
+      </header>
+
+      <section class="steps" aria-label="三步安装流程">
+        <div class="connector" aria-hidden="true"></div>
+
+        <article class="step">
+          <span class="step-number">1</span>
+          <div class="visual"><span class="tm-mark">TM</span></div>
+          <p class="step-label">安装浏览器插件</p>
+          <h2>安装 Tampermonkey</h2>
+          <p>从 Tampermonkey 官网安装插件，并确认扩展处于<strong>已启用</strong>状态。</p>
+        </article>
+
+        <article class="step">
+          <span class="step-number">2</span>
+          <div class="visual"><span class="toggle-mark"></span></div>
+          <p class="step-label">完成首次授权</p>
+          <h2>开启“允许用户脚本”</h2>
+          <p>进入浏览器扩展详情页，打开<strong>允许用户脚本</strong>。看不到选项时，先开启开发者模式。</p>
+        </article>
+
+        <article class="step">
+          <span class="step-number">3</span>
+          <div class="visual"><span class="script-mark">&lt;/&gt;</span></div>
+          <p class="step-label">安装头像助手</p>
+          <h2>点击“安装此脚本”</h2>
+          <p>打开 Greasy Fork 脚本页，完成安装，然后刷新 <strong>SeaTalk Web</strong>。</p>
+        </article>
+      </section>
+
+      <footer>
+        <div class="success-copy">
+          <span class="check">✓</span>
+          <span>页面右侧出现“GIF头像助手”，就表示全部安装成功。</span>
+        </div>
+        <span class="helper-button">GIF头像助手</span>
+      </footer>
+    </main>
+  </body>
+</html>

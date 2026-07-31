@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title description">
+  <title id="title">SeaTalk GIF 头像助手三步安装</title>
+  <desc id="description">安装 Tampermonkey，开启允许用户脚本，再安装 GIF 头像助手脚本。</desc>
+
+  <rect width="1600" height="900" fill="#f5f7f8"/>
+  <rect x="32" y="32" width="1536" height="836" rx="8" fill="#ffffff" stroke="#dce3e8"/>
+
+  <text x="104" y="116" fill="#109b92" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="22" font-weight="800">首次安装只做一次</text>
+  <text x="104" y="186" fill="#17202d" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="56" font-weight="800">准备工作只有 3 步</text>
+  <text x="1496" y="126" fill="#667085" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="21" text-anchor="end">按顺序完成插件、授权和脚本安装</text>
+  <text x="1496" y="162" fill="#667085" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="21" text-anchor="end">之后更换头像只需打开助手</text>
+
+  <line x1="500" y1="305" x2="1100" y2="305" stroke="#dce3e8" stroke-width="3"/>
+
+  <g transform="translate(104 246)">
+    <rect width="438" height="390" rx="8" fill="#ffffff" stroke="#dce3e8"/>
+    <rect x="30" y="30" width="112" height="112" rx="8" fill="#e7f7f5"/>
+    <text x="86" y="100" fill="#109b92" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="42" font-weight="900" text-anchor="middle">TM</text>
+    <circle cx="382" cy="56" r="21" fill="#17202d"/>
+    <text x="382" y="64" fill="#ffffff" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="800" text-anchor="middle">1</text>
+    <text x="30" y="190" fill="#667085" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="18" font-weight="800">安装浏览器插件</text>
+    <text x="30" y="238" fill="#17202d" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="30" font-weight="800">安装 Tampermonkey</text>
+    <text x="30" y="288" fill="#667085" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="20">
+      <tspan x="30" dy="0">从 Tampermonkey 官网安装插件，</tspan>
+      <tspan x="30" dy="34">并确认扩展处于“已启用”状态。</tspan>
+    </text>
+  </g>
+
+  <g transform="translate(581 246)">
+    <rect width="438" height="390" rx="8" fill="#ffffff" stroke="#dce3e8"/>
+    <rect x="30" y="30" width="112" height="112" rx="8" fill="#fff8df"/>
+    <rect x="51" y="66" width="70" height="38" rx="19" fill="#f4b728"/>
+    <circle cx="102" cy="85" r="14" fill="#ffffff"/>
+    <circle cx="382" cy="56" r="21" fill="#17202d"/>
+    <text x="382" y="64" fill="#ffffff" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="800" text-anchor="middle">2</text>
+    <text x="30" y="190" fill="#667085" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="18" font-weight="800">完成首次授权</text>
+    <text x="30" y="238" fill="#17202d" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="30" font-weight="800">开启“允许用户脚本”</text>
+    <text x="30" y="288" fill="#667085" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="20">
+      <tspan x="30" dy="0">进入浏览器扩展详情页，打开</tspan>
+      <tspan x="30" dy="34">“允许用户脚本”。没有该选项时，</tspan>
+      <tspan x="30" dy="34">先开启扩展页的开发者模式。</tspan>
+    </text>
+  </g>
+
+  <g transform="translate(1058 246)">
+    <rect width="438" height="390" rx="8" fill="#ffffff" stroke="#dce3e8"/>
+    <rect x="30" y="30" width="112" height="112" rx="8" fill="#fff0ee"/>
+    <text x="86" y="100" fill="#f35f54" font-family="Consolas, monospace" font-size="38" font-weight="800" text-anchor="middle">&lt;/&gt;</text>
+    <circle cx="382" cy="56" r="21" fill="#17202d"/>
+    <text x="382" y="64" fill="#ffffff" font-family="Microsoft YaHei, sans-serif" font-size="20" font-weight="800" text-anchor="middle">3</text>
+    <text x="30" y="190" fill="#667085" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="18" font-weight="800">安装头像助手</text>
+    <text x="30" y="238" fill="#17202d" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="30" font-weight="800">点击“安装此脚本”</text>
+    <text x="30" y="288" fill="#667085" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="20">
+      <tspan x="30" dy="0">打开 Greasy Fork 脚本页，</tspan>
+      <tspan x="30" dy="34">完成安装，然后刷新 SeaTalk Web。</tspan>
+    </text>
+  </g>
+
+  <g transform="translate(104 690)">
+    <rect width="1392" height="112" rx="8" fill="#e7f7f5" stroke="#a9dcd7"/>
+    <circle cx="54" cy="56" r="19" fill="#109b92"/>
+    <text x="54" y="65" fill="#ffffff" font-family="Microsoft YaHei, sans-serif" font-size="24" text-anchor="middle">✓</text>
+    <text x="92" y="65" fill="#17202d" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="23" font-weight="800">页面右侧出现“GIF头像助手”，就表示全部安装成功。</text>
+    <rect x="1174" y="31" width="188" height="50" rx="25" fill="#109b92"/>
+    <text x="1268" y="64" fill="#ffffff" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-size="19" font-weight="800" text-anchor="middle">GIF头像助手</text>
+  </g>
+</svg>

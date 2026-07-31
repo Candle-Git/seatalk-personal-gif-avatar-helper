@@ -1,109 +1,126 @@
-# SeaTalk Personal GIF Avatar Helper
+<p align="center">
+  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.png" alt="SeaTalk Personal GIF Avatar Helper" width="100%">
+</p>
 
-[中文说明](README.md) | [English](README.en.md)
+<p align="center">
+  <strong>Turn a GIF sticker from your SeaTalk chat into an animated personal avatar. No bundle search or DevTools breakpoint required.</strong>
+</p>
 
-Set a GIF from your SeaTalk chat as your animated personal avatar. The userscript automatically finds the avatar update entry point for the current SeaTalk version, so no manual bundle search or DevTools breakpoint is required.
+<p align="center">
+  <a href="https://greasyfork.org/en/scripts/588931">Install userscript</a>
+  ·
+  <a href="https://seatalkweb.com/">Open SeaTalk Web</a>
+  ·
+  <a href="https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues">Report an issue</a>
+  ·
+  <a href="README.md">中文</a>
+</p>
 
-> Install in this order: **install the Tampermonkey browser extension first, then install this userscript.**
+## First-time setup: only 3 steps
 
-## Installation
+> The extension, permission, and userscript only need to be set up once. After that, open the helper whenever you want to change your GIF avatar.
 
-### Step 1: Install Tampermonkey
+![Install in three steps](docs/images/install-in-3-steps.en.png)
 
-1. Open the [official Tampermonkey website](https://www.tampermonkey.net/) in Chrome or Edge.
-2. Choose your browser and install the extension.
-3. Make sure Tampermonkey is enabled.
+1. **Install Tampermonkey**: Open the [official Tampermonkey website](https://www.tampermonkey.net/) in Chrome or Edge, then install and enable the extension.
 
-### Required for first-time installation: allow Tampermonkey to run userscripts
+2. **Enable “Allow User Scripts”**: Open `chrome://extensions` or `edge://extensions`, select Tampermonkey **Details**, and enable **Allow User Scripts**.
 
-> **If you skip this step, the script may show as installed but will not run on SeaTalk.**
+3. **Install GIF Avatar Helper**: Open the [Greasy Fork script page](https://greasyfork.org/en/scripts/588931), click **Install this script**, then refresh [SeaTalk Web](https://seatalkweb.com/).
 
-After installing Tampermonkey, complete the following authorization first:
+> [!IMPORTANT]
+> Setup is complete only when the **GIF Avatar** button appears on the right side of SeaTalk.
 
-1. Open one of these pages in your browser:
-   - Chrome: `chrome://extensions`
-   - Edge: `edge://extensions`
-2. Find **Tampermonkey** and make sure the extension is enabled.
-3. Select **Details**, or right-click the Tampermonkey icon and choose **Manage extension**.
-4. Find and enable **Allow User Scripts**.
-5. If **Allow User Scripts** is not available yet, enable **Developer mode** in the top-right corner of the extensions page.
-6. Refresh SeaTalk after completing this step, then continue with this userscript installation.
+<details>
+<summary><strong>“Allow User Scripts” is missing</strong></summary>
 
-Open or refresh SeaTalk after installation. The authorization and script installation are both successful only when the **GIF Avatar** button appears on the right side. You can drag the button, and its position is saved automatically.
+1. Open `chrome://extensions` or `edge://extensions`.
+2. Enable **Developer mode** in the top-right corner.
+3. Find Tampermonkey and open **Details**.
+4. Enable **Allow User Scripts**.
+5. Return to SeaTalk and refresh the page.
 
-### Step 2: Install the GIF Avatar Helper
+</details>
 
-1. Open the [Greasy Fork script page](https://greasyfork.org/en/scripts/588931).
-2. Click "Install this script".
-3. Tampermonkey will open a confirmation page. Click "Install".
-4. Open or refresh [SeaTalk Web](https://seatalkweb.com/).
-5. Installation is complete when the "GIF Avatar" button appears on the right side.
-
-## How to use
+## Start using it
 
 ### Quick try without your own GIF
 
-1. Open SeaTalk Web.
-2. Click "GIF Avatar" on the right side. Drag it elsewhere if it covers a SeaTalk control.
-3. Click "Try a random GIF avatar".
-4. After the success message appears, refresh the page to confirm the new avatar.
+1. Sign in to [SeaTalk Web](https://seatalkweb.com/).
+2. Click **GIF Avatar** on the right.
+3. Click **Try a random GIF avatar**.
 
 ### Use your own GIF
 
-1. Send the GIF you want through SeaTalk's sticker button in the current chat. Do not drag it into the chat as a regular image file.
-2. Click "GIF Avatar" on the right side.
-3. Click "Capture GIFs from this chat". This action only checks the currently open chat.
-4. Select one of the 3 most recent detected GIFs.
-5. Click "Use this GIF as my avatar" at the bottom of the panel.
+1. Send the GIF through SeaTalk's **sticker** button in the current chat. Do not upload it as a regular image file.
+2. Open **GIF Avatar** and click **Capture GIFs from this chat**.
+3. Select a sticker and click **Use this GIF as my avatar**.
+
+The helper shows a confirmation as soon as the SeaTalk API accepts the update. If the visible avatar is briefly cached, refresh the page once.
 
 ## Features
 
-- Apply a random built-in sample when you do not have a GIF ready.
-- Capture the 3 most recent GIF stickers from the current chat while ignoring unsupported regular GIF image files.
-- Drag the floating button away from SeaTalk controls and keep its saved position.
-- Find the current `chunk-styles-*.js` and avatar update entry point on every launch.
-- Wait automatically when SeaTalk's update module is still loading, with no repeated clicking required.
-- Chinese and English interface with a saved manual language preference.
-- Stage-by-stage diagnostics when a SeaTalk frontend change causes a compatibility issue.
-- Immediate success feedback after the SeaTalk API confirms the update, without false failures caused by cached avatar URLs.
+- Try a random built-in GIF immediately after installation.
+- Capture the 3 most recent SeaTalk GIF stickers from the current chat.
+- Ignore unsupported regular GIF image files automatically.
+- Discover the current `chunk-styles-*.js` and avatar update entry point.
+- Wait automatically when SeaTalk is still loading.
+- Drag the helper button and restore its saved position.
+- Chinese and English interface.
+- Stage-by-stage diagnostics and API success confirmation.
 
 ## Privacy and safety
 
-- Runs only on `seatalkweb.com` pages.
+- Runs only on `seatalkweb.com`.
 - Does not collect or upload account details, chat content, passwords, cookies, or other personal information.
-- Includes no separate analytics or user-tracking service.
-- Uses the personal avatar update capability already available in the current SeaTalk page and never modifies another user's avatar.
-- Preferences such as language are stored only in Tampermonkey local storage.
+- Includes no separate analytics or tracking service.
+- Uses only the personal avatar update capability already available in the current SeaTalk page.
+- Modifies only the current user's avatar.
+- Preferences such as language and button position stay in Tampermonkey local storage.
 
 ## FAQ
 
-**The button does not appear after installation. What should I do?**  
-Make sure both Tampermonkey and this userscript are enabled, then refresh SeaTalk Web.
+<details>
+<summary><strong>The GIF Avatar button does not appear</strong></summary>
 
-**The script is installed, but the “GIF Avatar” button still does not appear on SeaTalk. What should I do?**
-Check that you completed the **Allow User Scripts** authorization above. Open Tampermonkey details in `chrome://extensions` or `edge://extensions` and enable **Allow User Scripts**. If that option is unavailable, enable **Developer mode** in the top-right corner of the extensions page, then refresh SeaTalk.
+Make sure Tampermonkey and this userscript are both enabled. Confirm that **Allow User Scripts** is enabled, then refresh SeaTalk.
 
-**The update succeeded, but the old avatar is still visible.**  
+</details>
+
+<details>
+<summary><strong>The update succeeded, but the old avatar is still visible</strong></summary>
+
 This is usually a SeaTalk page cache. Refresh the page and check again.
 
-**The avatar update entry point cannot be found.**  
-Allow the automatic check to run for 5 seconds. If it still fails, click "Check again and apply" or refresh SeaTalk; no regular PNG/JPG upload is needed. If the problem continues, expand "Status and diagnostics", keep a screenshot, and report it through GitHub Issues.
+</details>
 
-**Where does "Capture GIFs" look?**  
-It only checks the currently open chat and shows the 3 most recent GIF sticker candidates. GIFs sent as regular image files are ignored because SeaTalk's avatar API does not accept that resource type.
+<details>
+<summary><strong>The avatar update entry point cannot be found</strong></summary>
 
-**What if the "GIF Avatar" button covers a SeaTalk control?**
-Drag the helper button somewhere else. The script saves the new position and restores it after a refresh.
+Allow the automatic check to run for 5 seconds. If it still fails, click **Check again and apply** or refresh SeaTalk. If the problem continues, expand **Status and diagnostics**, keep a screenshot, and report it through [GitHub Issues](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues).
 
-**How do I disable or uninstall the script?**  
-Open the Tampermonkey dashboard and turn off this script to disable it, or delete it to uninstall it.
+</details>
+
+<details>
+<summary><strong>The GIF I just sent was not captured</strong></summary>
+
+Make sure you sent it through SeaTalk's **sticker** button instead of uploading it as a regular image. The helper checks only the currently open chat.
+
+</details>
+
+<details>
+<summary><strong>The helper button covers a SeaTalk control</strong></summary>
+
+Drag the **GIF Avatar** button somewhere else. The script saves the new position.
+
+</details>
 
 ## Updates and feedback
 
-- Tampermonkey checks for updates from the script source. You can also check manually in the Tampermonkey dashboard.
-- When reporting a problem, include the SeaTalk page state, script diagnostics, and reproduction steps in [GitHub Issues](../../issues).
+- Tampermonkey checks Greasy Fork for script updates. You can also check manually in its dashboard.
+- See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+- Include reproduction steps and helper diagnostics when reporting a problem.
 - Never post passwords, cookies, work chat content, or other sensitive information in a public issue.
-- See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
 
 ## Notes
 
@@ -112,4 +129,4 @@ Open the Tampermonkey dashboard and turn off this script to disable it, or delet
 - This is an unofficial helper and is not affiliated with, endorsed by, or maintained by SeaTalk.
 - A future SeaTalk frontend update may temporarily affect compatibility. Check the diagnostics panel for details.
 
-Made by Yixin.Zhong × Codex
+<p align="center">Made by Yixin.Zhong × Codex</p>
