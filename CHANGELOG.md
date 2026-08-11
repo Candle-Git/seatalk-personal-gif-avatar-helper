@@ -13,7 +13,6 @@ This file records public releases of SeaTalk Personal GIF Avatar Helper.
 - 修复带有 Reaction、emoji 或 emoticon 结构的正常聊天消息被误判为表情选择面板的问题。
 - 按聊天位置和消息先后展示最近 3 个 GIF，不再让尺寸较大的旧图片挤掉新图片。
 - 增加一次性新版更新提示，并在助手底部显示 `v3.0.3`，方便用户区分版本和反馈故障。
-- 保留可点击的“Yixin.Zhong × Codex 制作”署名彩蛋，并补充中英文隐私说明与排障指引。
 
 ### English
 
@@ -22,7 +21,6 @@ This file records public releases of SeaTalk Personal GIF Avatar Helper.
 - Fixed normal chat messages with Reaction, emoji, or emoticon structures being mistaken for picker panels.
 - Kept the latest 3 GIFs in chat and message order so older large images cannot displace newer results.
 - Added a one-time update notice and a visible `v3.0.3` label at the bottom of the helper for easier troubleshooting.
-- Kept the clickable **Yixin.Zhong × Codex 制作** easter egg and expanded bilingual privacy and troubleshooting guidance.
 
 ## 3.0.2 - 2026-07-30
 
