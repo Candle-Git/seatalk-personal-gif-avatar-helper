@@ -78,7 +78,6 @@ The helper shows a confirmation as soon as the SeaTalk API accepts the update. I
 - Chinese and English interface.
 - Stage-by-stage diagnostics and API success confirmation.
 - Show the script version at the bottom of the helper for easier bug reports, with a one-time update notice for each new version.
-- Click **Yixin.Zhong × Codex 制作** at the bottom to discover a small easter egg.
 
 ## Privacy and safety
 
