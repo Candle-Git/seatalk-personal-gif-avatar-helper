@@ -1,8 +1,10 @@
-![SeaTalk GIF Avatar Helper](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.dark.en.png)
+![SeaTalk GIF Avatar Helper](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner.dark.en.png)
 
 # SeaTalk Personal GIF Avatar Helper
 
 Turn a GIF sticker from your SeaTalk chat into an animated avatar. No bundle search or DevTools breakpoint is required.
+
+Current version: `3.0.3`
 
 **[Read the full visual guide and FAQ](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.en.md)**
 
@@ -40,19 +42,23 @@ Use the **right mouse button** on the Tampermonkey toolbar icon. If this permiss
 
 - Automatically discovers the current SeaTalk avatar update entry point.
 - Includes random built-in GIFs for a quick first try.
-- Captures the 3 most recent GIF stickers from the current chat.
-- Ignores unsupported regular GIF image files.
+- Captures the 3 most recent GIF stickers from private chats, groups, and chat branches.
+- Reads real animation frame counts, accepts two-frame GIFs, and rejects still images.
+- Keeps results in chat order so older large images cannot displace newer GIFs.
 - Waits automatically when SeaTalk is still loading.
 - Provides a draggable helper button with saved position.
 - Supports Chinese and English.
 - Includes runtime diagnostics and API success confirmation.
+- Shows the version at the bottom of the helper and displays one update notice per new version.
 
 ## Privacy and safety
 
-- Runs only on `seatalkweb.com`.
+- Its interface runs only on `seatalkweb.com`.
+- Only during a user-requested capture, it reads candidate image bytes from `f.haiserve.com` to verify real animation frames.
 - Does not collect account details, chat content, passwords, or cookies.
 - Includes no separate analytics or tracking service.
 - Modifies only the current user's avatar.
+- Does not save or log signed candidate image URLs.
 
 This is an unofficial tool and is not affiliated with or endorsed by SeaTalk.
 

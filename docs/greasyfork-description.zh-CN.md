@@ -1,8 +1,10 @@
-![SeaTalk GIF 头像助手](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.dark.png)
+![SeaTalk GIF 头像助手](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner.dark.png)
 
 # SeaTalk 个人 GIF 头像助手
 
 把聊天里的 GIF 表情设为 SeaTalk 动态头像。无需搜索前端文件，也无需设置断点。
+
+当前版本：`3.0.3`
 
 **[查看完整图文教程与常见问题](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper)**
 
@@ -40,19 +42,23 @@ SeaTalk 页面右侧出现“GIF头像助手”，就表示全部安装成功。
 
 - 自动发现当前 SeaTalk 头像更新入口。
 - 随机应用内置 GIF，安装后可以立即体验。
-- 抓取当前聊天最近的 3 个 GIF 表情。
-- 自动忽略头像接口不支持的普通 GIF 图片文件。
+- 抓取个人私聊、群聊和聊天分支中最近的 3 个 GIF 表情。
+- 读取真实动图帧数，支持双帧 GIF，并自动过滤静态图片。
+- 按聊天先后展示结果，不会让尺寸较大的旧图片挤掉新图片。
 - SeaTalk 加载较慢时自动等待，无需连续点击。
 - 浮动按钮支持拖动并记住位置。
 - 支持中文和英文界面。
 - 提供运行诊断和接口成功确认。
+- 助手底部显示版本号，新版本首次运行时会显示一次更新提示。
 
 ## 隐私与安全
 
-- 只在 `seatalkweb.com` 页面运行。
+- 界面只在 `seatalkweb.com` 页面运行。
+- 仅在主动抓取时读取 `f.haiserve.com` 的候选图片数据，用于确认真实动图帧数。
 - 不收集账号、聊天内容、密码或 Cookie。
 - 不包含独立统计或追踪服务。
 - 只修改当前用户自己的头像。
+- 不保存或记录带签名参数的候选图片地址。
 
 本脚本为非官方工具，与 SeaTalk 官方无隶属或合作关系。
 
