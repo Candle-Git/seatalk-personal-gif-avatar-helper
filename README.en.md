@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/seatalk-gif-avatar-helper-banner-v3.0.2.dark.en.png" alt="SeaTalk Personal GIF Avatar Helper" width="100%">
+  <img src="docs/images/seatalk-gif-avatar-helper-banner.dark.en.png" alt="SeaTalk Personal GIF Avatar Helper" width="100%">
 </p>
 
 <p align="center">
@@ -68,22 +68,28 @@ The helper shows a confirmation as soon as the SeaTalk API accepts the update. I
 ## Features
 
 - Try a random built-in GIF immediately after installation.
-- Capture the 3 most recent SeaTalk GIF stickers from the current chat.
-- Ignore unsupported regular GIF image files automatically.
+- Capture the 3 most recent SeaTalk GIF stickers from private chats, groups, and chat branches.
+- Read the real frame count of each candidate, recognize two-frame GIFs, and reject still images automatically.
+- Keep results in chat order so an older large image cannot displace a newer GIF.
+- Keep normal messages eligible even when they contain Reaction, emoji, or emoticon structures.
 - Discover the current `chunk-styles-*.js` and avatar update entry point.
 - Wait automatically when SeaTalk is still loading.
 - Drag the helper button and restore its saved position.
 - Chinese and English interface.
 - Stage-by-stage diagnostics and API success confirmation.
+- Show the script version at the bottom of the helper for easier bug reports, with a one-time update notice for each new version.
+- Click **Yixin.Zhong × Codex 制作** at the bottom to discover a small easter egg.
 
 ## Privacy and safety
 
-- Runs only on `seatalkweb.com`.
+- Its interface runs only on `seatalkweb.com`.
+- Only when the user starts a capture, it reads candidate image bytes from `f.haiserve.com` to confirm that an image really contains at least two frames.
 - Does not collect or upload account details, chat content, passwords, cookies, or other personal information.
 - Includes no separate analytics or tracking service.
 - Uses only the personal avatar update capability already available in the current SeaTalk page.
 - Modifies only the current user's avatar.
 - Preferences such as language and button position stay in Tampermonkey local storage.
+- Does not save signed candidate image URLs in local preferences, diagnostics, or public documentation.
 
 ## FAQ
 
@@ -111,7 +117,9 @@ Allow the automatic check to run for 5 seconds. If it still fails, click **Check
 <details>
 <summary><strong>The GIF I just sent was not captured</strong></summary>
 
-Make sure you sent it through SeaTalk's **sticker** button instead of uploading it as a regular image. The helper checks only the currently open chat.
+Make sure you sent it through SeaTalk's **sticker** button instead of uploading it as a regular image. The helper checks only chat content that is currently open and visible. It reads candidate images to verify their real frame count, so capture may take a few seconds.
+
+If it still fails, expand **Status and diagnostics**. Keep the version number at the bottom of the helper visible in your screenshot, but redact chat content, names, and URL parameters.
 
 </details>
 
@@ -126,12 +134,12 @@ Drag the **GIF Avatar** button somewhere else. The script saves the new position
 
 - Tampermonkey checks Greasy Fork for script updates. You can also check manually in its dashboard.
 - See [CHANGELOG.md](CHANGELOG.md) for the full version history.
-- Include reproduction steps and helper diagnostics when reporting a problem.
+- Include reproduction steps, the version shown at the bottom of the helper, and anonymized diagnostics when reporting a problem.
 - Never post passwords, cookies, work chat content, or other sensitive information in a public issue.
 
 ## Notes
 
-- Current version: `3.0.2`
+- Current version: `3.0.3`
 - Supported page: SeaTalk Web
 - This is an unofficial helper and is not affiliated with, endorsed by, or maintained by SeaTalk.
 - A future SeaTalk frontend update may temporarily affect compatibility. Check the diagnostics panel for details.

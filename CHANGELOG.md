@@ -4,6 +4,26 @@
 
 This file records public releases of SeaTalk Personal GIF Avatar Helper.
 
+## 3.0.3 - 2026-08-12
+
+### 中文
+
+- 修复部分 GIF 表情在个人私聊中无法抓取的问题，并统一个人私聊、群聊和聊天分支的抓取逻辑。
+- 读取候选图片的真实文件内容与帧数：双帧 GIF 可以正常识别，单帧 GIF、普通 PNG/JPG 和其他静态图片会被过滤。
+- 修复带有 Reaction、emoji 或 emoticon 结构的正常聊天消息被误判为表情选择面板的问题。
+- 按聊天位置和消息先后展示最近 3 个 GIF，不再让尺寸较大的旧图片挤掉新图片。
+- 增加一次性新版更新提示，并在助手底部显示 `v3.0.3`，方便用户区分版本和反馈故障。
+- 保留可点击的“Yixin.Zhong × Codex 制作”署名彩蛋，并补充中英文隐私说明与排障指引。
+
+### English
+
+- Fixed GIF stickers that could not be captured in some private chats, with one capture flow shared by private chats, groups, and chat branches.
+- Added real file and frame-count verification: two-frame GIFs are accepted while one-frame GIFs, regular PNG/JPG files, and other still images are rejected.
+- Fixed normal chat messages with Reaction, emoji, or emoticon structures being mistaken for picker panels.
+- Kept the latest 3 GIFs in chat and message order so older large images cannot displace newer results.
+- Added a one-time update notice and a visible `v3.0.3` label at the bottom of the helper for easier troubleshooting.
+- Kept the clickable **Yixin.Zhong × Codex 制作** easter egg and expanded bilingual privacy and troubleshooting guidance.
+
 ## 3.0.2 - 2026-07-30
 
 ### 中文

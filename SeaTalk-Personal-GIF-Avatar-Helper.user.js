@@ -2,14 +2,16 @@
 // @name         SeaTalk 个人 GIF 头像助手
 // @name:en      SeaTalk Personal GIF Avatar Helper
 // @namespace    https://seatalkweb.com/
-// @version      3.0.2
-// @description  自动识别 SeaTalk 当前头像更新入口，把聊天 GIF 表情设为个人头像，并提供分阶段诊断。
-// @description:en Set a GIF from your SeaTalk chat as your animated personal avatar, with automatic compatibility checks and diagnostics.
+// @version      3.0.3
+// @description  抓取当前聊天里的真实动态 GIF 表情并设为个人头像，支持私聊、群聊、聊天分支和分阶段诊断。
+// @description:en Capture verified animated GIF stickers from the current chat and use one as your personal avatar, with private chat, group, branch, and diagnostic support.
 // @author       Yixin.Zhong × Codex
 // @match        https://seatalkweb.com/*
 // @match        https://*.seatalkweb.com/*
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
+// @connect      f.haiserve.com
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -31,11 +33,23 @@
    * - 每次刷新都会重新发现当前 chunk 文件并自检；如果前端结构变化，面板会显示具体失败阶段。
    */
 
+  // 沿用稳定版存储键，升级后继续保留用户的语言、选择和浮动按钮位置。
   const STORAGE_KEY = "seatalk-personal-gif-avatar-helper-v1";
   const PANEL_ID = "seatalk-personal-gif-avatar-panel";
   const TOGGLE_ID = "seatalk-personal-gif-avatar-toggle";
   const STYLE_ID = "seatalk-personal-gif-avatar-style";
   const SUCCESS_MODAL_ID = "seatalk-personal-gif-avatar-success-modal";
+  const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
+  const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
+  // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
+  const SCRIPT_VERSION = "3.0.3";
+  const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
+
+  // 动图验证只读取 SeaTalk 图片域名中的候选文件，不会上传、保存或打印带签名参数的地址。
+  // 20 MB 上限和 8 秒超时用于避免异常大文件或失效链接让页面一直等待。
+  const MAX_ANIMATION_FILE_BYTES = 20 * 1024 * 1024;
+  const ANIMATION_REQUEST_TIMEOUT_MS = 8000;
+  const ANIMATION_RESULT_CACHE = new Map();
 
   // Tampermonkey 脚本运行在隔离环境里，不能直接改网页自己的 webpack 模块。
   // 所以这里用 CustomEvent 和页面注入脚本通信。
@@ -145,6 +159,9 @@
       ownStepOne: "1  在当前聊天发送一个 GIF 表情",
       ownStepTwo: "2  点击下方按钮抓取最近 3 个 GIF",
       scanCurrentChat: "抓取当前聊天最近的 GIF",
+      scanCheckingAnimation: "正在读取候选图片并确认是否真的会动，请稍候...",
+      scanSuccessVerified: "发现 {checked} 个符合编号的候选：{animated} 个确认会动，{static} 个读取后只有一帧，{unverified} 个无法读取；已按聊天先后展示最近 {shown} 个，另忽略 {unsupported} 个普通资源。",
+      scanEmptyVerified: "没有找到可确认的动态 GIF。发现 {checked} 个符合编号的候选：{static} 个读取后只有一帧，{unverified} 个无法读取；另忽略 {unsupported} 个普通资源。",
       scanSuccess: "已从当前聊天找到 {count} 个 GIF，并选中最新一个。",
       scanEmpty: "当前聊天没有找到 GIF。请先发送一个 GIF，并关闭表情面板后重试。",
       scanSuccessFiltered: "找到 {count} 个可用 GIF 表情，已忽略 {skipped} 个普通 GIF 图片文件。",
@@ -186,12 +203,23 @@
       successMessage: "快去给你的同事炫耀吧",
       successSubtitle: "你的动态头像已经成功上线。",
       successClose: "好耶！",
+      updateBadge: "NEW",
+      updateVersion: "版本 {version}",
+      updateTitle: "这一版，终于全抓到了！",
+      updateSubtitle: "GIF 抓取能力完成了一次重点升级：",
+      updateHighlightOne: "个人私聊、群聊和聊天分支使用同一套可靠抓取逻辑",
+      updateHighlightTwo: "读取真实动图帧数，双帧 GIF 也能识别，并自动过滤静态图片",
+      updateHighlightThree: "带 Reaction、emoji 或 emoticon 结构的正常消息不再被误伤",
+      updateHighlightFour: "按聊天先后展示最近 3 个 GIF，不再让大图挤掉新图",
+      updateClose: "知道了，去试试！",
       toggleLabel: "语言",
       helperToggle: "GIF头像助手",
       dragHint: "可拖动到不挡操作的位置",
       credit: "Yixin.Zhong × Codex 制作",
+      creditEasterEggHint: "点一下，有小惊喜",
+      creditEasterEggMessage: "✨ 被你发现啦！愿每次换头像都有好心情 ✨",
       diagnosticSuccessGeneric: "技术检查通过。",
-      diagnosticErrorGeneric: "检测到技术问题，请重试或把截图发给 Yixin.Zhong。",
+      diagnosticErrorGeneric: "检测到技术问题，请重试或把匿名化截图发给维护者。",
       diagnosticInfoGeneric: "已记录一条运行信息。",
       diagnosticApiConfirmed: "SeaTalk 接口已确认头像更新成功。",
       diagnosticVisualPending: "页面没有返回可识别的新头像地址，但不会影响已成功的更新。",
@@ -210,6 +238,9 @@
       ownStepOne: "1  Send a GIF in the current chat",
       ownStepTwo: "2  Capture the 3 most recent GIFs below",
       scanCurrentChat: "Capture GIFs from this chat",
+      scanCheckingAnimation: "Reading candidate images and checking whether they really animate...",
+      scanSuccessVerified: "Found {checked} candidates with supported IDs: {animated} animated, {static} one-frame, and {unverified} unreadable; showing the latest {shown} in chat order and ignoring {unsupported} regular resources.",
+      scanEmptyVerified: "No verified animated GIF was found. Found {checked} candidates with supported IDs: {static} one-frame and {unverified} unreadable; also ignored {unsupported} regular resources.",
       scanSuccess: "Found {count} GIFs in this chat and selected the latest one.",
       scanEmpty: "No GIF was found in this chat. Send one, close the emoji panel, and try again.",
       scanSuccessFiltered: "Found {count} usable GIF stickers and ignored {skipped} regular GIF image files.",
@@ -251,12 +282,23 @@
       successMessage: "Go show it off to your teammates",
       successSubtitle: "Your animated avatar is now live.",
       successClose: "Love it!",
+      updateBadge: "NEW",
+      updateVersion: "Version {version}",
+      updateTitle: "This build finally catches them all!",
+      updateSubtitle: "GIF discovery received a focused reliability upgrade:",
+      updateHighlightOne: "One reliable flow now covers private chats, groups, and chat branches",
+      updateHighlightTwo: "Checks real frame counts, accepts two-frame GIFs, and rejects still images",
+      updateHighlightThree: "Normal messages with Reaction, emoji, or emoticon structures are no longer excluded",
+      updateHighlightFour: "Shows the latest 3 GIFs in chat order instead of favoring larger images",
+      updateClose: "Got it — let me try!",
       toggleLabel: "Language",
       helperToggle: "GIF Avatar",
       dragHint: "Drag this button anywhere convenient",
       credit: "Made by Yixin.Zhong × Codex",
+      creditEasterEggHint: "Click for a little surprise",
+      creditEasterEggMessage: "✨ You found it! May every new avatar brighten your day ✨",
       diagnosticSuccessGeneric: "Technical check passed.",
-      diagnosticErrorGeneric: "A technical issue was detected. Retry or share a screenshot with Yixin.Zhong.",
+      diagnosticErrorGeneric: "A technical issue was detected. Retry or share an anonymized screenshot with the maintainer.",
       diagnosticInfoGeneric: "A runtime event was recorded.",
       diagnosticApiConfirmed: "SeaTalk confirmed the avatar update.",
       diagnosticVisualPending: "The page did not expose a recognizable new avatar URL, but the confirmed update is unaffected.",
@@ -296,8 +338,14 @@
     apiConfirmedGifId: "",
     activeAction: "",
     filteredImageCount: 0,
+    staticImageCount: 0,
+    unverifiedImageCount: 0,
+    checkedCandidateCount: 0,
+    animatedCandidateCount: 0,
+    scanInProgress: false,
     directUpdaterFailed: false,
     togglePosition: null,
+    lastSeenUpdateNoticeVersion: "",
   };
 
   function addDiagnostic(message, level = "info") {
@@ -334,6 +382,8 @@
         state.locale = saved.locale;
       }
 
+      state.lastSeenUpdateNoticeVersion = String(saved.lastSeenUpdateNoticeVersion || "");
+
       if (saved.selected && isCustomGifStickerId(saved.selected.gifId)) {
         state.selected = {
           label: String(saved.selected.label || "上次选择的 GIF"),
@@ -362,9 +412,16 @@
     try {
       GM_setValue(STORAGE_KEY, {
         enabled: state.enabled,
-        selected: state.selected,
+        // 只保存不含查询参数的规范预览地址，避免把聊天图片的临时签名写进本地设置。
+        selected: state.selected
+          ? {
+              ...state.selected,
+              previewUrl: buildPreviewUrl(state.selected.gifId),
+            }
+          : null,
         locale: state.locale,
         togglePosition: state.togglePosition,
+        lastSeenUpdateNoticeVersion: state.lastSeenUpdateNoticeVersion,
       });
     } catch (error) {
       console.warn("[SeaTalk GIF Avatar Helper] 保存本地设置失败：", error);
@@ -375,15 +432,345 @@
     return /^[a-zA-Z0-9]{32,}$/.test(String(value || ""));
   }
 
-  // SeaTalk 资源 ID 的第 34 位之后包含资源类型。当前自定义 GIF 表情使用 b0705，
-  // 普通聊天图片通常是 b0101，后者提交给头像接口会返回 SERVER_ERROR。
+  // SeaTalk 资源 ID 的第 34 位之后包含资源类型。
+  // SeaTalk 当前存在两种可用于动态头像的 GIF 表情资源编号。
+  // 两类候选都必须继续通过后面的真实文件帧数验证，静态图片不会因此被放行。
+  // 普通聊天图片通常是 b0101，仍然必须拒绝，否则头像接口可能返回 SERVER_ERROR。
   function isCustomGifStickerId(value) {
     const gifId = String(value || "");
-    return isValidGifId(gifId) && gifId.slice(33, 38).toLowerCase() === "b0705";
+    const resourceType = gifId.slice(33, 38).toLowerCase();
+    return isValidGifId(gifId) && (resourceType === "b0701" || resourceType === "b0705");
   }
 
   function buildPreviewUrl(gifId) {
     return `https://f.haiserve.com/download/${gifId}_600`;
+  }
+
+  /**
+   * 安全地读取 4 字节无符号整数。图片格式里的长度字段可能是大端或小端。
+   * @param {Uint8Array} bytes 图片字节
+   * @param {number} offset 起始位置
+   * @param {boolean} littleEndian 是否按小端顺序读取
+   * @returns {number} 读取到的整数
+   */
+  function readUint32(bytes, offset, littleEndian = false) {
+    if (offset < 0 || offset + 4 > bytes.length) {
+      return -1;
+    }
+
+    const view = new DataView(bytes.buffer, bytes.byteOffset + offset, 4);
+    return view.getUint32(0, littleEndian);
+  }
+
+  function readAscii(bytes, offset, length) {
+    if (offset < 0 || offset + length > bytes.length) {
+      return "";
+    }
+    return String.fromCharCode(...bytes.subarray(offset, offset + length));
+  }
+
+  /**
+   * 跳过 GIF 中由多个“小数据块”组成的内容。
+   * 每段开头的 1 字节表示该段长度，长度为 0 表示结束。
+   * @returns {number} 下一段结构的位置；-1 表示文件不完整
+   */
+  function skipGifSubBlocks(bytes, startOffset) {
+    let offset = startOffset;
+    while (offset < bytes.length) {
+      const blockLength = bytes[offset];
+      offset += 1;
+      if (blockLength === 0) {
+        return offset;
+      }
+      if (offset + blockLength > bytes.length) {
+        return -1;
+      }
+      offset += blockLength;
+    }
+    return -1;
+  }
+
+  /**
+   * 严格解析 GIF 结构并统计真正的图像帧。
+   * 不能简单搜索 0x2C，因为压缩数据里也可能碰巧出现同一个字节。
+   */
+  function countGifFrames(bytes) {
+    const signature = readAscii(bytes, 0, 6);
+    if (signature !== "GIF87a" && signature !== "GIF89a") {
+      return -1;
+    }
+    if (bytes.length < 13) {
+      return -1;
+    }
+
+    const logicalScreenPacked = bytes[10];
+    let offset = 13;
+    if (logicalScreenPacked & 0x80) {
+      const globalColorTableLength = 3 * (2 ** ((logicalScreenPacked & 0x07) + 1));
+      offset += globalColorTableLength;
+    }
+
+    let frameCount = 0;
+    while (offset < bytes.length) {
+      const marker = bytes[offset];
+      offset += 1;
+
+      if (marker === 0x3b) {
+        return frameCount;
+      }
+
+      if (marker === 0x21) {
+        // 扩展块：跳过扩展标签，再跳过后续所有子块。
+        if (offset >= bytes.length) {
+          return -1;
+        }
+        offset += 1;
+        offset = skipGifSubBlocks(bytes, offset);
+        if (offset < 0) {
+          return -1;
+        }
+        continue;
+      }
+
+      if (marker === 0x2c) {
+        // 图像描述符固定占 9 字节，随后可能有局部颜色表和 LZW 数据。
+        if (offset + 9 > bytes.length) {
+          return -1;
+        }
+        const imagePacked = bytes[offset + 8];
+        offset += 9;
+        if (imagePacked & 0x80) {
+          const localColorTableLength = 3 * (2 ** ((imagePacked & 0x07) + 1));
+          offset += localColorTableLength;
+        }
+        if (offset >= bytes.length) {
+          return -1;
+        }
+
+        // 跳过 LZW 最小码长字节，再跳过压缩图像子块。
+        offset += 1;
+        offset = skipGifSubBlocks(bytes, offset);
+        if (offset < 0) {
+          return -1;
+        }
+
+        frameCount += 1;
+        if (frameCount >= 2) {
+          return frameCount;
+        }
+        continue;
+      }
+
+      // 出现 GIF 规范之外的结构时不猜测，按“无法确认”处理。
+      return -1;
+    }
+
+    return -1;
+  }
+
+  function countAnimatedWebpFrames(bytes) {
+    if (readAscii(bytes, 0, 4) !== "RIFF" || readAscii(bytes, 8, 4) !== "WEBP") {
+      return -1;
+    }
+
+    let offset = 12;
+    let frameCount = 0;
+    while (offset + 8 <= bytes.length) {
+      const chunkType = readAscii(bytes, offset, 4);
+      const chunkLength = readUint32(bytes, offset + 4, true);
+      if (chunkLength < 0) {
+        return -1;
+      }
+
+      const dataStart = offset + 8;
+      const nextOffset = dataStart + chunkLength + (chunkLength % 2);
+      if (nextOffset > bytes.length) {
+        return -1;
+      }
+
+      if (chunkType === "ANMF") {
+        frameCount += 1;
+        if (frameCount >= 2) {
+          return frameCount;
+        }
+      }
+      offset = nextOffset;
+    }
+
+    return frameCount;
+  }
+
+  function countAnimatedPngFrames(bytes) {
+    const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    if (bytes.length < pngSignature.length || !pngSignature.every((value, index) => bytes[index] === value)) {
+      return -1;
+    }
+
+    let offset = 8;
+    while (offset + 12 <= bytes.length) {
+      const chunkLength = readUint32(bytes, offset, false);
+      const chunkType = readAscii(bytes, offset + 4, 4);
+      if (chunkLength < 0 || offset + 12 + chunkLength > bytes.length) {
+        return -1;
+      }
+
+      if (chunkType === "acTL") {
+        if (chunkLength < 8) {
+          return -1;
+        }
+        return readUint32(bytes, offset + 8, false);
+      }
+      if (chunkType === "IEND") {
+        return 0;
+      }
+      offset += 12 + chunkLength;
+    }
+
+    return -1;
+  }
+
+  /**
+   * 根据文件真实内容识别格式并数帧，而不是相信网址后缀或服务器文件名。
+   * @returns {{ verified: boolean, animated: boolean, format: string, frameCount: number }}
+   */
+  function detectAnimationFromBytes(input) {
+    const bytes = input instanceof Uint8Array ? input : new Uint8Array(input || 0);
+    let format = "unknown";
+    let frameCount = -1;
+
+    const gifSignature = readAscii(bytes, 0, 6);
+    if (gifSignature === "GIF87a" || gifSignature === "GIF89a") {
+      format = "gif";
+      frameCount = countGifFrames(bytes);
+    } else if (readAscii(bytes, 0, 4) === "RIFF" && readAscii(bytes, 8, 4) === "WEBP") {
+      format = "webp";
+      frameCount = countAnimatedWebpFrames(bytes);
+    } else {
+      const pngFrameCount = countAnimatedPngFrames(bytes);
+      if (pngFrameCount >= 0) {
+        format = "png";
+        frameCount = pngFrameCount;
+      }
+    }
+
+    return {
+      verified: frameCount >= 0,
+      animated: frameCount >= 2,
+      format,
+      frameCount,
+    };
+  }
+
+  function getSafeAnimationCheckUrl(candidate) {
+    try {
+      const url = new URL(String(candidate?.previewUrl || ""), location.href);
+      if (url.protocol !== "https:" || url.hostname !== "f.haiserve.com" || !url.pathname.startsWith("/download/")) {
+        return "";
+      }
+      return url.href;
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  /**
+   * 通过油猴的跨域读取能力取得图片字节。
+   * Content-Disposition 即使写着“下载”，这里也只会把数据交给脚本，不会弹出保存窗口。
+   */
+  function requestAnimationBytes(candidate) {
+    return new Promise((resolve, reject) => {
+      const url = getSafeAnimationCheckUrl(candidate);
+      if (!url || typeof GM_xmlhttpRequest !== "function") {
+        reject(new Error("animation-check-unavailable"));
+        return;
+      }
+
+      let settled = false;
+      let request = null;
+      const finish = (callback, value) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        callback(value);
+      };
+
+      request = GM_xmlhttpRequest({
+        method: "GET",
+        url,
+        responseType: "arraybuffer",
+        // 不使用 anonymous 模式：部分 SeaTalk 图片需要沿用浏览器现有会话，
+        // 否则服务器可能返回只有一帧的静态预览，而不是完整 GIF。
+        headers: {
+          Accept: "image/gif,image/webp,image/apng,image/*,*/*;q=0.8",
+        },
+        timeout: ANIMATION_REQUEST_TIMEOUT_MS,
+        onprogress(event) {
+          if (Number(event.loaded) > MAX_ANIMATION_FILE_BYTES) {
+            request?.abort();
+            finish(reject, new Error("animation-file-too-large"));
+          }
+        },
+        onload(response) {
+          const status = Number(response.status || 0);
+          const buffer = response.response;
+          if (status < 200 || status >= 300 || !(buffer instanceof ArrayBuffer)) {
+            finish(reject, new Error("animation-request-failed"));
+            return;
+          }
+          if (buffer.byteLength <= 0 || buffer.byteLength > MAX_ANIMATION_FILE_BYTES) {
+            finish(reject, new Error("animation-file-size-invalid"));
+            return;
+          }
+          finish(resolve, buffer);
+        },
+        ontimeout() {
+          finish(reject, new Error("animation-request-timeout"));
+        },
+        onerror() {
+          finish(reject, new Error("animation-request-error"));
+        },
+        onabort() {
+          finish(reject, new Error("animation-request-aborted"));
+        },
+      });
+    });
+  }
+
+  async function verifyCandidateAnimation(candidate) {
+    const cacheKey = String(candidate?.gifId || "");
+    if (ANIMATION_RESULT_CACHE.has(cacheKey)) {
+      return ANIMATION_RESULT_CACHE.get(cacheKey);
+    }
+
+    try {
+      const bytes = await requestAnimationBytes(candidate);
+      const result = detectAnimationFromBytes(bytes);
+      // 只有成功识别了文件结构才缓存；网络失败或文件不完整时允许下次重试。
+      if (result.verified) {
+        ANIMATION_RESULT_CACHE.set(cacheKey, result);
+      }
+      return result;
+    } catch (_error) {
+      return { verified: false, animated: false, format: "unknown", frameCount: -1 };
+    }
+  }
+
+  async function keepVerifiedAnimatedCandidates(candidates) {
+    const checks = await Promise.all(candidates.map(async (candidate) => ({
+      candidate,
+      result: await verifyCandidateAnimation(candidate),
+    })));
+
+    state.checkedCandidateCount = checks.length;
+    state.staticImageCount = checks.filter(({ result }) => result.verified && !result.animated).length;
+    state.unverifiedImageCount = checks.filter(({ result }) => !result.verified).length;
+
+    const animatedCandidates = checks
+      .filter(({ result }) => result.verified && result.animated)
+      .map(({ candidate }) => candidate);
+    state.animatedCandidateCount = animatedCandidates.length;
+    return animatedCandidates.slice(0, 3);
   }
 
   function normalizeUrl(value) {
@@ -481,11 +868,13 @@
     return Math.max(0, right - left) * Math.max(0, bottom - top);
   }
 
-  function getAncestorText(node) {
+  function getAncestorText(node, maxDepth = 10) {
     const parts = [];
     let current = node;
 
-    for (let depth = 0; current && depth < 5; depth += 1) {
+    // SeaTalk 的群聊分支和个人私聊使用不同深度的消息 DOM。
+    // 个人私聊中的图片内容包装层更深，只检查 5 层会看不到外层 message-list-item。
+    for (let depth = 0; current && depth < maxDepth; depth += 1) {
       if (current instanceof Element) {
         parts.push(current.className || "", current.id || "", current.getAttribute("aria-label") || "");
       }
@@ -495,18 +884,80 @@
     return parts.join(" ").toLowerCase();
   }
 
+  function isStickerPickerContextText(text) {
+    // “reaction”单独出现时，通常只是正常消息下面已有的表态统计（例如“❓ 1”），
+    // 不能因此把整条 GIF 消息排除。真正的表态选择界面一般还会带 picker、popover、
+    // menu 或 selector 等标记，下面这些更具体的特征仍会继续阻止误抓弹窗内容。
+    return /picker|popover|sticker-panel|stickers-panel|sticker-nav|emoji-panel|emoticon-panel|reaction-menu|reaction-selector|favorite-panel|收藏面板/.test(
+      String(text || "").toLowerCase()
+    );
+  }
+
   function isLikelyStickerPickerNode(node) {
-    const text = getAncestorText(node);
-    return /emoji|emoticon|picker|popover|sticker-panel|stickers-panel|sticker-nav|reaction|favorite|收藏/.test(text);
+    return isStickerPickerContextText(getAncestorText(node));
   }
 
   function isChatStickerMessageNode(node) {
     const text = getAncestorText(node);
-    return (
+
+    // 已确认过的 SeaTalk GIF 表情消息结构。
+    const isKnownStickerContent = (
       text.includes("messages-message-list-item-sticker-content") ||
       text.includes("content-component-wrapper sticker.c") ||
       text.includes("navigation-message-list-item sticker_c")
     );
+    if (isKnownStickerContent) {
+      return true;
+    }
+
+    // 部分 b0701 GIF 在群聊分支中使用 sticker-content，
+    // 但在个人私聊中会使用 image-content 或更通用的消息内容包装层。
+    // 资源类型仍由 isCustomGifStickerId 严格限制为 b0701/b0705，
+    // 因此这里只扩大“聊天消息容器”识别，不会放行 b0101 普通图片。
+    const isKnownImageContent = (
+      text.includes("messages-message-list-item-image-content") ||
+      text.includes("content-component-wrapper image.c") ||
+      text.includes("navigation-message-list-item image_c")
+    );
+    if (isKnownImageContent) {
+      return true;
+    }
+
+    // 为 SeaTalk 后续的小版本类名变化保留一个受限兜底：
+    // 必须同时位于消息列表项和媒体内容层，并明确排除侧边栏会话列表。
+    const isMessageListItem = text.includes("message-list-item");
+    const isMediaContent = /sticker|image-content|gif-content|content-component-wrapper/.test(text);
+    const isSidebarItem = /conversation-list|chat-list-item|sidebar/.test(text);
+    return isMessageListItem && isMediaContent && !isSidebarItem;
+  }
+
+  /**
+   * 在 SeaTalk 改变消息类名时，用可见尺寸判断是否像聊天区里的大型 GIF。
+   * 这是受限兜底，不会单独决定资源是否可用：外层仍会要求 ID 类型为 b0701/b0705。
+   *
+   * @param {Element} node 待判断的图片或媒体节点
+   * @returns {boolean} 是否像聊天正文中的大型媒体
+   */
+  function isLikelyLargeChatMediaNode(node) {
+    if (!(node instanceof Element)) {
+      return false;
+    }
+
+    // 不能把助手面板里刚渲染出来的候选预览再次当成聊天消息。
+    const helperPanel = document.getElementById(PANEL_ID);
+    if (helperPanel?.contains(node)) {
+      return false;
+    }
+
+    const nearbyText = getAncestorText(node, 6);
+    if (/conversation-list|chat-list-item|contact-list|sidebar|avatar|profile-photo/.test(nearbyText)) {
+      return false;
+    }
+
+    const rect = node.getBoundingClientRect();
+    // 聊天 GIF 通常明显大于 40px 左右的头像和列表缩略图。
+    // 64px 是保守下限，既能覆盖截图中的 GIF，也能避开绝大多数头像。
+    return rect.width >= 64 && rect.height >= 64;
   }
 
   function getNearbyHaiserveImageCount(node) {
@@ -575,6 +1026,12 @@
     return score;
   }
 
+  function sortRecentCandidates(candidates) {
+    return [...candidates].sort(
+      (a, b) => b.bottom - a.bottom || b.index - a.index || b.score - a.score
+    );
+  }
+
   function collectRecentGifCandidates() {
     const selector = [
       "img",
@@ -606,8 +1063,10 @@
 
         // 只接受聊天消息中的“自定义 GIF 表情”。普通 GIF 图片也使用 haiserve 地址，
         // 但资源类型和消息容器不同，误用它会让 ContactUpdateUserInfo 返回 SERVER_ERROR。
-        if (!isCustomGifStickerId(gifId) || !isChatStickerMessageNode(node) || isLikelyStickerPickerNode(node)) {
-          if (!isCustomGifStickerId(gifId) && getAncestorText(node).includes("message-list-item")) {
+        const isSupportedGif = isCustomGifStickerId(gifId);
+        const isChatMedia = isChatStickerMessageNode(node) || isLikelyLargeChatMediaNode(node);
+        if (!isSupportedGif || !isChatMedia || isLikelyStickerPickerNode(node)) {
+          if (!isSupportedGif && getAncestorText(node).includes("message-list-item")) {
             filteredImageIds.add(gifId);
           }
           continue;
@@ -630,7 +1089,13 @@
         };
 
         const existing = candidatesById.get(gifId);
-        if (!existing || nextCandidate.score > existing.score) {
+        // 同一张 GIF 在页面中可能出现多次。保留屏幕位置更靠下、DOM 更靠后的那次，
+        // 因为它更接近当前聊天中最近发送的记录；图片尺寸只用于排除头像，不再决定新旧。
+        const isMoreRecentOccurrence = !existing || (
+          nextCandidate.bottom > existing.bottom ||
+          (Math.abs(nextCandidate.bottom - existing.bottom) < 1 && nextCandidate.index > existing.index)
+        );
+        if (isMoreRecentOccurrence) {
           candidatesById.set(gifId, nextCandidate);
         }
       }
@@ -638,10 +1103,9 @@
 
     state.filteredImageCount = filteredImageIds.size;
 
-    // 优先选择更像“聊天消息里的大表情”的候选，而不是表情面板里的小图标。
-    return Array.from(candidatesById.values())
-      .sort((a, b) => b.score - a.score || b.bottom - a.bottom || b.right - a.right || b.index - a.index)
-      .slice(0, 3);
+    // “最近”必须由聊天位置和 DOM 先后决定，不能让尺寸更大的旧图片挤掉新图片。
+    // 最多验证前 8 个，既保留足够的最近候选，也避免一次读取太多图片。
+    return sortRecentCandidates(Array.from(candidatesById.values())).slice(0, 8);
   }
 
   function selectCandidate(candidate) {
@@ -1345,12 +1809,138 @@
         background: #fcfcfd;
       }
 
+      #${PANEL_ID} .spga-credit-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 21px;
+        padding-top: 5px;
+      }
+
       #${PANEL_ID} .spga-credit {
-        padding: 6px 4px 0;
+        display: inline-flex;
+        width: auto;
+        padding: 1px 2px;
+        border: 0;
+        background: transparent;
         color: #98a2b3;
+        font-family: inherit;
         font-size: 10px;
         line-height: 15px;
         text-align: center;
+        cursor: pointer;
+        transition: color 160ms ease, transform 160ms ease;
+      }
+
+      #${PANEL_ID} .spga-credit:hover,
+      #${PANEL_ID} .spga-credit:focus-visible {
+        color: #0b5cab;
+      }
+
+      #${PANEL_ID} .spga-credit:focus-visible {
+        border-radius: 6px;
+        outline: 2px solid rgba(11, 92, 171, 0.35);
+        outline-offset: 2px;
+      }
+
+      #${PANEL_ID} .spga-credit.spga-credit-celebrating {
+        color: #0b5cab;
+        animation: spga-credit-bounce 720ms cubic-bezier(0.2, 0.9, 0.2, 1.2) both;
+      }
+
+      #${PANEL_ID} .spga-version-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 17px;
+        padding: 0 6px;
+        border: 1px solid #e4e7ec;
+        border-radius: 999px;
+        background: #f9fafb;
+        color: #667085;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 15px;
+        letter-spacing: 0.02em;
+        user-select: text;
+      }
+
+      #${EASTER_EGG_LAYER_ID} {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      #${EASTER_EGG_LAYER_ID} .spga-easter-message {
+        position: fixed;
+        max-width: min(360px, calc(100vw - 32px));
+        padding: 10px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 999px;
+        background: linear-gradient(135deg, #0b5cab, #7c3aed 55%, #ec4899);
+        box-shadow: 0 14px 38px rgba(49, 46, 129, 0.32);
+        color: #fff;
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+        font-size: 12px;
+        line-height: 18px;
+        font-weight: 800;
+        text-align: center;
+        white-space: normal;
+        animation: spga-easter-message 1500ms ease-out both;
+      }
+
+      #${EASTER_EGG_LAYER_ID} .spga-easter-particle {
+        position: fixed;
+        width: var(--spga-size);
+        height: 5px;
+        border-radius: 999px;
+        background: var(--spga-color);
+        box-shadow: 0 0 10px color-mix(in srgb, var(--spga-color) 65%, transparent);
+        animation: spga-easter-particle 1300ms cubic-bezier(0.15, 0.7, 0.2, 1) both;
+      }
+
+      #${EASTER_EGG_LAYER_ID} .spga-easter-particle.spga-easter-star {
+        width: auto;
+        height: auto;
+        background: transparent;
+        box-shadow: none;
+        color: var(--spga-color);
+        font-size: calc(var(--spga-size) * 1.6);
+        line-height: 1;
+        text-shadow: 0 0 12px currentColor;
+      }
+
+      @keyframes spga-credit-bounce {
+        0%, 100% { transform: translateY(0) scale(1); }
+        35% { transform: translateY(-4px) scale(1.06); }
+        65% { transform: translateY(1px) scale(0.98); }
+      }
+
+      @keyframes spga-easter-message {
+        0% { opacity: 0; transform: translate(-50%, -75%) scale(0.72); }
+        16% { opacity: 1; transform: translate(-50%, -115%) scale(1.04); }
+        72% { opacity: 1; transform: translate(-50%, -120%) scale(1); }
+        100% { opacity: 0; transform: translate(-50%, -145%) scale(0.94); }
+      }
+
+      @keyframes spga-easter-particle {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -50%) rotate(0deg) scale(0.35);
+        }
+        12% { opacity: 1; }
+        100% {
+          opacity: 0;
+          transform:
+            translate(
+              calc(-50% + var(--spga-dx)),
+              calc(-50% + var(--spga-dy))
+            )
+            rotate(var(--spga-rotate))
+            scale(1);
+        }
       }
 
       #${PANEL_ID} .spga-sticky-footer {
@@ -1497,6 +2087,132 @@
       #${SUCCESS_MODAL_ID} .spga-success-spark:nth-child(3) { top: 24px; right: 34px; --spga-rotate: 32deg; background: #ec4899; }
       #${SUCCESS_MODAL_ID} .spga-success-spark:nth-child(4) { top: 72px; right: 60px; --spga-rotate: -60deg; background: #8b5cf6; }
 
+      #${UPDATE_MODAL_ID} {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483646;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.64);
+        backdrop-filter: blur(6px);
+        animation: spga-success-backdrop-in 180ms ease-out both;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-card {
+        position: relative;
+        width: min(500px, calc(100vw - 40px));
+        overflow: hidden;
+        padding: 30px;
+        border: 1px solid rgba(37, 99, 235, 0.25);
+        border-radius: 20px;
+        background:
+          radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.2), transparent 38%),
+          radial-gradient(circle at 0% 100%, rgba(14, 165, 233, 0.16), transparent 38%),
+          #ffffff;
+        box-shadow: 0 30px 90px rgba(15, 23, 42, 0.42);
+        color: #172033;
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+        animation: spga-success-card-in 420ms cubic-bezier(0.2, 0.9, 0.2, 1.15) both;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-topline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        height: 26px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        box-shadow: 0 7px 18px rgba(79, 70, 229, 0.24);
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-version {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-title {
+        margin: 0;
+        color: #172033;
+        font-size: 28px;
+        line-height: 1.25;
+        font-weight: 900;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-subtitle {
+        margin: 10px 0 16px;
+        color: #526079;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-list {
+        display: grid;
+        gap: 10px;
+        margin: 0 0 22px;
+        padding: 0;
+        list-style: none;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-item {
+        position: relative;
+        padding: 11px 13px 11px 38px;
+        border: 1px solid #dbe7ff;
+        border-radius: 12px;
+        background: rgba(239, 246, 255, 0.78);
+        color: #334155;
+        font-size: 13px;
+        line-height: 1.55;
+        font-weight: 650;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-item::before {
+        content: "✓";
+        position: absolute;
+        top: 10px;
+        left: 13px;
+        display: grid;
+        place-items: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-close {
+        width: 100%;
+        min-height: 46px;
+        border: 0;
+        border-radius: 11px;
+        background: linear-gradient(135deg, #1769c2, #2563eb);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 850;
+        cursor: pointer;
+        box-shadow: 0 11px 25px rgba(37, 99, 235, 0.25);
+      }
+
+      #${UPDATE_MODAL_ID} .spga-update-close:hover {
+        filter: brightness(1.06);
+      }
+
       @keyframes spga-success-backdrop-in {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -1513,9 +2229,14 @@
       }
 
       @media (prefers-reduced-motion: reduce) {
+        #${PANEL_ID} .spga-credit.spga-credit-celebrating,
+        #${EASTER_EGG_LAYER_ID} .spga-easter-message,
+        #${EASTER_EGG_LAYER_ID} .spga-easter-particle,
         #${SUCCESS_MODAL_ID},
         #${SUCCESS_MODAL_ID} .spga-success-card,
-        #${SUCCESS_MODAL_ID} .spga-success-spark {
+        #${SUCCESS_MODAL_ID} .spga-success-spark,
+        #${UPDATE_MODAL_ID},
+        #${UPDATE_MODAL_ID} .spga-update-card {
           animation: none;
         }
       }
@@ -1542,6 +2263,66 @@
     }
 
     return element;
+  }
+
+  /**
+   * 点击底部制作署名后播放一个完全本地的轻量彩蛋。
+   * 特效只创建短暂的 DOM 粒子，不加载图片、字体或第三方库，也不会发送网络请求。
+   *
+   * @param {HTMLElement} trigger 被点击的制作署名按钮
+   */
+  function showCreditEasterEgg(trigger) {
+    if (!(trigger instanceof HTMLElement)) {
+      return;
+    }
+
+    document.getElementById(EASTER_EGG_LAYER_ID)?.remove();
+
+    const rect = trigger.getBoundingClientRect();
+    const originX = Math.min(Math.max(24, rect.left + rect.width / 2), window.innerWidth - 24);
+    const originY = Math.min(Math.max(24, rect.top + rect.height / 2), window.innerHeight - 24);
+    const layer = createElement("div", {
+      attributes: {
+        id: EASTER_EGG_LAYER_ID,
+        "aria-hidden": "true",
+      },
+    });
+    const message = createElement("div", {
+      className: "spga-easter-message",
+      textContent: t("creditEasterEggMessage"),
+    });
+    message.style.left = `${originX}px`;
+    message.style.top = `${originY}px`;
+    layer.append(message);
+
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const colors = ["#0ea5e9", "#2563eb", "#7c3aed", "#ec4899", "#f59e0b", "#10b981"];
+    const particleCount = reduceMotion ? 0 : 34;
+
+    for (let index = 0; index < particleCount; index += 1) {
+      // 从署名位置向上方半圆散开，避免粒子挡住底部操作按钮太久。
+      const progress = particleCount === 1 ? 0.5 : index / (particleCount - 1);
+      const angle = Math.PI + Math.PI * progress + (Math.random() - 0.5) * 0.26;
+      const distance = 72 + Math.random() * 118;
+      const particle = createElement("span", {
+        className: `spga-easter-particle ${index % 6 === 0 ? "spga-easter-star" : ""}`.trim(),
+        textContent: index % 6 === 0 ? "✦" : "",
+      });
+      particle.style.left = `${originX}px`;
+      particle.style.top = `${originY}px`;
+      particle.style.setProperty("--spga-dx", `${Math.cos(angle) * distance}px`);
+      particle.style.setProperty("--spga-dy", `${Math.sin(angle) * distance - Math.random() * 32}px`);
+      particle.style.setProperty("--spga-rotate", `${Math.round((Math.random() - 0.5) * 760)}deg`);
+      particle.style.setProperty("--spga-size", `${6 + Math.random() * 7}px`);
+      particle.style.setProperty("--spga-color", colors[index % colors.length]);
+      particle.style.animationDelay = `${Math.random() * 90}ms`;
+      layer.append(particle);
+    }
+
+    document.body.append(layer);
+    trigger.classList.add("spga-credit-celebrating");
+    window.setTimeout(() => trigger.classList.remove("spga-credit-celebrating"), 760);
+    window.setTimeout(() => layer.remove(), 1700);
   }
 
   function showSuccessCelebration(gifId) {
@@ -1616,6 +2397,102 @@
     overlay.append(card);
     document.body.append(overlay);
     closeButton.focus();
+  }
+
+  function shouldShowUpdateNotice(lastSeenVersion) {
+    return String(lastSeenVersion || "") !== UPDATE_NOTICE_VERSION;
+  }
+
+  function showUpdateNotice() {
+    if (!shouldShowUpdateNotice(state.lastSeenUpdateNoticeVersion)) {
+      return;
+    }
+
+    document.getElementById(UPDATE_MODAL_ID)?.remove();
+
+    const overlay = createElement("div", {
+      attributes: {
+        id: UPDATE_MODAL_ID,
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-labelledby": `${UPDATE_MODAL_ID}-title`,
+      },
+    });
+    const card = createElement("div", { className: "spga-update-card" });
+    const topLine = createElement("div", { className: "spga-update-topline" });
+    topLine.append(
+      createElement("span", { className: "spga-update-badge", textContent: t("updateBadge") }),
+      createElement("span", {
+        className: "spga-update-version",
+        textContent: t("updateVersion", { version: UPDATE_NOTICE_VERSION }),
+      })
+    );
+
+    const title = createElement("h2", {
+      className: "spga-update-title",
+      textContent: t("updateTitle"),
+      attributes: { id: `${UPDATE_MODAL_ID}-title` },
+    });
+    const subtitle = createElement("p", {
+      className: "spga-update-subtitle",
+      textContent: t("updateSubtitle"),
+    });
+    const highlightList = createElement("ul", { className: "spga-update-list" });
+    [
+      "updateHighlightOne",
+      "updateHighlightTwo",
+      "updateHighlightThree",
+      "updateHighlightFour",
+    ].forEach((key) => {
+      highlightList.append(
+        createElement("li", { className: "spga-update-item", textContent: t(key) })
+      );
+    });
+
+    const closeButton = createElement("button", {
+      className: "spga-update-close",
+      textContent: t("updateClose"),
+      attributes: { type: "button" },
+    });
+
+    // 只有用户真正关闭弹窗后才记录“已读”。如果页面提前刷新，下次仍会再次展示。
+    const closeModal = () => {
+      state.lastSeenUpdateNoticeVersion = UPDATE_NOTICE_VERSION;
+      saveState();
+      document.removeEventListener("keydown", handleKeyDown);
+      overlay.remove();
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    };
+
+    closeButton.addEventListener("click", closeModal);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) {
+        closeModal();
+      }
+    });
+    document.addEventListener("keydown", handleKeyDown);
+
+    card.append(topLine, title, subtitle, highlightList, closeButton);
+    overlay.append(card);
+    document.body.append(overlay);
+    closeButton.focus();
+  }
+
+  function showUpdateNoticeIfNeeded() {
+    if (!shouldShowUpdateNotice(state.lastSeenUpdateNoticeVersion)) {
+      return;
+    }
+
+    // 稍微延后出现，让 SeaTalk 主界面和助手面板先完成首屏渲染。
+    window.setTimeout(() => {
+      if (shouldShowUpdateNotice(state.lastSeenUpdateNoticeVersion)) {
+        showUpdateNotice();
+      }
+    }, 450);
   }
 
   function createButton(text, action, className = "") {
@@ -1932,7 +2809,11 @@
       createElement("div", { textContent: t("ownStepOne") }),
       createElement("div", { textContent: t("ownStepTwo") })
     );
-    const scanButton = createButton(t("scanCurrentChat"), "scan-recent");
+    const scanButton = createButton(
+      state.scanInProgress ? t("scanCheckingAnimation") : t("scanCurrentChat"),
+      "scan-recent"
+    );
+    scanButton.disabled = state.scanInProgress;
     const ownCard = createPathCard({
       eyebrow: t("ownEyebrow"),
       title: t("ownTitle"),
@@ -1973,11 +2854,27 @@
     });
     const applyButton = createButton(getEnableButtonText(), "enable", "spga-button-primary spga-apply-button");
     applyButton.disabled = !state.selected || (state.enabled && !state.directUpdaterFailed);
-    footer.append(
-      status,
-      applyButton,
-      createElement("div", { className: "spga-credit", textContent: t("credit") })
-    );
+    const creditButton = createElement("button", {
+      className: "spga-credit",
+      textContent: t("credit"),
+      attributes: {
+        type: "button",
+        title: t("creditEasterEggHint"),
+        "aria-label": `${t("credit")}：${t("creditEasterEggHint")}`,
+        "data-action": "credit-easter-egg",
+      },
+    });
+    const versionBadge = createElement("span", {
+      className: "spga-version-badge",
+      textContent: `v${SCRIPT_VERSION}`,
+      attributes: {
+        title: `SeaTalk GIF Avatar Helper v${SCRIPT_VERSION}`,
+        "aria-label": `SeaTalk GIF Avatar Helper version ${SCRIPT_VERSION}`,
+      },
+    });
+    const creditRow = createElement("div", { className: "spga-credit-row" });
+    creditRow.append(creditButton, versionBadge);
+    footer.append(status, applyButton, creditRow);
 
     panel.append(header, body, footer);
     window.requestAnimationFrame(positionPanelNearToggle);
@@ -2477,7 +3374,7 @@
   }
 
   function bindPanelEvents() {
-    document.addEventListener("click", (event) => {
+    document.addEventListener("click", async (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
         return;
@@ -2485,6 +3382,11 @@
 
       const action = target.getAttribute("data-action");
       if (!action) {
+        return;
+      }
+
+      if (action === "credit-easter-egg") {
+        showCreditEasterEgg(target);
         return;
       }
 
@@ -2511,25 +3413,41 @@
       }
 
       if (action === "scan-recent") {
-        state.recentCandidates = collectRecentGifCandidates();
+        if (state.scanInProgress) {
+          return;
+        }
+
+        state.scanInProgress = true;
+        state.staticImageCount = 0;
+        state.unverifiedImageCount = 0;
+        state.checkedCandidateCount = 0;
+        state.animatedCandidateCount = 0;
+        renderPanel();
+        setStatus(t("scanCheckingAnimation"));
+
+        const rawCandidates = collectRecentGifCandidates();
+        state.recentCandidates = await keepVerifiedAnimatedCandidates(rawCandidates);
+        state.scanInProgress = false;
+
         if (state.recentCandidates.length) {
           state.candidatesOpen = true;
           selectCandidate(state.recentCandidates[0]);
-          setStatus(
-            state.filteredImageCount
-              ? t("scanSuccessFiltered", {
-                  count: state.recentCandidates.length,
-                  skipped: state.filteredImageCount,
-                })
-              : t("scanSuccess", { count: state.recentCandidates.length })
-          );
+          setStatus(t("scanSuccessVerified", {
+            checked: state.checkedCandidateCount,
+            animated: state.animatedCandidateCount,
+            shown: state.recentCandidates.length,
+            static: state.staticImageCount,
+            unverified: state.unverifiedImageCount,
+            unsupported: state.filteredImageCount,
+          }));
         } else {
           renderPanel();
-          setStatus(
-            state.filteredImageCount
-              ? t("scanEmptyFiltered", { skipped: state.filteredImageCount })
-              : t("scanEmpty")
-          );
+          setStatus(t("scanEmptyVerified", {
+            checked: state.checkedCandidateCount,
+            static: state.staticImageCount,
+            unverified: state.unverifiedImageCount,
+            unsupported: state.filteredImageCount,
+          }));
         }
         return;
       }
@@ -3891,10 +4809,25 @@
     readSavedState();
     injectStyles();
     createPanel();
+    showUpdateNoticeIfNeeded();
     bindPanelEvents();
     bindHookStatusEvents();
     injectPageHook();
     sendHookConfig();
+  }
+
+  // 仅供本地自动测试读取纯解析函数。正常安装时没有这个标记，不会暴露任何接口。
+  if (globalThis.__SPGA_TEST_MODE__ === true) {
+    globalThis.__SPGA_TEST_API__ = {
+      countGifFrames,
+      countAnimatedWebpFrames,
+      countAnimatedPngFrames,
+      detectAnimationFromBytes,
+      sortRecentCandidates,
+      isStickerPickerContextText,
+      shouldShowUpdateNotice,
+    };
+    return;
   }
 
   if (document.body) {
