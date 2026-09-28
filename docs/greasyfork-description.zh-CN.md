@@ -4,9 +4,17 @@
 
 把聊天里的 GIF 表情设为 SeaTalk 动态头像。无需搜索前端文件，也无需设置断点。
 
-当前版本：`3.0.3`
+当前版本：`3.0.5`
 
 **[查看完整图文教程与常见问题](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper)**
+
+## 3.0.5 更新
+
+- 修复当前 SeaTalk CSP 阻止头像更新入口启动的问题。
+- 升级后如提示权限变更，请确认 `unsafeWindow` 权限并刷新 SeaTalk。
+- 显示环境版本、流程错误码和耗时，支持复制脱敏诊断报告。
+- 慢请求期间阻止重复提交，后台状态更新不会打断手动报告复制。
+- 已在 SeaTalk 3.70.1、Chrome 153、Tampermonkey 5.5.0 验证正常头像更新和报告复制。
 
 ## 首次安装：只需 3 步
 

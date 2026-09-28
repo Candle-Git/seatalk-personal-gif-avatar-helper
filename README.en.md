@@ -16,6 +16,19 @@
   <a href="README.md">中文</a>
 </p>
 
+
+> **Upgrading from 3.0.3 to 3.0.5:** The page hook now requires `unsafeWindow`. Accept any Tampermonkey permission prompt and reload SeaTalk. If `PAGE_CONTEXT_UNAVAILABLE`, `PAGE_CONTEXT_EXECUTION_BLOCKED`, or `HOOK_NO_ACK` appears, retain the code and Console error. Do not disable browser security policies.
+
+
+### 3.0.5 diagnostics
+
+Expand runtime diagnostics for environment versions, attempt numbers, stage codes and elapsed time. Use **Copy sanitized diagnostics** for a JSON report, or copy from the independent report dialog if clipboard access is denied; background updates preserve its content and selection. Only allowlisted environment fields, stage codes and available numeric API error codes are exported; accounts, chats, GIF IDs, image URLs and raw exceptions are excluded. Up to 60 events are held in memory until reload; nothing is sent automatically.
+
+`API_SUCCESS` confirms submission. `VISUAL_PENDING` means submission succeeded but the display has not been confirmed. A SeaTalk version change is a diagnostic clue and does not block the helper.
+
+
+While an API request remains pending, another submission is blocked. The 20-second visual timeout does not mean the request failed or was cancelled. See the [3.0.5 acceptance record](docs/RELEASE_3.0.5.md) for tested environments and limits.
+
 ## First-time setup: only 3 steps
 
 > The extension, permission, and userscript only need to be set up once. After that, open the helper whenever you want to change your GIF avatar.
@@ -138,7 +151,7 @@ Drag the **GIF Avatar** button somewhere else. The script saves the new position
 
 ## Notes
 
-- Current version: `3.0.3`
+- Current version: `3.0.5`
 - Supported page: SeaTalk Web
 - This is an unofficial helper and is not affiliated with, endorsed by, or maintained by SeaTalk.
 - A future SeaTalk frontend update may temporarily affect compatibility. Check the diagnostics panel for details.
