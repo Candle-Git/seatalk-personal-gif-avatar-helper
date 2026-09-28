@@ -2,12 +2,13 @@
 // @name         SeaTalk 个人 GIF 头像助手
 // @name:en      SeaTalk Personal GIF Avatar Helper
 // @namespace    https://seatalkweb.com/
-// @version      3.0.3
+// @version      3.0.5
 // @description  抓取当前聊天里的真实动态 GIF 表情并设为个人头像，支持私聊、群聊、聊天分支和分阶段诊断。
 // @description:en Capture verified animated GIF stickers from the current chat and use one as your personal avatar, with private chat, group, branch, and diagnostic support.
 // @author       Yixin.Zhong × Codex
 // @match        https://seatalkweb.com/*
 // @match        https://*.seatalkweb.com/*
+// @grant        unsafeWindow
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
@@ -39,10 +40,11 @@
   const TOGGLE_ID = "seatalk-personal-gif-avatar-toggle";
   const STYLE_ID = "seatalk-personal-gif-avatar-style";
   const SUCCESS_MODAL_ID = "seatalk-personal-gif-avatar-success-modal";
+  const DIAGNOSTIC_REPORT_ID = "seatalk-personal-gif-avatar-report";
   const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
   const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
   // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
-  const SCRIPT_VERSION = "3.0.3";
+  const SCRIPT_VERSION = "3.0.5";
   const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
 
   // 动图验证只读取 SeaTalk 图片域名中的候选文件，不会上传、保存或打印带签名参数的地址。
@@ -52,7 +54,8 @@
   const ANIMATION_RESULT_CACHE = new Map();
 
   // Tampermonkey 脚本运行在隔离环境里，不能直接改网页自己的 webpack 模块。
-  // 所以这里用 CustomEvent 和页面注入脚本通信。
+  // 通过 unsafeWindow 的页面 Function 创建 Hook，再使用 CustomEvent 通信。
+  // 不插入内联 script；执行仍须符合页面 CSP（当前允许 unsafe-eval）。
   const HOOK_EVENTS = {
     configEvent: "seatalk-personal-gif-avatar:set-config",
     statusEvent: "seatalk-personal-gif-avatar:hook-status",
@@ -116,10 +119,6 @@
     {
       label: "美少女jiyi",
       gifId: "b85fdeb54f129ea6ee22258515ed0b820b0705000002a37e1780358408011036",
-    },
-    {
-      label: "虾小助",
-      gifId: "a5475d8a03ac8150fec2a44ddede215f0b070500001570aa1780963208011027",
     },
     {
       label: "让我保护你药水哥",
@@ -196,6 +195,7 @@
       statusReady: "运行正常，可以直接更换头像。",
       statusChecking: "正在检查当前 SeaTalk 版本。",
       statusApplying: "正在更新头像。",
+      requestStillPending: "上一请求仍在等待接口返回，请勿重复提交。",
       statusError: "遇到问题，请展开调试信息查看详情。",
       verificationConfirmed: "SeaTalk 已确认更新成功。页面头像显示可能有短暂缓存。",
       verificationObserved: "页面头像已同步更新。",
@@ -205,12 +205,12 @@
       successClose: "好耶！",
       updateBadge: "NEW",
       updateVersion: "版本 {version}",
-      updateTitle: "这一版，终于全抓到了！",
-      updateSubtitle: "GIF 抓取能力完成了一次重点升级：",
-      updateHighlightOne: "个人私聊、群聊和聊天分支使用同一套可靠抓取逻辑",
-      updateHighlightTwo: "读取真实动图帧数，双帧 GIF 也能识别，并自动过滤静态图片",
-      updateHighlightThree: "带 Reaction、emoji 或 emoticon 结构的正常消息不再被误伤",
-      updateHighlightFour: "按聊天先后展示最近 3 个 GIF，不再让大图挤掉新图",
+      updateTitle: "诊断信息升级",
+      updateSubtitle: "遇到问题时，可以复制脱敏报告帮助定位：",
+      updateHighlightOne: "显示 SeaTalk 版本、构建号和脚本运行环境",
+      updateHighlightTwo: "按页面连接、服务发现、接口提交和显示验证分阶段记录",
+      updateHighlightThree: "记录本次操作编号、耗时和明确错误码",
+      updateHighlightFour: "一键复制脱敏报告；剪贴板不可用时支持手动复制",
       updateClose: "知道了，去试试！",
       toggleLabel: "语言",
       helperToggle: "GIF头像助手",
@@ -219,6 +219,7 @@
       creditEasterEggHint: "点一下，有小惊喜",
       creditEasterEggMessage: "✨ 被你发现啦！愿每次换头像都有好心情 ✨",
       diagnosticSuccessGeneric: "技术检查通过。",
+      hookStartFailed: "页面 Hook 启动失败（{code}）。请确认已授权新版脚本并刷新 SeaTalk；若仍失败，请提供此错误码和 Console 中的 CSP 报错。",
       diagnosticErrorGeneric: "检测到技术问题，请重试或把匿名化截图发给维护者。",
       diagnosticInfoGeneric: "已记录一条运行信息。",
       diagnosticApiConfirmed: "SeaTalk 接口已确认头像更新成功。",
@@ -275,6 +276,7 @@
       statusReady: "Everything is ready. You can update your avatar now.",
       statusChecking: "Checking this SeaTalk version.",
       statusApplying: "Updating your avatar.",
+      requestStillPending: "The previous request is still pending. Please wait before submitting again.",
       statusError: "Something went wrong. Expand diagnostics for details.",
       verificationConfirmed: "SeaTalk confirmed the update. The visible avatar may be briefly cached.",
       verificationObserved: "The avatar is now updated on the page.",
@@ -284,12 +286,12 @@
       successClose: "Love it!",
       updateBadge: "NEW",
       updateVersion: "Version {version}",
-      updateTitle: "This build finally catches them all!",
-      updateSubtitle: "GIF discovery received a focused reliability upgrade:",
-      updateHighlightOne: "One reliable flow now covers private chats, groups, and chat branches",
-      updateHighlightTwo: "Checks real frame counts, accepts two-frame GIFs, and rejects still images",
-      updateHighlightThree: "Normal messages with Reaction, emoji, or emoticon structures are no longer excluded",
-      updateHighlightFour: "Shows the latest 3 GIFs in chat order instead of favoring larger images",
+      updateTitle: "Better troubleshooting",
+      updateSubtitle: "Copy a sanitized report when something goes wrong:",
+      updateHighlightOne: "See SeaTalk version, build and userscript environment",
+      updateHighlightTwo: "Track hook, service discovery, submission and visual verification",
+      updateHighlightThree: "Record attempt numbers, elapsed time and diagnostic codes",
+      updateHighlightFour: "Copy a sanitized report, with a manual fallback",
       updateClose: "Got it — let me try!",
       toggleLabel: "Language",
       helperToggle: "GIF Avatar",
@@ -298,6 +300,7 @@
       creditEasterEggHint: "Click for a little surprise",
       creditEasterEggMessage: "✨ You found it! May every new avatar brighten your day ✨",
       diagnosticSuccessGeneric: "Technical check passed.",
+      hookStartFailed: "Page hook failed to start ({code}). Approve the updated userscript permissions and reload SeaTalk. If it persists, share this code and the Console CSP error.",
       diagnosticErrorGeneric: "A technical issue was detected. Retry or share an anonymized screenshot with the maintainer.",
       diagnosticInfoGeneric: "A runtime event was recorded.",
       diagnosticApiConfirmed: "SeaTalk confirmed the avatar update.",
@@ -328,6 +331,15 @@
     directUpdaterReady: false,
     chunkName: "",
     diagnosticEvents: [],
+    pageHookReady: false,
+    diagnosticStartedAt: Date.now(),
+    diagnosticAttempt: 0,
+    diagnosticAttemptAt: 0,
+    activeOperation: null,
+    requestPending: false,
+    requestSlow: false,
+    manualDiagnosticReport: "",
+    diagnosticCopyRequest: 0,
     successModalShownForGifId: "",
     locale: getDefaultLocale(),
     candidatesOpen: false,
@@ -348,24 +360,129 @@
     lastSeenUpdateNoticeVersion: "",
   };
 
-  function addDiagnostic(message, level = "info") {
-    const now = new Date();
-    const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
-      .map((value) => String(value).padStart(2, "0"))
-      .join(":");
+  const DIAGNOSTIC_CODES = {
+    HOOK_READY: ["hook", "页面连接已启动", "Page hook started"],
+    PAGE_CONTEXT_UNAVAILABLE: ["hook", "无法访问页面上下文，请检查新增权限", "Page context unavailable; check userscript permissions"],
+    PAGE_CONTEXT_EXECUTION_BLOCKED: ["hook", "页面执行被阻止，请检查 Console", "Page execution blocked; check Console"],
+    HOOK_NO_ACK: ["hook", "未收到页面连接启动确认", "No page hook acknowledgement"],
+    HOOK_START_FAILED: ["hook", "页面连接启动失败，请检查脚本权限和 Console", "Page hook failed; check userscript permissions and Console"],
+    APPLY_START: ["submit", "开始本次头像更新", "Avatar update started"],
+    MODULE_WAIT: ["discovery", "正在等待用户资料模块", "Waiting for profile module"],
+    MODULE_MISSING: ["discovery", "未找到用户资料模块", "Profile module not found"],
+    MODULE_IMPORT_FAILED: ["discovery", "用户资料模块导入失败", "Profile module import failed"],
+    SERVICE_MISSING: ["discovery", "模块中未找到更新服务", "Update service not found in module"],
+    SERVICE_READY: ["discovery", "头像更新服务已就绪", "Avatar update service ready"],
+    ACCOUNT_MISSING: ["submit", "无法确认当前账号", "Current account could not be identified"],
+    REQUEST_STILL_PENDING: ["submit", "接口仍在等待回报，暂不能重复提交；可复制诊断信息", "Request is still pending; another submission is blocked. You can copy diagnostics"],
+    REQUEST_BUSY: ["submit", "上一请求尚未完成，本次提交未发送", "Previous request is still pending; this submission was not sent"],
+    API_PENDING: ["submit", "正在提交头像更新", "Submitting avatar update"],
+    API_SUCCESS: ["submit", "接口已确认更新成功", "API confirmed the update"],
+    API_ERROR: ["submit", "接口返回错误，请检查 Console 后重试", "API returned an error; check Console before retrying"],
+    VISUAL_SUCCESS: ["verification", "已观察到页面头像变化", "Avatar change observed on page"],
+    VISUAL_PENDING: ["verification", "提交成功，页面显示待确认", "Update submitted; visual confirmation pending"],
+    RESULT_TIMEOUT: ["verification", "未收到接口成功回报，也未观察到头像变化", "No API success or avatar change observed"],
+  };
 
-    const normalizedMessage = String(message || "未知状态");
-    if (state.diagnosticEvents[0]?.message === normalizedMessage) {
-      state.diagnosticEvents[0] = { time, level, message: normalizedMessage };
-      return;
+  function sanitizeDiagnosticText(value) {
+    return String(value || "")
+      .replace(/https?:\/\/[^\s<>"']+/gi, "[URL]")
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[EMAIL]")
+      .replace(/\b[a-z0-9]{32,}\b/gi, "[RESOURCE]")
+      .replace(/\b\d{5,}\b/g, "[ID]")
+      .slice(0, 500);
+  }
+
+  function getDiagnosticEnvironment() {
+    const safeVersion = value => /^[a-z0-9._-]{1,64}$/i.test(String(value || "")) ? String(value) : "unknown";
+    const root = document.documentElement;
+    const browser = navigator.userAgent?.match(/(Firefox|Edg|Chrome|Version)\/([0-9.]+)/);
+    const manager = typeof GM_info === "object" ? GM_info : {};
+    return {
+      script: SCRIPT_VERSION,
+      seatalk: safeVersion(root?.getAttribute("data-web-semantic-version")),
+      release: safeVersion(root?.getAttribute("data-release-hash")),
+      browser: browser ? `${browser[1]}/${safeVersion(browser[2])}` : "unknown",
+      manager: ["Tampermonkey", "Violentmonkey", "Greasemonkey"].includes(manager.scriptHandler) ? manager.scriptHandler : "unknown",
+      managerVersion: safeVersion(manager.version),
+    };
+  }
+
+  function addDiagnostic(message, level = "info", code = "", errorCode = null) {
+    const now = Date.now();
+    const entry = {
+      time: new Date(now).toLocaleTimeString("en-GB", { hour12: false }),
+      level: ["info", "success", "error"].includes(level) ? level : "info",
+      message: sanitizeDiagnosticText(message),
+      code: Object.hasOwn(DIAGNOSTIC_CODES, code) ? code : "",
+      elapsedMs: Math.max(0, now - (state.diagnosticAttemptAt || state.diagnosticStartedAt)),
+      attempt: state.diagnosticAttempt,
+      errorCode: /^-?\d{1,6}$/.test(String(errorCode ?? "")) ? String(errorCode) : null,
+    };
+    const last = state.diagnosticEvents[0];
+    if (last?.message === entry.message && last?.code === entry.code && last?.attempt === entry.attempt) return;
+    state.diagnosticEvents.unshift(entry);
+    state.diagnosticEvents = state.diagnosticEvents.slice(0, 60);
+  }
+
+  function buildDiagnosticReport() {
+    // Export only explicitly allowlisted fields and fixed messages. Never export
+    // raw exception text, account IDs, selected GIFs, chat DOM, URLs or storage.
+    return JSON.stringify({
+      schema: 1,
+      environment: getDiagnosticEnvironment(),
+      hookReady: state.pageHookReady,
+      serviceReady: state.directUpdaterReady,
+      attempt: state.diagnosticAttempt,
+      events: state.diagnosticEvents.filter(e => Object.hasOwn(DIAGNOSTIC_CODES, e.code)).slice().reverse().map(e => ({
+        attempt: e.attempt, elapsedMs: e.elapsedMs, level: e.level,
+        stage: DIAGNOSTIC_CODES[e.code][0], code: e.code, errorCode: e.errorCode,
+        message: DIAGNOSTIC_CODES[e.code][2],
+      })),
+    }, null, 2);
+  }
+
+  function showManualDiagnosticReport(report) {
+    state.manualDiagnosticReport = report;
+    let dialog = document.getElementById(DIAGNOSTIC_REPORT_ID);
+    if (!dialog) {
+      dialog = createElement("dialog", { attributes: { id: DIAGNOSTIC_REPORT_ID, "aria-label": "Sanitized diagnostic report" } });
+      dialog.style.cssText = "width:min(640px,85vw);border:1px solid #bbb;border-radius:12px;padding:20px;color:#18243a;background:#fff";
+      const help = createElement("p", { textContent: state.locale === "zh"
+        ? "剪贴板不可用，请手动复制下方报告。内容已固定，后台状态更新不会改动它。"
+        : "Clipboard unavailable. Copy the report below manually. This snapshot stays unchanged during background updates." });
+      const output = createElement("textarea", { attributes: { readonly: "", "aria-label": "Sanitized diagnostic report" } });
+      output.style.cssText = "width:100%;height:45vh;box-sizing:border-box;font:13px monospace";
+      const close = createElement("button", { textContent: state.locale === "zh" ? "关闭" : "Close", attributes: { type: "button" } });
+      close.addEventListener("click", () => dialog.close());
+      dialog.addEventListener("close", () => {
+        state.manualDiagnosticReport = "";
+        dialog.remove();
+      });
+      dialog.append(help, output, close);
+      // Outside PANEL_ID: renderPanel must never detach this node or selection.
+      document.body.append(dialog);
     }
+    const output = dialog.querySelector("textarea");
+    output.value = state.manualDiagnosticReport;
+    if (!dialog.open) dialog.showModal();
+    output.focus();
+    output.select();
+  }
 
-    state.diagnosticEvents.unshift({
-      time,
-      level,
-      message: normalizedMessage,
-    });
-    state.diagnosticEvents = state.diagnosticEvents.slice(0, 8);
+  async function copyDiagnosticReport(button) {
+    const report = buildDiagnosticReport();
+    const request = ++state.diagnosticCopyRequest;
+    try {
+      await navigator.clipboard.writeText(report);
+      if (request !== state.diagnosticCopyRequest) return;
+      button.textContent = state.locale === "zh" ? "已复制脱敏诊断" : "Diagnostics copied";
+    } catch (_error) {
+      if (request !== state.diagnosticCopyRequest) return;
+      // The originating button may already have been replaced by renderPanel.
+      // Open a stable, independent dialog using the original report snapshot.
+      showManualDiagnosticReport(report);
+      button.textContent = state.locale === "zh" ? "请手动复制报告" : "Copy the report manually";
+    }
   }
 
   function readSavedState() {
@@ -2331,6 +2448,8 @@
       return;
     }
     state.successModalShownForGifId = normalizedGifId;
+    // Do not steal focus/selection from a report the user is copying.
+    if (state.manualDiagnosticReport) return;
 
     document.getElementById(SUCCESS_MODAL_ID)?.remove();
 
@@ -2668,6 +2787,7 @@
   }
 
   function getEnableButtonText() {
+    if (state.requestPending && state.requestSlow) return t("requestStillPending");
     if (!state.selected) {
       return t("applyDisabled");
     }
@@ -2684,6 +2804,9 @@
   }
 
   function localizeDiagnosticMessage(item) {
+    if (Object.hasOwn(DIAGNOSTIC_CODES, item.code)) {
+      return DIAGNOSTIC_CODES[item.code][state.locale === "zh" ? 1 : 2];
+    }
     if (state.locale === "zh") {
       return item.message;
     }
@@ -2694,16 +2817,29 @@
       return t("diagnosticVisualPending");
     }
     if (item.level === "error") {
-      return t("diagnosticErrorGeneric");
+      return `${t("diagnosticErrorGeneric")} ${item.message}`;
     }
     if (item.level === "success") {
-      return t("diagnosticSuccessGeneric");
+      return `${t("diagnosticSuccessGeneric")} ${item.message}`;
     }
-    return t("diagnosticInfoGeneric");
+    return `${t("diagnosticInfoGeneric")} ${item.message}`;
   }
 
   function createDiagnosticsView() {
     const wrapper = createElement("div", { className: "spga-diagnostics" });
+    const env = getDiagnosticEnvironment();
+    wrapper.append(createElement("div", { textContent: `Helper ${env.script} · SeaTalk ${env.seatalk} · Build ${env.release}` }));
+    wrapper.append(createElement("div", { textContent: `${env.browser} · ${env.manager} ${env.managerVersion}` }));
+    const copyButton = createElement("button", {
+      className: "spga-button",
+      textContent: state.locale === "zh" ? "复制脱敏诊断" : "Copy sanitized diagnostics",
+      attributes: { type: "button" },
+    });
+    copyButton.addEventListener("click", () => copyDiagnosticReport(copyButton));
+    wrapper.append(copyButton);
+    wrapper.append(createElement("div", { textContent: state.locale === "zh"
+      ? "仅复制环境版本和流程错误码，不包含账号、聊天内容或图片地址。耗时从本次操作开始计算。"
+      : "Copies versions and stage codes only; no account, chat or image URLs. Timing is relative to each attempt." }));
     const events = state.diagnosticEvents.length
       ? state.diagnosticEvents
       : [{ time: "--:--:--", level: "info", message: t("diagnosticsEmpty") }];
@@ -2716,7 +2852,7 @@
             : item.level === "success"
               ? "spga-diagnostic-success"
               : "",
-        textContent: `[${item.time}] ${localizeDiagnosticMessage(item)}`,
+        textContent: `[${item.time}]${item.code ? ` #${item.attempt} +${(item.elapsedMs / 1000).toFixed(1)}s ${item.code}${item.errorCode !== null && item.errorCode !== undefined ? ` (${item.errorCode})` : ""}` : ""} ${localizeDiagnosticMessage(item)}`,
       });
       if (state.locale === "en") {
         row.title = item.message;
@@ -2795,7 +2931,7 @@
       "random-apply",
       "spga-button-soft"
     );
-    randomButton.disabled = state.enabled;
+    randomButton.disabled = state.enabled || state.requestPending;
     const quickCard = createPathCard({
       eyebrow: t("quickEyebrow"),
       title: t("quickTitle"),
@@ -2853,7 +2989,7 @@
       attributes: { "data-role": "status" },
     });
     const applyButton = createButton(getEnableButtonText(), "enable", "spga-button-primary spga-apply-button");
-    applyButton.disabled = !state.selected || (state.enabled && !state.directUpdaterFailed);
+    applyButton.disabled = !state.selected || state.requestPending || (state.enabled && !state.directUpdaterFailed);
     const creditButton = createElement("button", {
       className: "spga-credit",
       textContent: t("credit"),
@@ -2881,6 +3017,7 @@
   }
 
   function buildStatusText() {
+    if (state.requestPending && state.requestSlow) return t("requestStillPending");
     if (state.enabled) {
       return t("statusApplying");
     }
@@ -3136,49 +3273,45 @@
     }
   }
 
-  function startAvatarVerification(gifId) {
+  function markRequestStillPending() {
+    if (!state.requestPending) return;
+    state.requestSlow = true;
+    state.hookStatus = t("requestStillPending");
+    addDiagnostic("", "info", "REQUEST_STILL_PENDING");
+    state.diagnosticsOpen = true;
+    clearDelayedLoading();
+    renderPanel();
+  }
+
+  function startAvatarVerification(operation) {
     clearVerificationTimer();
-    state.apiConfirmedGifId = "";
-    const baseline = new Set(getCurrentPersonalAvatarUrls());
     const startedAt = Date.now();
-
     state.verificationTimer = window.setInterval(() => {
+      // Even an already-queued timer must not mutate a later attempt.
+      if (state.activeOperation !== operation) return;
       const currentUrls = getCurrentPersonalAvatarUrls();
-      const containsGifId = currentUrls.some((url) => url.includes(gifId));
-      const avatarChanged = currentUrls.some((url) => !baseline.has(url));
-
-      if (containsGifId || avatarChanged) {
+      const containsGifId = currentUrls.some((url) => url.includes(operation.gifId));
+      // An arbitrary URL change can belong to an old request or cache refresh.
+      // Only the captured target ID counts as visual confirmation.
+      if (containsGifId) {
         clearVerificationTimer();
-        clearPendingTimeout();
-        clearDelayedLoading();
-        state.activeAction = "";
-        state.enabled = false;
-        state.hookStatus = t("verificationObserved");
-        addDiagnostic(t("verificationObserved"), "success");
-        showSuccessCelebration(gifId);
-        saveState();
-        sendHookConfig();
+        addDiagnostic(t("verificationObserved"), "success", "VISUAL_SUCCESS");
+        if (!state.requestPending && state.apiConfirmedGifId === operation.gifId) {
+          state.hookStatus = t("verificationObserved");
+        }
+        // Visual success never unlocks an unresolved API request.
         renderPanel();
         return;
       }
-
       if (Date.now() - startedAt >= 20000) {
         clearVerificationTimer();
-        clearDelayedLoading();
-        state.activeAction = "";
-        state.enabled = false;
-        if (state.apiConfirmedGifId === gifId) {
-          // 接口成功就是最终结果。页面可能重建头像节点、使用缓存 URL，或隐藏真实 GIF ID，
-          // 因此视觉观察超时只能作为提示，不能把已经成功的操作改判为失败。
+        if (state.requestPending) {
+          markRequestStillPending();
+        } else if (state.apiConfirmedGifId === operation.gifId) {
           state.hookStatus = t("verificationConfirmed");
-          addDiagnostic(t("diagnosticVisualPending"), "info");
-        } else {
-          state.hookStatus = t("statusError");
-          addDiagnostic(t("diagnosticErrorGeneric"), "error");
+          addDiagnostic(t("diagnosticVisualPending"), "info", "VISUAL_PENDING");
+          renderPanel();
         }
-        saveState();
-        sendHookConfig();
-        renderPanel();
       }
     }, 800);
   }
@@ -3246,21 +3379,11 @@
     }, 450);
   }
 
-  function startPendingTimeout() {
+  function startPendingTimeout(operation = state.activeOperation) {
     clearPendingTimeout();
     state.pendingTimer = window.setTimeout(() => {
-      if (!state.enabled) {
-        return;
-      }
-
-      state.hookStatus = "等待超时：没有检测到直接更新完成或头像上传请求。请查看运行诊断后重试。";
-      addDiagnostic("等待更新流程超时。", "error");
-      state.enabled = false;
-      state.diagnosticsOpen = true;
-      clearDelayedLoading();
-      state.activeAction = "";
-      saveState();
-      renderPanel();
+      if (state.activeOperation !== operation || !state.requestPending) return;
+      markRequestStillPending();
     }, 30000);
   }
 
@@ -3329,6 +3452,10 @@
   }
 
   function startAvatarApply(actionSource = "selected") {
+    if (state.requestPending) {
+      markRequestStillPending();
+      return;
+    }
     if (!state.selected || !isCustomGifStickerId(state.selected.gifId)) {
       setStatus(state.selected ? t("unsupportedGif") : t("applyDisabled"));
       if (state.selected) {
@@ -3336,6 +3463,15 @@
         state.diagnosticsOpen = true;
         renderPanel();
       }
+      return;
+    }
+
+    if (state.enabled && !state.directUpdaterFailed) return;
+    state.diagnosticAttempt += 1;
+    state.diagnosticAttemptAt = Date.now();
+    addDiagnostic("", "info", "APPLY_START");
+
+    if (!state.pageHookReady && !injectPageHook()) {
       return;
     }
 
@@ -3350,6 +3486,10 @@
       addDiagnostic("用户已重新检查自动更新入口。", "info");
     }
 
+    const operation = Object.freeze({ id: state.diagnosticAttempt, gifId: state.selected.gifId });
+    state.activeOperation = operation;
+    state.requestPending = true;
+    state.requestSlow = false;
     state.enabled = true;
     state.activeAction = actionSource;
     state.apiConfirmedGifId = "";
@@ -3363,12 +3503,11 @@
         : "更新入口尚未就绪，正在等待页面模块加载。"
     );
     saveState();
-    sendHookConfig();
-    startPendingTimeout();
+    startPendingTimeout(operation);
     startDelayedLoading();
 
-    startAvatarVerification(state.selected.gifId);
-    sendHookConfig("apply-direct");
+    startAvatarVerification(operation);
+    sendHookConfig("apply-direct", { attemptId: operation.id, gifId: operation.gifId });
 
     renderPanel();
   }
@@ -3401,7 +3540,7 @@
       }
 
       if (action === "random-apply") {
-        if (state.enabled || !LOCAL_GIF_PRESETS.length) {
+        if (state.enabled || state.requestPending || !LOCAL_GIF_PRESETS.length) {
           return;
         }
         const alternatives = LOCAL_GIF_PRESETS.filter((item) => item.gifId !== state.selected?.gifId);
@@ -3546,6 +3685,17 @@
   function bindHookStatusEvents() {
     window.addEventListener(HOOK_EVENTS.statusEvent, (event) => {
       const detail = event.detail || {};
+      if (detail.attemptId !== undefined) {
+        if (detail.attemptId !== state.activeOperation?.id || detail.gifId !== state.activeOperation?.gifId) return;
+        if (!state.requestPending) return;
+      } else if (state.requestPending && ["error", "compatibility-error", "patched", "direct-submitted", "stage"].includes(detail.type)) {
+        return;
+      }
+      if (detail.code) addDiagnostic("", detail.level || (detail.type === "error" || detail.type === "compatibility-error" ? "error" : "info"), detail.code, detail.errorCode);
+      if (detail.type === "hook-started") {
+        state.pageHookReady = true;
+        addDiagnostic("", "success", "HOOK_READY");
+      }
 
       if (detail.type === "ready") {
         if (detail.mode === "esm-direct") {
@@ -3556,6 +3706,7 @@
           state.chunkName = detail.chunkName || "";
           state.hookStatus = `直接更新入口已就绪${state.chunkName ? `：${state.chunkName}` : ""}。`;
           if (!wasReady) {
+            addDiagnostic("", "success", "SERVICE_READY");
             addDiagnostic(`启动自检通过：已找到直接更新入口${state.chunkName ? `（${state.chunkName}）` : ""}。`, "success");
           }
         } else if (!state.directUpdaterReady) {
@@ -3580,17 +3731,31 @@
       } else if (detail.type === "stage") {
         state.hookStatus = detail.message || "更新流程正在进行。";
         addDiagnostic(state.hookStatus, detail.level === "error" ? "error" : "info");
+      } else if (detail.type === "request-busy") {
+        // Defensive rejection if the page still has a request unknown to this UI.
+        // This is not a queued retry: no new avatar was submitted.
+        state.requestPending = false;
+        state.enabled = false;
+        state.activeAction = "";
+        clearPendingTimeout();
+        clearVerificationTimer();
+        clearDelayedLoading();
+        state.hookStatus = t("requestStillPending");
+        state.diagnosticsOpen = true;
       } else if (detail.type === "direct-submitted") {
         // 接口已经成功返回时，实际更新任务就完成了，立即恢复按钮。
         // 页面头像变化验证继续在后台运行，只负责补充最终确认，不再锁住操作按钮。
         state.enabled = false;
-        state.apiConfirmedGifId = detail.gifId || state.selected?.gifId || "";
+        state.requestPending = false;
+        state.requestSlow = false;
+        state.apiConfirmedGifId = detail.gifId;
+        startAvatarVerification(state.activeOperation);
         clearPendingTimeout();
         clearDelayedLoading();
         state.activeAction = "";
         saveState();
         state.hookStatus = t("verificationConfirmed");
-        addDiagnostic(t("diagnosticApiConfirmed"), "success");
+        addDiagnostic(t("diagnosticApiConfirmed"), "success", "API_SUCCESS");
         showSuccessCelebration(detail.gifId);
         sendHookConfig();
       } else if (detail.type === "compatibility-error") {
@@ -3610,6 +3775,8 @@
       } else if (detail.type === "disabled") {
         // 这是内部一次性任务结束通知，不再展示成“替换已关闭”，避免让用户误以为操作失败。
       } else if (detail.type === "error") {
+        state.requestPending = false;
+        state.requestSlow = false;
         state.hookStatus = detail.message || "Hook 出错。";
         addDiagnostic(state.hookStatus, "error");
         if (detail.fallbackAvailable) {
@@ -3631,10 +3798,42 @@
   }
 
   function injectPageHook() {
-    const script = document.createElement("script");
-    script.textContent = `;(${pageHook.toString()})(${JSON.stringify(HOOK_EVENTS)});`;
-    (document.head || document.documentElement).appendChild(script);
-    script.remove();
+    let acknowledged = false;
+    const onStarted = (event) => {
+      if (event.detail?.type === "hook-started") acknowledged = true;
+    };
+    window.addEventListener(HOOK_EVENTS.statusEvent, onStarted);
+    let failureCode = "HOOK_NO_ACK";
+    try {
+      if (typeof unsafeWindow === "undefined" || typeof unsafeWindow.Function !== "function") {
+        failureCode = "PAGE_CONTEXT_UNAVAILABLE";
+      } else {
+        // Only our own bundled function and fixed event names are evaluated.
+        // The page's Function gives import() and native hooks the page realm.
+        // No DOM script insertion, CSP rewriting, or remote code evaluation.
+        const start = unsafeWindow.Function(
+          `"use strict"; (${pageHook.toString()})(${JSON.stringify(HOOK_EVENTS)});`
+        );
+        start();
+      }
+    } catch (_error) {
+      // Do not expose arbitrary exception text that might contain private URLs.
+      acknowledged = false;
+      failureCode = "PAGE_CONTEXT_EXECUTION_BLOCKED";
+    } finally {
+      window.removeEventListener(HOOK_EVENTS.statusEvent, onStarted);
+    }
+    state.pageHookReady = acknowledged;
+    if (!acknowledged) {
+      window.dispatchEvent(new CustomEvent(HOOK_EVENTS.statusEvent, {
+        detail: {
+          type: "compatibility-error",
+          message: t("hookStartFailed", { code: failureCode }),
+          code: failureCode,
+        },
+      }));
+    }
+    return acknowledged;
   }
 
   function pageHook(events) {
@@ -3644,7 +3843,7 @@
       window.dispatchEvent(
         new CustomEvent(events.statusEvent, {
           detail: {
-            type: "waiting",
+            type: window.__seatalkPersonalGifAvatarHookReady ? "hook-started" : "waiting",
             message: "页面 Hook 已安装，正在复用现有实例。",
           },
         })
@@ -3671,7 +3870,7 @@
       esmChunkUrl: "",
       esmDiscoveryPromise: null,
       esmDiscoveryFailedFor: "",
-      directApplyPromise: null,
+      directOperation: null,
       avatarFileSelectedAt: 0,
     };
 
@@ -3757,6 +3956,7 @@
         if (!chunkUrls.length) {
           emit({
             type: reportFailure ? "compatibility-error" : "waiting",
+            code: reportFailure ? "MODULE_MISSING" : "MODULE_WAIT",
             message: reportFailure
               ? "启动自检失败：等待后仍未发现主站 chunk-styles 文件。请刷新页面或重新检查。"
               : "SeaTalk 页面仍在加载，正在等待主站更新模块。",
@@ -3774,6 +3974,7 @@
               emit({
                 type: "stage",
                 level: "error",
+                code: "MODULE_IMPORT_FAILED",
                 message: `自检无法导入 ${chunkUrl.split("/").pop() || "chunk-styles"}：${String(error?.message || error).slice(0, 180)}`,
               });
             }
@@ -3822,6 +4023,7 @@
         emit({
           type: reportFailure ? "compatibility-error" : "waiting",
           chunkName: failedChunkName,
+          code: reportFailure ? "SERVICE_MISSING" : "MODULE_WAIT",
           message: reportFailure
             ? `启动自检失败：${failedChunkName} 中没有识别到用户资料 updateUserInfo 服务。SeaTalk 前端结构可能已变化。`
             : `已发现 ${failedChunkName}，正在等待用户资料服务完成加载。`,
@@ -3850,64 +4052,66 @@
         await new Promise((resolve) => window.setTimeout(resolve, 500));
       }
 
-      return discoverEsmUpdater({ reportFailure: true });
+      return discoverEsmUpdater({ reportFailure: false });
     }
 
-    async function applyDirectAvatar() {
-      if (!runtime.enabled || !isValidGifId(runtime.gifId)) {
-        emit({
-          type: "error",
-          message: "直接更新已取消：替换开关未开启或 GIF ID 无效。",
-        });
+    function startDirectAvatar(detail) {
+      const operation = Object.freeze({ id: detail.attemptId, gifId: detail.gifId });
+      if (runtime.directOperation) {
+        emit({ type: "request-busy", code: "REQUEST_BUSY", level: "info",
+          attemptId: operation.id, gifId: operation.gifId });
         return;
       }
-
-      const ready = await waitForEsmUpdater();
-      if (!ready || !runtime.esmUpdater) {
-        runtime.enabled = false;
-        emit({
-          type: "error",
-          fallbackAvailable: false,
-          message: "直接更新失败：没有找到 SeaTalk 用户资料更新服务。请刷新页面或重新检查。",
-        });
+      if (!Number.isSafeInteger(operation.id) || operation.id <= 0 || !isValidGifId(operation.gifId)) {
+        emit({ type: "error", attemptId: operation.id, gifId: operation.gifId,
+          message: "直接更新已取消：操作编号或 GIF ID 无效。" });
         return;
       }
+      // Reserve synchronously, before awaiting discovery or API work. Direct
+      // submissions do not use the legacy mutable upload-rewrite configuration.
+      runtime.directOperation = operation;
+      runtime.enabled = false;
+      void applyDirectAvatar(operation);
+    }
 
-      const userId = findCurrentUserId();
-      if (!userId) {
-        runtime.enabled = false;
-        emit({
-          type: "error",
-          fallbackAvailable: false,
-          message: "直接更新失败：没有识别到当前账号 ID。请刷新页面后重试。",
-        });
-        return;
-      }
-
-      emit({
-        type: "stage",
-        message: `已识别当前账号 ID ${userId}，正在提交 ContactUpdateUserInfo。`,
-      });
-
+    async function applyDirectAvatar(operation) {
+      const report = (detail) => {
+        if (runtime.directOperation === operation) {
+          emit({ ...detail, attemptId: operation.id, gifId: operation.gifId });
+        }
+      };
+      let result;
       try {
+        const ready = await waitForEsmUpdater();
+        if (runtime.directOperation !== operation) return;
+        if (!ready || !runtime.esmUpdater) {
+          result = { type: "error", code: "SERVICE_MISSING", fallbackAvailable: false,
+            message: "直接更新失败：没有找到 SeaTalk 用户资料更新服务。请刷新页面或重新检查。" };
+          return;
+        }
+        const userId = findCurrentUserId();
+        if (!userId) {
+          result = { type: "error", code: "ACCOUNT_MISSING", fallbackAvailable: false,
+            message: "直接更新失败：没有识别到当前账号 ID。请刷新页面后重试。" };
+          return;
+        }
+        report({ type: "stage", code: "API_PENDING",
+          message: "当前账号已识别，正在提交 ContactUpdateUserInfo。" });
         await Reflect.apply(runtime.esmUpdater.updateUserInfo, runtime.esmUpdater, [
-          userId,
-          { avatar: runtime.gifId },
+          userId, { avatar: operation.gifId },
         ]);
-        runtime.enabled = false;
-        emit({
-          type: "direct-submitted",
-          userId,
-          gifId: runtime.gifId,
-          chunkName: runtime.esmChunkUrl.split("/").pop() || runtime.esmChunkUrl,
-        });
+        result = { type: "direct-submitted", chunkName: runtime.esmChunkUrl.split("/").pop() || runtime.esmChunkUrl };
       } catch (error) {
-        runtime.enabled = false;
-        emit({
-          type: "error",
-          fallbackAvailable: false,
-          message: `SeaTalk 直接更新失败：${String(error?.message || error || "未知错误").slice(0, 240)}`,
-        });
+        result = { type: "error", fallbackAvailable: false, code: "API_ERROR",
+          errorCode: /^-?\d{1,6}$/.test(String(error?.errorCode ?? "")) ? String(error.errorCode) : null,
+          message: `SeaTalk 直接更新失败：${String(error?.message || error || "未知错误").slice(0, 240)}` };
+      } finally {
+        if (runtime.directOperation === operation) {
+          // Release BEFORE terminal delivery so an immediate retry is accepted.
+          runtime.directOperation = null;
+          runtime.enabled = false;
+          if (result) emit({ ...result, attemptId: operation.id, gifId: operation.gifId });
+        }
       }
     }
 
@@ -4743,6 +4947,11 @@
 
     window.addEventListener(events.configEvent, (event) => {
       const detail = event.detail || {};
+      if (detail.command === "apply-direct") {
+        startDirectAvatar(detail);
+        return;
+      }
+      if (runtime.directOperation) return;
       runtime.enabled = Boolean(detail.enabled);
       runtime.gifId = isValidGifId(detail.gifId) ? detail.gifId : "";
 
@@ -4754,13 +4963,6 @@
         });
       }
 
-      if (detail.command === "apply-direct") {
-        if (!runtime.directApplyPromise) {
-          runtime.directApplyPromise = applyDirectAvatar().finally(() => {
-            runtime.directApplyPromise = null;
-          });
-        }
-      }
 
       if (!runtime.enabled) {
         emit({
@@ -4803,6 +5005,8 @@
         discoverEsmUpdater({ reportFailure: false });
       }
     }, 5000);
+    window.__seatalkPersonalGifAvatarHookReady = true;
+    emit({ type: "hook-started" });
   }
 
   function init() {
@@ -4819,6 +5023,19 @@
   // 仅供本地自动测试读取纯解析函数。正常安装时没有这个标记，不会暴露任何接口。
   if (globalThis.__SPGA_TEST_MODE__ === true) {
     globalThis.__SPGA_TEST_API__ = {
+      sanitizeDiagnosticText,
+      getDiagnosticEnvironment,
+      buildDiagnosticReport,
+      addDiagnostic,
+      copyDiagnosticReport,
+      showManualDiagnosticReport,
+      createPanel,
+      renderPanel,
+      bindHookStatusEvents,
+      startAvatarApply,
+      startAvatarVerification,
+      showSuccessCelebration,
+      state,
       countGifFrames,
       countAnimatedWebpFrames,
       countAnimatedPngFrames,
