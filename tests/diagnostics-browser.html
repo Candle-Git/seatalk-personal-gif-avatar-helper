@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" data-web-semantic-version="fixture" data-release-hash="local">
+<meta charset="utf-8">
+<title>Local diagnostic copy regression</title>
+<p>This isolated fixture uses synthetic data. It does not contact SeaTalk or modify an account.</p>
+<div id="seatalk-personal-gif-avatar-panel"></div>
+<button id="seatalk-personal-gif-avatar-toggle">Helper</button>
+<pre id="result" data-test-result="running">Running</pre>
+<script>
+  globalThis.__SPGA_TEST_MODE__ = true;
+  globalThis.GM_setValue = () => {};
+  globalThis.GM_info = { scriptHandler: 'Tampermonkey', version: 'fixture' };
+</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<script>
+(async () => {
+  const result = document.getElementById('result');
+  const checks = [];
+  const assert = (condition, name) => { if (!condition) throw Error(name); checks.push(name); };
+  const api = globalThis.__SPGA_TEST_API__;
+  const event = detail => window.dispatchEvent(new CustomEvent('seatalk-personal-gif-avatar:hook-status', { detail }));
+  try {
+    api.state.locale = 'en';
+    api.state.diagnosticsOpen = true;
+    api.renderPanel();
+    api.bindHookStatusEvents();
+    let rejectClipboard;
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {
+      writeText: () => new Promise((_, reject) => { rejectClipboard = reject; }),
+    }});
+    const initial = api.buildDiagnosticReport();
+    const copy = document.querySelector('.spga-diagnostics button');
+    copy.click();
+    event({ type: 'hook-started' }); // replaces the button while permission is pending
+    assert(!copy.isConnected, 'background render replaces originating button');
+    rejectClipboard(Error('Clipboard denied by fixture'));
+    await Promise.resolve(); await Promise.resolve();
+    const dialog = document.getElementById('seatalk-personal-gif-avatar-report');
+    const output = dialog?.querySelector('textarea');
+    assert(dialog?.open && output?.isConnected, 'late clipboard refusal opens stable report dialog');
+    assert(output.value === initial, 'report is original copy-time snapshot');
+    assert(document.activeElement === output, 'manual report receives focus');
+    output.setSelectionRange(5, 42, 'backward');
+    output.scrollTop = 20;
+    const scroll = output.scrollTop;
+    const gifId = '77db1154ce5639bf4ef946b0296c75da0b070500000f995617737056080110e5';
+    api.state.activeOperation = Object.freeze({ id: 1, gifId });
+    api.state.diagnosticAttempt = 1;
+    api.state.requestPending = true;
+    event({ type: 'stage', code: 'API_PENDING', attemptId: 1, gifId });
+    event({ type: 'direct-submitted', attemptId: 1, gifId });
+    event({ type: 'waiting', message: 'background event' });
+    api.state.locale = 'zh';
+    api.renderPanel();
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    assert(document.getElementById('seatalk-personal-gif-avatar-report') === dialog, 'background states retain same dialog node');
+    assert(dialog.querySelector('textarea') === output, 'background states retain same textarea node');
+    assert(output.value === initial, 'API success and background rendering do not mutate snapshot');
+    assert(document.activeElement === output, 'API success does not steal focus');
+    assert(output.selectionStart === 5 && output.selectionEnd === 42 && output.selectionDirection === 'backward', 'selected range and direction survive rendering');
+    assert(output.scrollTop === scroll, 'textarea scroll survives rendering');
+    assert(!document.getElementById('seatalk-personal-gif-avatar-success-modal'), 'success celebration does not interrupt manual copying');
+    clearInterval(api.state.verificationTimer);
+    const closed = new Promise(resolve => dialog.addEventListener('close', resolve, { once: true }));
+    dialog.querySelector('button').click();
+    await closed;
+    assert(!dialog.isConnected && api.state.manualDiagnosticReport === '', 'closing report clears modal and in-memory snapshot');
+    result.dataset.testResult = 'passed';
+    result.textContent = `PASS ${checks.length} browser assertions\n` + checks.join('\n');
+  } catch (error) {
+    result.dataset.testResult = 'failed';
+    result.textContent = 'FAIL ' + error.stack;
+  }
+})();
+</script>
+</html>

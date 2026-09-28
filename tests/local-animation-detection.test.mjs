@@ -161,8 +161,8 @@ assert.equal(isStickerPickerContextText("emoji-picker"), true, "表情选择器�
 assert.equal(isStickerPickerContextText("emoticon-panel"), true, "表情面板仍必须排除");
 
 assert.equal(shouldShowUpdateNotice(""), true, "首次安装时应显示更新提示");
-assert.equal(shouldShowUpdateNotice("3.0.3-beta.9"), true, "从旧测试版升级后应显示正式版更新提示");
-assert.equal(shouldShowUpdateNotice("3.0.3"), false, "当前正式版本已读后不应重复显示更新提示");
+assert.equal(shouldShowUpdateNotice("3.0.5-beta.9"), true, "从旧测试版升级后应显示正式版更新提示");
+assert.equal(shouldShowUpdateNotice("3.0.5"), false, "当前正式版本已读后不应重复显示更新提示");
 
 assert.match(source, /@grant\s+GM_xmlhttpRequest/, "正式版应声明跨域读取权限");
 assert.match(source, /@connect\s+f\.haiserve\.com/, "跨域权限必须只连接 SeaTalk 图片域名");
@@ -170,8 +170,8 @@ assert.match(source, /Accept:\s*"image\/gif,image\/webp,image\/apng,image\/\*,\*
 assert.doesNotMatch(source, /anonymous:\s*true/, "读取 SeaTalk 图片时不能丢失浏览器现有会话");
 assert.match(source, /checkedCandidateCount/, "面板应单独显示进入动图验证的候选数量");
 assert.match(source, /animatedCandidateCount/, "面板应区分动图总数与最多 3 个展示结果");
-assert.match(source, /@version\s+3\.0\.3/, "正式版版本号应为 3.0.3");
-assert.match(source, /SCRIPT_VERSION\s*=\s*"3\.0\.3"/, "界面版本常量必须与脚本版本一致");
+assert.match(source, /@version\s+3\.0\.5/, "正式版版本号应为 3.0.5");
+assert.match(source, /SCRIPT_VERSION\s*=\s*"3\.0\.5"/, "界面版本常量必须与脚本版本一致");
 assert.match(source, /UPDATE_NOTICE_VERSION\s*=\s*SCRIPT_VERSION/, "弹窗记录版本必须复用界面版本常量");
 assert.match(source, /className:\s*"spga-version-badge"/, "助手底部应显示可识别的版本号标签");
 assert.match(source, /textContent:\s*`v\$\{SCRIPT_VERSION\}`/, "版本号标签必须读取统一版本常量");
