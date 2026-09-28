@@ -4,6 +4,35 @@
 
 This file records public releases of SeaTalk Personal GIF Avatar Helper.
 
+## 3.0.5 - 2026-09-28
+
+- 新增环境信息：助手版本、SeaTalk 页面版本/构建号、浏览器和脚本管理器版本；未知值明确显示 unknown。
+- 记录页面连接、模块发现、头像提交和显示验证阶段，附操作编号和相对耗时，最多保留当前页面会话的 60 条记录。
+- 新增一键复制脱敏 JSON 报告；剪贴板不可用时显示只读文本供手动复制。导出仅包含允许的环境字段和固定流程码，不导出原始异常、账号、聊天内容、GIF ID 或图片地址。
+- 合入已验证的 CSP 兼容修复，使用页面上下文启动 Hook；升级后请确认新增权限并刷新 SeaTalk。
+- 固定每次提交的头像 ID 和操作编号；慢请求尚未返回时阻止重复提交，隔离迟到回报。
+- 手动复制报告使用独立对话框，后台刷新不打断内容、焦点和选区。
+- 已在 SeaTalk 3.70.1、Chrome 153、Tampermonkey 5.5.0 验证头像更新和诊断复制；异常分支由本地自动化测试覆盖，详见验收记录。
+
+- Add environment versions, per-attempt stage codes and timings, and a 60-event in-memory limit.
+- Copy an allowlisted diagnostic JSON report, with a manual-copy fallback. Raw errors, accounts, chats and image URLs are excluded.
+- Include the verified CSP-compatible page hook startup. Accept the updated userscript permissions and reload SeaTalk.
+- Capture avatar IDs and attempt numbers per request; block concurrent retries and isolate late results.
+- Keep manual reports in an independent dialog so background updates preserve focus and selection.
+- Avatar updates and diagnostic copying verified on SeaTalk 3.70.1, Chrome 153 and Tampermonkey 5.5.0; failure branches covered by local automated tests. See the acceptance record.
+
+## 3.0.4 - 2026-09-28（本地验证版本 / Local validation build）
+
+- 修复 SeaTalk Web 3.70.1 的 CSP 阻止内联页面 Hook 的兼容性问题：使用 Tampermonkey 的 `unsafeWindow` 页面上下文，仍遵守页面的脚本求值策略。
+- 增加 Hook 启动确认；失败时立即显示错误码，不再等待头像验证超时。
+- 英文诊断保留原始技术详情，避免所有故障都显示为同一句泛化提示。
+- 升级需授权新增的 `unsafeWindow` 权限并刷新 SeaTalk。该版本已在用户浏览器验证，修复随 3.0.5 对外发布。
+
+- Replace inline hook injection with Tampermonkey's `unsafeWindow` page context, subject to the page's script evaluation policy.
+- Detect missing hook startup immediately and show a diagnostic code.
+- Preserve original technical details in English diagnostics.
+- Approve the new `unsafeWindow` grant and reload SeaTalk after updating. This local build was verified in the user’s browser; its fix is included in the public 3.0.5 release.
+
 ## 3.0.3 - 2026-08-12
 
 ### 中文
