@@ -4,9 +4,17 @@
 
 Turn a GIF sticker from your SeaTalk chat into an animated avatar. No bundle search or DevTools breakpoint is required.
 
-Current version: `3.0.3`
+Current version: `3.0.5`
 
 **[Read the full visual guide and FAQ](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.en.md)**
+
+## Version 3.0.5
+
+- Fix page-hook startup blocked by the current SeaTalk CSP.
+- Accept the new `unsafeWindow` grant if prompted, then reload SeaTalk.
+- Show environment versions, stage codes and timings; copy sanitized diagnostics.
+- Block duplicate submissions while a request is pending and preserve manual reports during background updates.
+- Normal avatar updates and diagnostic copying verified on SeaTalk 3.70.1, Chrome 153 and Tampermonkey 5.5.0.
 
 ## First-time setup: only 3 steps
 
