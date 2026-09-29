@@ -38,7 +38,7 @@ function fixture(mode = 'normal') {
       : mode === 'silent' ? () => () => {} : vm.runInContext('Function', page),
   };
   const sandbox = vm.createContext({
-    window: bridge, CustomEvent, unsafeWindow,
+    window: bridge, CustomEvent, unsafeWindow, groupUI: {pending:null},
     state: { pageHookReady: false, selected: { gifId: 'test' } },
     HOOK_EVENTS: { statusEvent: 'status', configEvent: 'config' },
     t: (_key, { code }) => code,

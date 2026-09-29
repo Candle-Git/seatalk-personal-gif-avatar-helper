@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 // 它用于防止版本号、横幅链接、中英文说明和隐私边界在发布时漏改。
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(testDirectory, "..");
-const releaseVersion = "3.0.5";
+const releaseVersion = "4.0.0";
 
 function readProjectFile(relativePath) {
   return fs.readFileSync(path.join(projectDirectory, relativePath), "utf8");
@@ -36,7 +36,7 @@ for (const [name, content] of [
   assert.match(content, new RegExp(releaseVersion.replaceAll(".", "\\.")), `${name} 没有写入当前版本`);
 }
 
-assert.match(changelog, /## 3\.0\.5 - 2026-09-28/, "更新日志缺少 3.0.5 正式发布日期");
+assert.match(changelog, /## 4\.0\.0 - 2026-09-29/, "更新日志缺少 4.0.0 正式发布日期");
 
 const bannerZh = "docs/images/seatalk-gif-avatar-helper-banner.dark.png";
 const bannerEn = "docs/images/seatalk-gif-avatar-helper-banner.dark.en.png";
@@ -80,4 +80,4 @@ for (const [name, content] of [
 const connectHosts = Array.from(script.matchAll(/^\/\/ @connect\s+([^\s]+)$/gm), (match) => match[1]);
 assert.deepEqual(connectHosts, ["f.haiserve.com"], "跨域读取权限必须只允许 SeaTalk 图片域名");
 
-console.log("3.0.5 发布完整性检查通过：版本、双语文档、无版本横幅和隐私边界均已同步。");
+console.log("4.0.0 发布完整性检查通过：版本、双语文档、无版本横幅和隐私边界均已同步。");
