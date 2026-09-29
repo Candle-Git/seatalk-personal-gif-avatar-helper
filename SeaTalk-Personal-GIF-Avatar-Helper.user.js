@@ -2,9 +2,9 @@
 // @name         SeaTalk 个人 GIF 头像助手
 // @name:en      SeaTalk Personal GIF Avatar Helper
 // @namespace    https://seatalkweb.com/
-// @version      3.0.5
-// @description  抓取当前聊天里的真实动态 GIF 表情并设为个人头像，支持私聊、群聊、聊天分支和分阶段诊断。
-// @description:en Capture verified animated GIF stickers from the current chat and use one as your personal avatar, with private chat, group, branch, and diagnostic support.
+// @version      4.0.0
+// @description  将聊天中的 GIF 设为个人或群头像，支持群目标确认、成功提示和脱敏诊断。
+// @description:en Use chat GIFs as personal or group avatars, with group confirmation, success feedback and sanitized diagnostics.
 // @author       Yixin.Zhong × Codex
 // @match        https://seatalkweb.com/*
 // @match        https://*.seatalkweb.com/*
@@ -28,7 +28,7 @@
    * 5. 如果 SeaTalk 暂时没有加载完成，脚本会自动等待并允许一键重新检查。
    *
    * 重要说明：
-   * - 本脚本不会修改别人头像。
+   * - 本脚本仅修改自己的头像或经确认的可编辑群头像。
    * - 自动入口可用时，本脚本不会上传新文件，而是调用 SeaTalk 当前页面自己的 updateUserInfo 服务。
    * - 脚本不会要求用户手动上传普通 PNG/JPG 图片作为中间步骤。
    * - 每次刷新都会重新发现当前 chunk 文件并自检；如果前端结构变化，面板会显示具体失败阶段。
@@ -44,7 +44,7 @@
   const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
   const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
   // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
-  const SCRIPT_VERSION = "3.0.5";
+  const SCRIPT_VERSION = "4.0.0";
   const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
 
   // 动图验证只读取 SeaTalk 图片域名中的候选文件，不会上传、保存或打印带签名参数的地址。
@@ -205,12 +205,12 @@
       successClose: "好耶！",
       updateBadge: "NEW",
       updateVersion: "版本 {version}",
-      updateTitle: "诊断信息升级",
-      updateSubtitle: "遇到问题时，可以复制脱敏报告帮助定位：",
-      updateHighlightOne: "显示 SeaTalk 版本、构建号和脚本运行环境",
-      updateHighlightTwo: "按页面连接、服务发现、接口提交和显示验证分阶段记录",
-      updateHighlightThree: "记录本次操作编号、耗时和明确错误码",
-      updateHighlightFour: "一键复制脱敏报告；剪贴板不可用时支持手动复制",
+      updateTitle: "支持更新群头像了！",
+      updateSubtitle: "4.0.0：让你的个人头像和群头像一起动起来。",
+      updateHighlightOne: "新增「当前群头像」页签，打开群设置即可识别目标群",
+      updateHighlightTwo: "每次更换群头像前，确认群名与 GIF 预览",
+      updateHighlightThree: "自动检查群头像更新，成功弹窗后可继续更换",
+      updateHighlightFour: "全新紧凑界面；随机挑选先预览，再点击更换",
       updateClose: "知道了，去试试！",
       toggleLabel: "语言",
       helperToggle: "GIF头像助手",
@@ -286,12 +286,12 @@
       successClose: "Love it!",
       updateBadge: "NEW",
       updateVersion: "Version {version}",
-      updateTitle: "Better troubleshooting",
-      updateSubtitle: "Copy a sanitized report when something goes wrong:",
-      updateHighlightOne: "See SeaTalk version, build and userscript environment",
-      updateHighlightTwo: "Track hook, service discovery, submission and visual verification",
-      updateHighlightThree: "Record attempt numbers, elapsed time and diagnostic codes",
-      updateHighlightFour: "Copy a sanitized report, with a manual fallback",
+      updateTitle: "Group GIF avatars are here!",
+      updateSubtitle: "4.0.0: bring both personal and group avatars to life.",
+      updateHighlightOne: "New Group avatar tab: open group settings to identify the target",
+      updateHighlightTwo: "Confirm the group name and GIF before every group update",
+      updateHighlightThree: "Automatically check the group avatar and show a success popup",
+      updateHighlightFour: "Compact UI: preview random GIFs before applying them",
       updateClose: "Got it — let me try!",
       toggleLabel: "Language",
       helperToggle: "GIF Avatar",
@@ -321,6 +321,7 @@
     return value;
   }
 
+  const groupUI = { mode: "personal", context: null, pending: null, sequence: 0, message: "", dialog: null };
   const state = {
     selected: null,
     recentCandidates: [],
@@ -361,6 +362,12 @@
   };
 
   const DIAGNOSTIC_CODES = {
+    GROUP_CONTEXT_MISSING: ["discovery", "未识别到可编辑群：请打开群设置并保持打开", "Open and keep the editable target group settings visible"],
+    GROUP_CONTEXT_READY: ["discovery", "已识别可编辑群，请核对界面群名", "Editable group detected; verify the displayed group name"],
+    GROUP_APPLY_START: ["submit", "已确认目标，正在提交群头像", "Confirmed group avatar submission started"],
+    GROUP_OBSERVED: ["verification", "页面已观察到目标群头像", "Target group avatar observed on page"],
+    GROUP_PENDING: ["verification", "群头像结果未确认，保持提交锁定", "Group result unconfirmed; submissions remain locked"],
+    GROUP_TARGET_CHANGED: ["submit", "群目标或权限已变化，未提交", "Group target or permission changed; not submitted"],
     HOOK_READY: ["hook", "页面连接已启动", "Page hook started"],
     PAGE_CONTEXT_UNAVAILABLE: ["hook", "无法访问页面上下文，请检查新增权限", "Page context unavailable; check userscript permissions"],
     PAGE_CONTEXT_EXECUTION_BLOCKED: ["hook", "页面执行被阻止，请检查 Console", "Page execution blocked; check Console"],
@@ -1727,6 +1734,14 @@
         overscroll-behavior: contain;
       }
 
+      body:has(#${PANEL_ID}.spga-open) #${TOGGLE_ID} { visibility: hidden; }
+      #${PANEL_ID} .spga-target-summary { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: #f2f6fc; color: #42526b; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+      #${PANEL_ID} .spga-picker { padding: 4px 2px; }
+      #${PANEL_ID} .spga-picker-actions { display: flex; gap: 8px; margin: 12px 0 8px; }
+      #${PANEL_ID} .spga-picker-actions button { flex: 1; width: 0; }
+      #${PANEL_ID} .spga-target-tabs { display: flex; gap: 4px; padding: 4px; background: #edf2f7; border-radius: 12px; }
+      #${PANEL_ID} .spga-target-tabs .spga-target-tab { flex: 1; width: 0; margin: 0; border: 0; background: transparent; color: #59677b; border-radius: 9px; }
+      #${PANEL_ID} .spga-target-tabs .spga-target-tab[aria-selected="true"] { background: #fff; color: #0866c6; box-shadow: 0 1px 4px #152b4620; }
       #${PANEL_ID} .spga-path-card {
         padding: 13px;
         border: 1px solid #e4e7ec;
@@ -2442,7 +2457,7 @@
     window.setTimeout(() => layer.remove(), 1700);
   }
 
-  function showSuccessCelebration(gifId) {
+  function showSuccessCelebration(gifId, groupName = "") {
     const normalizedGifId = String(gifId || state.selected?.gifId || "");
     if (state.successModalShownForGifId === normalizedGifId) {
       return;
@@ -2480,11 +2495,11 @@
     });
     const message = createElement("p", {
       className: "spga-success-message",
-      textContent: t("successMessage"),
+      textContent: groupName ? groupText("已看到「" + groupName + "」的群头像更新", "Avatar update observed for “" + groupName + "”") : t("successMessage"),
     });
     const subtitle = createElement("p", {
       className: "spga-success-subtitle",
-      textContent: t("successSubtitle"),
+      textContent: groupName ? groupText("可以继续选择 GIF 并更换，无需刷新。", "You can choose another GIF without refreshing.") : t("successSubtitle"),
     });
     const closeButton = createElement("button", {
       className: "spga-success-close",
@@ -2925,6 +2940,10 @@
       createElement("p", { className: "spga-subtitle", textContent: t("subtitle") })
     );
     header.append(heading, createLanguageToggle());
+    const close = createButton("×", "close-panel");
+    close.setAttribute("aria-label", groupText("关闭助手", "Close helper"));
+    close.addEventListener("click", () => panel.classList.remove("spga-open"));
+    header.append(close);
 
     const randomButton = createButton(
       state.activeAction === "random" && state.showDelayedLoading ? t("randomPreparing") : t("randomApply"),
@@ -2967,7 +2986,16 @@
         })
       );
     }
-    body.append(quickCard, ownCard, createSelectedView());
+    const picker = createElement("section", { className: "spga-picker" });
+    const actions = createElement("div", { className: "spga-picker-actions" });
+    scanButton.textContent = groupText("从聊天获取", "Get from chat");
+    randomButton.textContent = groupText("随机挑一个", "Pick a GIF");
+    scanButton.disabled = state.scanInProgress || !!groupUI.pending || state.requestPending;
+    actions.append(scanButton, randomButton);
+    picker.append(createElement("h3", {className:"spga-path-title", textContent:groupText("选择 GIF", "Choose a GIF")}), actions,
+      createElement("p", {className:"spga-path-description",textContent:groupText("先在当前聊天发送 GIF，再获取并预览。", "Send a GIF in this chat, then get it here to preview.")}));
+    body.append(createTargetSelector(), picker, createSelectedView());
+
     if (state.recentCandidates.length) {
       body.append(
         createDisclosure(
@@ -2986,7 +3014,7 @@
     const status = createElement("div", {
       className: "spga-footer-status",
       textContent: buildStatusText(),
-      attributes: { "data-role": "status" },
+      attributes: { "data-role": "status", "aria-live": "polite" },
     });
     const applyButton = createButton(getEnableButtonText(), "enable", "spga-button-primary spga-apply-button");
     applyButton.disabled = !state.selected || state.requestPending || (state.enabled && !state.directUpdaterFailed);
@@ -3010,6 +3038,17 @@
     });
     const creditRow = createElement("div", { className: "spga-credit-row" });
     creditRow.append(creditButton, versionBadge);
+    if (groupUI.mode === "group") {
+      status.textContent = groupUI.message || (groupUI.context
+        ? groupText("预览后确认，即可更换群头像。", "Preview, then confirm to update the group avatar.")
+        : groupText("请点聊天右上角「···」打开群设置，并保持打开。", "Open the chat's top-right … group settings and keep it open."));
+      applyButton.textContent = groupUI.context
+        ? groupText("设为当前群头像…", "Set group avatar…")
+        : groupText("请先打开目标群设置", "Open target group settings first");
+      if (groupUI.pending) applyButton.textContent = groupText("正在确认结果…", "Checking result…");
+      applyButton.disabled = !state.selected || !groupUI.context || !!groupUI.pending || state.requestPending;
+    } else if (groupUI.pending) applyButton.disabled = true;
+    randomButton.disabled = randomButton.disabled || !!groupUI.pending;
     footer.append(status, applyButton, creditRow);
 
     panel.append(header, body, footer);
@@ -3452,6 +3491,7 @@
   }
 
   function startAvatarApply(actionSource = "selected") {
+    if (groupUI.pending) return;
     if (state.requestPending) {
       markRequestStillPending();
       return;
@@ -3512,6 +3552,92 @@
     renderPanel();
   }
 
+
+  function groupText(zh, en) { return state.locale === "en" ? en : zh; }
+
+  function createTargetSelector() {
+    const box = createElement("div", { className: "spga-path-card" });
+    const row = createElement("div", { className: "spga-target-tabs", attributes: { role: "tablist", "aria-label": groupText("头像目标", "Avatar target") } });
+    for (const [mode, zh, en] of [["personal", "我的头像", "My avatar"], ["group", "当前群头像", "Group avatar"]]) {
+      const button = createElement("button", { textContent: groupText(zh, en), attributes: { type: "button", role: "tab", "aria-selected": String(groupUI.mode === mode) } });
+      button.className = "spga-button spga-target-tab";
+      button.disabled = !!groupUI.pending || state.requestPending;
+      button.addEventListener("click", () => {
+        groupUI.mode = mode; groupUI.message = "";
+        if (mode === "group") addDiagnostic("", "info", groupUI.context ? "GROUP_CONTEXT_READY" : "GROUP_CONTEXT_MISSING");
+        renderPanel();
+      });
+      row.append(button);
+    }
+    box.append(row);
+    if (groupUI.mode === "group") box.append(createElement("p", { className: "spga-target-summary", textContent: (groupUI.pending || groupUI.context)
+      ? groupText("目标群：", "Target group: ") + (groupUI.pending || groupUI.context).name
+      : groupText("请打开目标群的设置，并确认头像有“编辑”入口。", "Open the target group's settings with an editable avatar.") }));
+    return box;
+  }
+
+  function closeGroupConfirmation() {
+    if (groupUI.dialog) { groupUI.dialog.close(); groupUI.dialog.remove(); groupUI.dialog = null; }
+  }
+
+  function confirmGroupAvatar() {
+    if (groupUI.dialog || groupUI.pending || state.requestPending || !groupUI.context || !isCustomGifStickerId(state.selected?.gifId)) return;
+    const operation = Object.freeze({ ...groupUI.context, gifId: state.selected.gifId, requestId: ++groupUI.sequence });
+    const dialog = document.createElement("dialog");
+    dialog.style.cssText = "border:0;border-radius:18px;padding:24px;max-width:400px;width:85%;box-shadow:0 12px 60px #0006;color:#17243b;background:white";
+    dialog.setAttribute("aria-label", groupText("确认修改群头像", "Confirm group avatar change"));
+    const heading = document.createElement("h3"); heading.textContent = groupText("确认修改群头像？", "Change this group's avatar?");
+    const img = document.createElement("img"); img.src = buildPreviewUrl(operation.gifId); img.width = 96; img.height = 96; img.alt = "GIF preview";
+    const name = document.createElement("p"); name.textContent = groupText("目标群：", "Target group: ") + operation.name;
+    const note = document.createElement("p"); note.textContent = groupText("所有群成员都会看到新头像，群内可能产生修改通知。", "All group members will see the new avatar. A system notification may appear.");
+    const cancel = document.createElement("button"); cancel.textContent = groupText("取消", "Cancel"); cancel.type = "button";
+    const confirm = document.createElement("button"); confirm.textContent = groupText("确认修改群头像", "Confirm group avatar change"); confirm.type = "button";
+    cancel.addEventListener("click", closeGroupConfirmation);
+    dialog.addEventListener("cancel", () => { groupUI.dialog = null; dialog.remove(); });
+    confirm.addEventListener("click", () => {
+      if (groupUI.pending || !groupUI.context || operation.id !== groupUI.context.id || operation.revision !== groupUI.context.revision) { closeGroupConfirmation(); return; }
+      state.diagnosticAttempt += 1;
+      state.diagnosticAttemptAt = Date.now();
+      addDiagnostic("", "info", "GROUP_APPLY_START");
+      groupUI.pending = operation;
+      groupUI.message = groupText("正在更新群头像…", "Updating group avatar…");
+      closeGroupConfirmation(); renderPanel();
+      sendHookConfig("apply-group", operation);
+    });
+    dialog.append(heading, img, name, note, cancel, confirm);
+    document.body.append(dialog); groupUI.dialog = dialog; dialog.showModal(); cancel.focus();
+  }
+
+  function bindGroupStatus() {
+    window.addEventListener(HOOK_EVENTS.statusEvent, ({ detail: d }) => {
+      if (d?.type === "group-context") {
+        const previous = groupUI.context;
+        groupUI.context = d.context;
+        if (groupUI.mode === "group") {
+          if (!groupUI.pending) groupUI.message = "";
+          addDiagnostic("", "info", d.context ? "GROUP_CONTEXT_READY" : "GROUP_CONTEXT_MISSING");
+        }
+        if (groupUI.dialog && (!d.context || previous?.revision !== d.context.revision || previous?.id !== d.context.id)) {
+          closeGroupConfirmation(); groupUI.message = groupText("目标已变化，请重新确认。", "Target changed. Please confirm again.");
+        }
+        renderPanel();
+      }
+      if (d?.type !== "group-result" || d.requestId !== groupUI.pending?.requestId) return;
+      addDiagnostic("", d.code === "GROUP_OBSERVED" ? "success" : "error", d.code);
+      groupUI.message = d.code === "GROUP_OBSERVED"
+        ? groupText("已观察到群头像更新，可以继续更换。", "Group avatar update observed. Ready for another update.")
+        : d.code === "GROUP_PENDING"
+          ? groupText("尚未确认结果，仍在检查；请保持目标群设置打开。", "Still checking. Keep the target group settings open.")
+          : groupText("更新未提交：目标或权限已变化，请重新打开群设置。", "Not submitted: target or permission changed. Reopen group settings.");
+      if (d.code === "GROUP_OBSERVED") {
+        state.successModalShownForGifId = "";
+        showSuccessCelebration(groupUI.pending.gifId, groupUI.pending.name);
+      }
+      if (d.code !== "GROUP_PENDING") groupUI.pending = null;
+      renderPanel();
+    });
+  }
+
   function bindPanelEvents() {
     document.addEventListener("click", async (event) => {
       const target = event.target;
@@ -3540,14 +3666,14 @@
       }
 
       if (action === "random-apply") {
-        if (state.enabled || state.requestPending || !LOCAL_GIF_PRESETS.length) {
+        if (groupUI.pending || state.enabled || state.requestPending || !LOCAL_GIF_PRESETS.length) {
           return;
         }
         const alternatives = LOCAL_GIF_PRESETS.filter((item) => item.gifId !== state.selected?.gifId);
         const pool = alternatives.length ? alternatives : LOCAL_GIF_PRESETS;
         const preset = pool[Math.floor(Math.random() * pool.length)];
         selectCandidate(preset);
-        startAvatarApply("random");
+        // Both modes preview first; the primary button submits.
         return;
       }
 
@@ -3600,7 +3726,8 @@
       }
 
       if (action === "enable") {
-        startAvatarApply("selected");
+        if (groupUI.mode === "group") confirmGroupAvatar();
+        else if (!groupUI.pending) startAvatarApply("selected");
         return;
       }
     });
@@ -3685,6 +3812,7 @@
   function bindHookStatusEvents() {
     window.addEventListener(HOOK_EVENTS.statusEvent, (event) => {
       const detail = event.detail || {};
+      if (detail.type?.startsWith("group-")) return;
       if (detail.attemptId !== undefined) {
         if (detail.attemptId !== state.activeOperation?.id || detail.gifId !== state.activeOperation?.gifId) return;
         if (!state.requestPending) return;
@@ -4055,7 +4183,80 @@
       return discoverEsmUpdater({ reportFailure: false });
     }
 
+
+    let groupRevision = 0, groupKey = "", groupOperation = null;
+    function readGroupEditor() {
+      const overlays = document.querySelectorAll(".chat-setting-name-wrapper .avatar-overlay");
+      if (overlays.length !== 1) return null;
+      const element = overlays[0];
+      // The edit overlay is collapsed until hover; the containing editor is
+      // the visibility boundary, while overlay presence indicates editability.
+      const wrapper = element.closest(".chat-setting-name-wrapper");
+      if (!wrapper || !wrapper.getClientRects().length) return null;
+      let fiber = element[Object.keys(element).find(key => key.startsWith("__reactFiber$") || key.startsWith("__reactInternalInstance$"))];
+      for (; fiber; fiber = fiber.return) {
+        const props = fiber.memoizedProps;
+        if (props?.info?.type === "group" && Number.isSafeInteger(props.info.id) && props.info.id > 0 &&
+            typeof props.info.name === "string" && typeof props.actions?.actionChangeGroupInfo === "function") {
+          return { id: props.info.id, name: props.info.name, icons: props.info.icons || [], avatarElement: wrapper.querySelector(".common-avatar"), action: props.actions.actionChangeGroupInfo };
+        }
+      }
+      return null;
+    }
+    function groupAvatarMatches(editor, gifId) {
+      if (editor.icons.length === 1 && editor.icons[0] === gifId) return true;
+      // Only inspect the avatar containing this group's edit overlay, never chat GIFs.
+      const avatar = editor.avatarElement;
+      if (!avatar) return false;
+      const urls = [];
+      for (const node of [avatar, ...avatar.querySelectorAll("*")]) {
+        if (node.tagName === "IMG") urls.push(node.currentSrc || node.src);
+        const background = getComputedStyle(node).backgroundImage;
+        for (const match of background.matchAll(/url\(["']?([^"')]+)["']?\)/g)) urls.push(match[1]);
+      }
+      return urls.some(value => {
+        try { return new URL(value, location.href).pathname.split("/").some(part => part === gifId || (part.startsWith(gifId + "_") && /^\d+$/.test(part.slice(gifId.length + 1)))); }
+        catch (_) { return false; }
+      });
+    }
+    function refreshGroupContext() {
+      const editor = readGroupEditor();
+      const key = editor ? JSON.stringify([editor.id, editor.name]) : "";
+      if (key !== groupKey) {
+        groupKey = key; groupRevision++;
+        emit({ type: "group-context", context: editor ? { id: editor.id, name: editor.name, revision: groupRevision } : null });
+      }
+      return editor;
+    }
+    function applyGroupAvatar(detail) {
+      const editor = refreshGroupContext();
+      const reject = () => emit({ type: "group-result", requestId: detail.requestId, code: "GROUP_TARGET_CHANGED" });
+      if (groupOperation || runtime.directOperation || !editor || editor.id !== detail.id || editor.name !== detail.name ||
+          groupRevision !== detail.revision || !Number.isSafeInteger(detail.requestId) || detail.requestId <= 0 || !isValidGifId(detail.gifId)) { reject(); return; }
+      groupOperation = Object.freeze({ id: editor.id, gifId: detail.gifId, requestId: detail.requestId });
+      const operation = groupOperation;
+      try { editor.action({ gid: operation.id, info: { i: [operation.gifId] } }); }
+      catch (_) { emit({ type: "group-result", requestId: detail.requestId, code: "GROUP_PENDING" }); return; } // A throw does not prove no request was sent.
+      const started = Date.now();
+      let pendingReported = false;
+      const timer = window.setInterval(() => {
+        const current = readGroupEditor();
+        if (current?.id === operation.id && groupAvatarMatches(current, operation.gifId)) {
+          window.clearInterval(timer); groupOperation = null;
+          emit({ type: "group-result", requestId: operation.requestId, code: "GROUP_OBSERVED" });
+        } else if (!pendingReported && Date.now() - started > 20000) {
+          pendingReported = true;
+          emit({ type: "group-result", requestId: operation.requestId, code: "GROUP_PENDING" });
+        }
+      }, 300);
+    }
+    window.setInterval(refreshGroupContext, 400);
+    if (typeof MutationObserver !== "undefined") {
+      new MutationObserver(refreshGroupContext).observe(document.body, { childList: true, subtree: true });
+    }
+
     function startDirectAvatar(detail) {
+      if (groupOperation) return;
       const operation = Object.freeze({ id: detail.attemptId, gifId: detail.gifId });
       if (runtime.directOperation) {
         emit({ type: "request-busy", code: "REQUEST_BUSY", level: "info",
@@ -4947,6 +5148,7 @@
 
     window.addEventListener(events.configEvent, (event) => {
       const detail = event.detail || {};
+      if (detail.command === "apply-group") { applyGroupAvatar(detail); return; }
       if (detail.command === "apply-direct") {
         startDirectAvatar(detail);
         return;
@@ -5016,6 +5218,7 @@
     showUpdateNoticeIfNeeded();
     bindPanelEvents();
     bindHookStatusEvents();
+    bindGroupStatus();
     injectPageHook();
     sendHookConfig();
   }
@@ -5023,6 +5226,7 @@
   // 仅供本地自动测试读取纯解析函数。正常安装时没有这个标记，不会暴露任何接口。
   if (globalThis.__SPGA_TEST_MODE__ === true) {
     globalThis.__SPGA_TEST_API__ = {
+      groupUI, bindGroupStatus, confirmGroupAvatar, bindPanelEvents, injectStyles,
       sanitizeDiagnosticText,
       getDiagnosticEnvironment,
       buildDiagnosticReport,

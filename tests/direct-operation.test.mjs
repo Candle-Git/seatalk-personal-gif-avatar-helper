@@ -25,7 +25,7 @@ function fixture() {
   const uiSource = source
     .replace('function renderPanel() {', 'function renderPanel() { return;')
     .replace('function getCurrentPersonalAvatarUrls() {', 'function getCurrentPersonalAvatarUrls() { return __avatarUrls;')
-    .replace('function showSuccessCelebration(gifId) {', 'function showSuccessCelebration(gifId) { __successes.push(gifId); return;');
+    .replace('function showSuccessCelebration(gifId, groupName = "") {', 'function showSuccessCelebration(gifId, groupName = "") { __successes.push(gifId); return;');
   const ui = vm.createContext({
     __SPGA_TEST_MODE__: true, __avatarUrls: avatarUrls, __successes: successes,
     navigator: { language: 'en' }, location: { href: 'https://seatalkweb.com/' }, URL,

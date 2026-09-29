@@ -4,9 +4,19 @@
 
 Turn a GIF sticker from your SeaTalk chat into an animated avatar. No bundle search or DevTools breakpoint is required.
 
-Current version: `3.0.5`
+Current version: `4.0.0`
 
 **[Read the full visual guide and FAQ](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.en.md)**
+
+## 4.0.0: Group GIF avatars are here!
+
+- Switch between **My avatar / Group avatar** to use GIFs for yourself or a group.
+- Open the target group's settings, check its name, select a GIF, and confirm the group and preview before each update.
+- The helper checks the target avatar, shows a success popup and unlocks the next update without a refresh.
+- Compact UI with shared GIF selection, a styled target label and no floating button covering the open panel.
+- Random selection now **previews first** in both modes; apply with the main button.
+
+Keep editable group settings open. Unconfirmed updates remain protected against duplicate submissions while checking continues. Group success means the target resource was observed on the page, not an independent API receipt. Disable beta scripts before enabling the stable release and refresh SeaTalk.
 
 ## Version 3.0.5
 
@@ -38,7 +48,7 @@ Use the **right mouse button** on the Tampermonkey toolbar icon. If this permiss
 
 1. Sign in to SeaTalk Web.
 2. Open **GIF Avatar**.
-3. Click **Try a random GIF avatar**.
+3. Click **Pick a GIF** to preview, then apply with the main button.
 
 ### Use your own GIF
 
@@ -65,7 +75,7 @@ Use the **right mouse button** on the Tampermonkey toolbar icon. If this permiss
 - Only during a user-requested capture, it reads candidate image bytes from `f.haiserve.com` to verify real animation frames.
 - Does not collect account details, chat content, passwords, or cookies.
 - Includes no separate analytics or tracking service.
-- Modifies only the current user's avatar.
+- Modifies your own avatar or an editable target group's avatar after confirmation.
 - Does not save or log signed candidate image URLs.
 
 This is an unofficial tool and is not affiliated with or endorsed by SeaTalk.
