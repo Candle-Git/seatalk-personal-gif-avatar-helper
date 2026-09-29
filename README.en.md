@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Turn a GIF sticker from your SeaTalk chat into an animated personal avatar. No bundle search or DevTools breakpoint required.</strong>
+  <strong>Turn a GIF sticker from your SeaTalk chat into an animated personal or group avatar. No bundle search or DevTools breakpoint required.</strong>
 </p>
 
 <p align="center">
@@ -20,7 +20,17 @@
 > **Upgrading from 3.0.3 to 3.0.5:** The page hook now requires `unsafeWindow`. Accept any Tampermonkey permission prompt and reload SeaTalk. If `PAGE_CONTEXT_UNAVAILABLE`, `PAGE_CONTEXT_EXECUTION_BLOCKED`, or `HOOK_NO_ACK` appears, retain the code and Console error. Do not disable browser security policies.
 
 
-### 3.0.5 diagnostics
+### 4.0.0: Group GIF avatars are here!
+
+- Switch between **My avatar / Group avatar** to use GIFs for yourself or a group.
+- Open the target group's settings, check its name, select a GIF, and confirm the group and preview before each update.
+- The helper checks the target avatar, shows a success popup and unlocks the next update without a refresh.
+- Compact UI with shared GIF selection, a styled target label and no floating button covering the open panel.
+- Random selection now **previews first** in both modes; apply with the main button.
+
+Keep editable group settings open. Unconfirmed updates remain protected against duplicate submissions while checking continues. Group success means the target resource was observed on the page, not an independent API receipt. Disable beta scripts before enabling the stable release and refresh SeaTalk.
+
+## 3.0.5 diagnostics
 
 Expand runtime diagnostics for environment versions, attempt numbers, stage codes and elapsed time. Use **Copy sanitized diagnostics** for a JSON report, or copy from the independent report dialog if clipboard access is denied; background updates preserve its content and selection. Only allowlisted environment fields, stage codes and available numeric API error codes are exported; accounts, chats, GIF IDs, image URLs and raw exceptions are excluded. Up to 60 events are held in memory until reload; nothing is sent automatically.
 
@@ -68,7 +78,7 @@ While an API request remains pending, another submission is blocked. The 20-seco
 
 1. Sign in to [SeaTalk Web](https://seatalkweb.com/).
 2. Click **GIF Avatar** on the right.
-3. Click **Try a random GIF avatar**.
+3. Click **Pick a GIF** to preview, then apply with the main button.
 
 ### Use your own GIF
 
@@ -80,7 +90,7 @@ The helper shows a confirmation as soon as the SeaTalk API accepts the update. I
 
 ## Features
 
-- Try a random built-in GIF immediately after installation.
+- Preview a random built-in GIF, then apply it to your selected target.
 - Capture the 3 most recent SeaTalk GIF stickers from private chats, groups, and chat branches.
 - Read the real frame count of each candidate, recognize two-frame GIFs, and reject still images automatically.
 - Keep results in chat order so an older large image cannot displace a newer GIF.
@@ -98,8 +108,8 @@ The helper shows a confirmation as soon as the SeaTalk API accepts the update. I
 - Only when the user starts a capture, it reads candidate image bytes from `f.haiserve.com` to confirm that an image really contains at least two frames.
 - Does not collect or upload account details, chat content, passwords, cookies, or other personal information.
 - Includes no separate analytics or tracking service.
-- Uses only the personal avatar update capability already available in the current SeaTalk page.
-- Modifies only the current user's avatar.
+- Uses the personal or group avatar update capabilities already available in the current SeaTalk page.
+- Modifies your own avatar or an editable target group's avatar after confirmation.
 - Preferences such as language and button position stay in Tampermonkey local storage.
 - Does not save signed candidate image URLs in local preferences, diagnostics, or public documentation.
 
@@ -151,7 +161,7 @@ Drag the **GIF Avatar** button somewhere else. The script saves the new position
 
 ## Notes
 
-- Current version: `3.0.5`
+- Current version: `4.0.0`
 - Supported page: SeaTalk Web
 - This is an unofficial helper and is not affiliated with, endorsed by, or maintained by SeaTalk.
 - A future SeaTalk frontend update may temporarily affect compatibility. Check the diagnostics panel for details.

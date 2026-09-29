@@ -4,6 +4,24 @@
 
 This file records public releases of SeaTalk Personal GIF Avatar Helper.
 
+## 4.0.0 - 2026-09-29
+
+- **个人头像 / 当前群头像** 双页签，GIF 也能作为群头像。
+- 打开目标群设置，确认助手显示的群名，选择 GIF 后点击更换；每次都有群名和 GIF 二次确认。
+- 自动观察目标群头像，确认后弹出成功提示并恢复操作，无需刷新即可继续更换。
+- 新版紧凑界面：素材入口合并、目标群提示更清楚，展开时隐藏悬浮按钮。
+- 两个模式的随机挑选均为**先预览，再点击更换**。
+
+群设置须保持打开且存在头像编辑入口；未确认结果时继续检查并阻止重复提交。群成功表示页面已观察到目标资源，不代表独立 API 回执。使用过测试版的用户请先停用 beta 脚本，再启用正式版并刷新 SeaTalk。
+
+- Switch between **My avatar / Group avatar** to use GIFs for yourself or a group.
+- Open the target group's settings, check its name, select a GIF, and confirm the group and preview before each update.
+- The helper checks the target avatar, shows a success popup and unlocks the next update without a refresh.
+- Compact UI with shared GIF selection, a styled target label and no floating button covering the open panel.
+- Random selection now **previews first** in both modes; apply with the main button.
+
+Keep editable group settings open. Unconfirmed updates remain protected against duplicate submissions while checking continues. Group success means the target resource was observed on the page, not an independent API receipt. Disable beta scripts before enabling the stable release and refresh SeaTalk.
+
 ## 3.0.5 - 2026-09-28
 
 - 新增环境信息：助手版本、SeaTalk 页面版本/构建号、浏览器和脚本管理器版本；未知值明确显示 unknown。
