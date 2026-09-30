@@ -4,6 +4,20 @@
 
 This file records public releases of SeaTalk Personal GIF Avatar Helper.
 
+## 4.0.1 - 2026-09-30
+
+- 修复英文自检日志混入中文，保留启动模块信息。
+- 支持拖动标题栏；小窗口与缩放时内容可滚动，底部按钮保持可见。
+- 新增右下角 GitHub 图标，中英文提示，新标签页打开项目主页。
+- 日常控件使用蓝色，更新和成功弹窗用少量渐变点缀；成功保留绿色对勾。
+- 展示名称统一为 **SeaTalk GIF 头像助手**，支持个人与群头像。仓库地址、脚本安装名称和更新身份保持兼容。
+
+- Fix mixed-language English startup diagnostics while retaining module information.
+- Drag the header; scroll content in small or zoomed windows while keeping primary actions visible.
+- Open the GitHub project in a new tab from the footer icon, with bilingual labels.
+- Blue everyday controls, subtle gradient accents in update/success dialogs, and a green success check.
+- Display branding is **SeaTalk GIF Avatar Helper**, for personal and group avatars. Repository URL and userscript installation identity remain compatible.
+
 ## 4.0.0 - 2026-09-29
 
 - **个人头像 / 当前群头像** 双页签，GIF 也能作为群头像。
