@@ -1,12 +1,20 @@
 ![SeaTalk GIF Avatar Helper](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner.dark.en.png)
 
-# SeaTalk Personal GIF Avatar Helper
+# SeaTalk GIF Avatar Helper
 
 Turn a GIF sticker from your SeaTalk chat into an animated avatar. No bundle search or DevTools breakpoint is required.
 
-Current version: `4.0.0`
+Current version: `4.0.1`
 
 **[Read the full visual guide and FAQ](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.en.md)**
+
+## 4.0.1: Interaction and visual refinements
+
+- Fix mixed-language English startup diagnostics while retaining module information.
+- Drag the header; scroll content in small or zoomed windows while keeping primary actions visible.
+- Open the GitHub project in a new tab from the footer icon, with bilingual labels.
+- Blue everyday controls, subtle gradient accents in update/success dialogs, and a green success check.
+- Display branding is **SeaTalk GIF Avatar Helper**, for personal and group avatars. Repository URL and userscript installation identity remain compatible.
 
 ## 4.0.0: Group GIF avatars are here!
 

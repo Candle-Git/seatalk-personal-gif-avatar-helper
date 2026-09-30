@@ -20,7 +20,15 @@
 > **Upgrading from 3.0.3 to 3.0.5:** The page hook now requires `unsafeWindow`. Accept any Tampermonkey permission prompt and reload SeaTalk. If `PAGE_CONTEXT_UNAVAILABLE`, `PAGE_CONTEXT_EXECUTION_BLOCKED`, or `HOOK_NO_ACK` appears, retain the code and Console error. Do not disable browser security policies.
 
 
-### 4.0.0: Group GIF avatars are here!
+### 4.0.1: Interaction and visual refinements
+
+- Fix mixed-language English startup diagnostics while retaining module information.
+- Drag the header; scroll content in small or zoomed windows while keeping primary actions visible.
+- Open the GitHub project in a new tab from the footer icon, with bilingual labels.
+- Blue everyday controls, subtle gradient accents in update/success dialogs, and a green success check.
+- Display branding is **SeaTalk GIF Avatar Helper**, for personal and group avatars. Repository URL and userscript installation identity remain compatible.
+
+## 4.0.0: Group GIF avatars are here!
 
 - Switch between **My avatar / Group avatar** to use GIFs for yourself or a group.
 - Open the target group's settings, check its name, select a GIF, and confirm the group and preview before each update.
@@ -161,7 +169,7 @@ Drag the **GIF Avatar** button somewhere else. The script saves the new position
 
 ## Notes
 
-- Current version: `4.0.0`
+- Current version: `4.0.1`
 - Supported page: SeaTalk Web
 - This is an unofficial helper and is not affiliated with, endorsed by, or maintained by SeaTalk.
 - A future SeaTalk frontend update may temporarily affect compatibility. Check the diagnostics panel for details.
