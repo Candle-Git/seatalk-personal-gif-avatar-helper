@@ -2,7 +2,7 @@
 // @name         SeaTalk 个人 GIF 头像助手
 // @name:en      SeaTalk Personal GIF Avatar Helper
 // @namespace    https://seatalkweb.com/
-// @version      4.0.0
+// @version      4.0.1
 // @description  将聊天中的 GIF 设为个人或群头像，支持群目标确认、成功提示和脱敏诊断。
 // @description:en Use chat GIFs as personal or group avatars, with group confirmation, success feedback and sanitized diagnostics.
 // @author       Yixin.Zhong × Codex
@@ -44,7 +44,7 @@
   const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
   const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
   // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
-  const SCRIPT_VERSION = "4.0.0";
+  const SCRIPT_VERSION = "4.0.1";
   const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
 
   // 动图验证只读取 SeaTalk 图片域名中的候选文件，不会上传、保存或打印带签名参数的地址。
@@ -205,12 +205,12 @@
       successClose: "好耶！",
       updateBadge: "NEW",
       updateVersion: "版本 {version}",
-      updateTitle: "支持更新群头像了！",
-      updateSubtitle: "4.0.0：让你的个人头像和群头像一起动起来。",
-      updateHighlightOne: "新增「当前群头像」页签，打开群设置即可识别目标群",
-      updateHighlightTwo: "每次更换群头像前，确认群名与 GIF 预览",
-      updateHighlightThree: "自动检查群头像更新，成功弹窗后可继续更换",
-      updateHighlightFour: "全新紧凑界面；随机挑选先预览，再点击更换",
+      updateTitle: "更顺手的 GIF 头像助手",
+      updateSubtitle: "个人与群 GIF 头像，操作与外观进一步优化。",
+      updateHighlightOne: "英文自检日志不再混入中文，保留模块信息",
+      updateHighlightTwo: "标题栏支持拖动，小窗口内容可滚动、底部按钮保持可见",
+      updateHighlightThree: "新增 GitHub 项目入口，支持中英文提示",
+      updateHighlightFour: "日常蓝色界面，弹窗渐变点缀，成功保留绿色对勾",
       updateClose: "知道了，去试试！",
       toggleLabel: "语言",
       helperToggle: "GIF头像助手",
@@ -286,12 +286,12 @@
       successClose: "Love it!",
       updateBadge: "NEW",
       updateVersion: "Version {version}",
-      updateTitle: "Group GIF avatars are here!",
-      updateSubtitle: "4.0.0: bring both personal and group avatars to life.",
-      updateHighlightOne: "New Group avatar tab: open group settings to identify the target",
-      updateHighlightTwo: "Confirm the group name and GIF before every group update",
-      updateHighlightThree: "Automatically check the group avatar and show a success popup",
-      updateHighlightFour: "Compact UI: preview random GIFs before applying them",
+      updateTitle: "A smoother GIF avatar helper",
+      updateSubtitle: "Refinements for personal and group GIF avatars.",
+      updateHighlightOne: "English diagnostics no longer mix in Chinese startup messages",
+      updateHighlightTwo: "Drag the header; scroll content in small windows with actions visible",
+      updateHighlightThree: "Open the GitHub project from the new footer icon",
+      updateHighlightFour: "Blue everyday controls, subtle gradient accents and a green success check",
       updateClose: "Got it — let me try!",
       toggleLabel: "Language",
       helperToggle: "GIF Avatar",
@@ -1284,6 +1284,32 @@
     };
   }
 
+  let panelPosition = null;
+  function panelViewport() {
+    const viewport = window.visualViewport;
+    return { width: viewport?.width || window.innerWidth, height: viewport?.height || window.innerHeight,
+      left: viewport?.offsetLeft || 0, top: viewport?.offsetTop || 0 };
+  }
+  function bindPanelDrag(header, panel) {
+    let drag = null;
+    header.title = groupText("拖动标题栏移动助手", "Drag the header to move the helper");
+    header.addEventListener("pointerdown", event => {
+      if (event.button !== 0 || event.target.closest("button, a, input, select")) return;
+      const rect = panel.getBoundingClientRect();
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
+      header.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    header.addEventListener("pointermove", event => {
+      if (!drag || event.pointerId !== drag.id) return;
+      panelPosition = { left: drag.left + event.clientX - drag.x, top: drag.top + event.clientY - drag.y };
+      positionPanelNearToggle();
+    });
+    const end = () => { drag = null; };
+    header.addEventListener("pointerup", end);
+    header.addEventListener("pointercancel", end);
+    header.addEventListener("lostpointercapture", end);
+  }
   function positionPanelNearToggle() {
     const toggle = document.getElementById(TOGGLE_ID);
     const panel = document.getElementById(PANEL_ID);
@@ -1294,8 +1320,9 @@
     const margin = 10;
     const gap = 10;
     const toggleRect = toggle.getBoundingClientRect();
-    const panelWidth = Math.min(390, window.innerWidth - margin * 2);
-    const availableHeight = Math.max(220, window.innerHeight - margin * 2);
+    const viewport = panelViewport();
+    const panelWidth = Math.max(1, Math.min(390, viewport.width - margin * 2));
+    const availableHeight = Math.max(1, viewport.height - margin * 2);
 
     panel.style.width = `${panelWidth}px`;
     panel.style.maxHeight = `${availableHeight}px`;
@@ -1316,8 +1343,8 @@
       Math.max(margin, window.innerHeight - panelHeight - margin)
     );
 
-    panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
+    panel.style.left = `${Math.max(viewport.left + margin, Math.min(panelPosition?.left ?? left, viewport.left + viewport.width - panelWidth - margin))}px`;
+    panel.style.top = `${Math.max(viewport.top + margin, Math.min(panelPosition?.top ?? top, viewport.top + viewport.height - panelHeight - margin))}px`;
   }
 
   function applyFloatingPosition({ persist = false } = {}) {
@@ -1681,6 +1708,8 @@
         background: #fff;
       }
 
+      #${PANEL_ID} .spga-header { cursor: grab; touch-action: none; user-select: none; }
+      #${PANEL_ID} .spga-header:active { cursor: grabbing; }
       #${PANEL_ID} .spga-heading {
         min-width: 0;
       }
@@ -1730,7 +1759,10 @@
         gap: 10px;
         min-height: 0;
         padding: 12px 14px 16px;
-        overflow: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        grid-auto-rows: max-content;
+        scrollbar-gutter: stable;
         overscroll-behavior: contain;
       }
 
@@ -1941,6 +1973,14 @@
         background: #fcfcfd;
       }
 
+      #${PANEL_ID} .spga-github-link {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; flex: 0 0 32px; margin-left: auto;
+        color: #667085; border-radius: 6px; text-decoration: none;
+      }
+      #${PANEL_ID} .spga-github-link:hover,
+      #${PANEL_ID} .spga-github-link:focus-visible { color: #0b5cab; background: #eaf2fc; }
+      #${PANEL_ID} .spga-github-link:focus-visible { outline: 2px solid #0b5cab; outline-offset: 2px; }
       #${PANEL_ID} .spga-credit-row {
         display: flex;
         align-items: center;
@@ -2372,6 +2412,36 @@
           animation: none;
         }
       }
+
+      /* Brand accent: deeper pink keeps white button text legible. */
+      #${PANEL_ID}, #${TOGGLE_ID}, #${SUCCESS_MODAL_ID}, #${UPDATE_MODAL_ID} {
+        --spga-brand: linear-gradient(110deg, #1954ad 0%, #7035c9 55%, #b42b89 100%);
+        --spga-accent: #0b5cab;
+      }
+      #${TOGGLE_ID}, #${PANEL_ID} .spga-button-primary,
+      #${SUCCESS_MODAL_ID} .spga-success-close, #${UPDATE_MODAL_ID} .spga-update-close { background: #0b5cab; color: #fff; border-color: transparent; }
+      #${PANEL_ID} .spga-button-primary:disabled { background: #e4e7ec; color: #667085; opacity: 1; }
+      #${PANEL_ID} .spga-target-tabs .spga-target-tab[aria-selected="true"],
+      #${PANEL_ID} .spga-language-active { color: var(--spga-accent); box-shadow: 0 1px 5px #1954ad20; }
+      #${PANEL_ID} .spga-target-tabs { background: #edf2f7; }
+      #${PANEL_ID} .spga-target-summary { background: #f2f6fc; }
+      #${PANEL_ID} .spga-github-link:hover, #${PANEL_ID} .spga-github-link:focus-visible { color: var(--spga-accent); background: #edf2f7; }
+      #${PANEL_ID} button:focus-visible, #${PANEL_ID} a:focus-visible { outline: 2px solid var(--spga-accent); outline-offset: 2px; }
+      #${SUCCESS_MODAL_ID} .spga-success-card {
+        background: #fff; border-color: #e3daf3; color: #172033;
+        box-shadow: 0 24px 70px #34205240;
+      }
+      #${SUCCESS_MODAL_ID} .spga-success-card::before, #${UPDATE_MODAL_ID} .spga-update-card::before {
+        content: ""; position: absolute; inset: 0 0 auto; height: 6px; background: var(--spga-brand);
+      }
+      #${SUCCESS_MODAL_ID} .spga-success-title { color: #172033; }
+      #${SUCCESS_MODAL_ID} .spga-success-message { color: #344054; }
+      #${SUCCESS_MODAL_ID} .spga-success-subtitle { color: #667085; }
+      #${SUCCESS_MODAL_ID} .spga-success-close { box-shadow: 0 8px 20px #7035c924; }
+      #${SUCCESS_MODAL_ID} .spga-success-close:hover, #${UPDATE_MODAL_ID} .spga-update-close:hover { background: #094e93; }
+      #${UPDATE_MODAL_ID} .spga-update-card { background: #fff; border-color: #dce3ec; }
+      #${UPDATE_MODAL_ID} .spga-update-badge { background: var(--spga-brand); }
+      #${SUCCESS_MODAL_ID} .spga-success-close { box-shadow: 0 8px 20px #1954ad20; }
     `;
 
     document.head.appendChild(style);
@@ -2484,7 +2554,7 @@
 
     const badge = createElement("div", {
       className: "spga-success-badge",
-      textContent: "GIF!",
+      textContent: "✓",
     });
     const title = createElement("h2", {
       className: "spga-success-title",
@@ -2831,13 +2901,22 @@
     if ([I18N.zh.diagnosticVisualPending, I18N.en.diagnosticVisualPending].includes(item.message)) {
       return t("diagnosticVisualPending");
     }
+    const message = String(item.message || "");
+    if (/启动自检通过/.test(message)) {
+      const chunk = message.match(/chunk-styles-[a-zA-Z0-9_-]+\.js/);
+      return "Startup check passed: avatar update service found" + (chunk ? ` (${chunk[0]})` : "");
+    }
+    if (/开始直接提交 GIF/.test(message)) return "Starting GIF avatar update.";
+    if (/正在提交 ContactUpdateUserInfo/.test(message)) return "Account identified; submitting ContactUpdateUserInfo.";
+    if (/等待.*加载|正在等待/.test(message)) return "Waiting for SeaTalk modules to load.";
+    if (!/[\u3400-\u9fff]/.test(message)) return message;
     if (item.level === "error") {
-      return `${t("diagnosticErrorGeneric")} ${item.message}`;
+      return t("diagnosticErrorGeneric");
     }
     if (item.level === "success") {
-      return `${t("diagnosticSuccessGeneric")} ${item.message}`;
+      return t("diagnosticSuccessGeneric");
     }
-    return `${t("diagnosticInfoGeneric")} ${item.message}`;
+    return t("diagnosticInfoGeneric");
   }
 
   function createDiagnosticsView() {
@@ -2940,6 +3019,7 @@
       createElement("p", { className: "spga-subtitle", textContent: t("subtitle") })
     );
     header.append(heading, createLanguageToggle());
+    bindPanelDrag(header, panel);
     const close = createButton("×", "close-panel");
     close.setAttribute("aria-label", groupText("关闭助手", "Close helper"));
     close.addEventListener("click", () => panel.classList.remove("spga-open"));
@@ -3037,7 +3117,21 @@
       },
     });
     const creditRow = createElement("div", { className: "spga-credit-row" });
-    creditRow.append(creditButton, versionBadge);
+    const githubLabel = groupText("查看 GitHub 项目", "View GitHub project");
+    const githubLink = createElement("a", {
+      className: "spga-github-link",
+      attributes: {
+        href: "https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper",
+        target: "_blank", rel: "noopener noreferrer", title: githubLabel, "aria-label": githubLabel,
+      },
+    });
+    const githubIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    for (const [key, value] of Object.entries({ viewBox: "0 0 16 16", width: "16", height: "16", fill: "currentColor", "aria-hidden": "true", focusable: "false" })) githubIcon.setAttribute(key, value);
+    const githubPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    githubPath.setAttribute("d", "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z");
+    githubIcon.append(githubPath);
+    githubLink.append(githubIcon);
+    creditRow.append(creditButton, versionBadge, githubLink);
     if (groupUI.mode === "group") {
       status.textContent = groupUI.message || (groupUI.context
         ? groupText("预览后确认，即可更换群头像。", "Preview, then confirm to update the group avatar.")
@@ -3051,6 +3145,7 @@
     randomButton.disabled = randomButton.disabled || !!groupUI.pending;
     footer.append(status, applyButton, creditRow);
 
+    footer.style.flexShrink = "0";
     panel.append(header, body, footer);
     window.requestAnimationFrame(positionPanelNearToggle);
   }
@@ -5212,6 +5307,8 @@
   }
 
   function init() {
+    window.visualViewport?.addEventListener("resize", positionPanelNearToggle);
+    window.visualViewport?.addEventListener("scroll", positionPanelNearToggle);
     readSavedState();
     injectStyles();
     createPanel();
@@ -5227,6 +5324,7 @@
   if (globalThis.__SPGA_TEST_MODE__ === true) {
     globalThis.__SPGA_TEST_API__ = {
       groupUI, bindGroupStatus, confirmGroupAvatar, bindPanelEvents, injectStyles,
+      localizeDiagnosticMessage, panelViewport, bindPanelDrag, positionPanelNearToggle,
       sanitizeDiagnosticText,
       getDiagnosticEnvironment,
       buildDiagnosticReport,
@@ -5238,7 +5336,7 @@
       bindHookStatusEvents,
       startAvatarApply,
       startAvatarVerification,
-      showSuccessCelebration,
+      showSuccessCelebration, showUpdateNotice,
       state,
       countGifFrames,
       countAnimatedWebpFrames,

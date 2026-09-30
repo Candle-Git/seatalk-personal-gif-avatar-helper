@@ -1,0 +1,42 @@
+<!doctype html><meta charset="utf-8"><title>4.0.0 UI test</title>
+<script>globalThis.__SPGA_TEST_MODE__=true;globalThis.GM_setValue=()=>{};</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<pre id="result"></pre><script>
+const a=__SPGA_TEST_API__,checks=[];function check(x,n){if(!x)throw Error(n);checks.push(n)}
+try {
+a.state.locale='zh';a.injectStyles();a.createPanel();a.bindGroupStatus();a.bindPanelEvents();
+a.groupUI.mode='group';a.state.selected={gifId:'baa2f40fca89613a479ddc196efaaad40b0705000003f1891780358408011068'};
+const event=context=>window.dispatchEvent(new CustomEvent('seatalk-personal-gif-avatar:hook-status',{detail:{type:'group-context',context}}));
+event({id:12,name:'测试群',revision:1});a.confirmGroupAvatar();
+check(a.groupUI.dialog.open,'confirmation opens');check(document.activeElement.textContent==='取消','cancel focused');
+a.renderPanel();check(a.groupUI.dialog.open,'background render preserves confirmation');
+event({id:13,name:'另一个群',revision:2});check(!a.groupUI.dialog,'target change cancels');
+a.confirmGroupAvatar();a.groupUI.dialog.querySelector('button').click();check(!a.groupUI.pending,'cancel sends nothing');
+a.confirmGroupAvatar();a.groupUI.dialog.querySelectorAll('button')[1].click();check(a.groupUI.pending.id===13,'confirmed target frozen');check(!a.groupUI.dialog,'dialog closes on submit');check(document.querySelector('[data-action="enable"]').disabled,'pending locks submit');
+window.dispatchEvent(new CustomEvent('seatalk-personal-gif-avatar:hook-status',{detail:{type:'group-result',requestId:a.groupUI.pending.requestId,code:'GROUP_OBSERVED'}}));
+check(!a.groupUI.pending,'success unlocks group');
+check(!!document.querySelector('.spga-success-card'),'success popup opens');
+check(!document.querySelector('[data-action="enable"]').disabled,'next update enabled');
+document.querySelector('.spga-success-close').click();
+document.querySelector('#seatalk-personal-gif-avatar-panel').classList.add('spga-open');
+a.renderPanel();
+a.state.locale='en';
+a.state.diagnosticsOpen=true;
+a.state.diagnosticEvents=[{time:'12:00',level:'success',message:'启动自检通过：已找到直接更新入口（chunk-styles-test.js）。'},{time:'12:01',level:'error',message:'未知中文错误'}];
+check(a.localizeDiagnosticMessage(a.state.diagnosticEvents[0]).includes('chunk-styles-test.js'),'English startup retains chunk');
+check(!/[\u3400-\u9fff]/.test(a.localizeDiagnosticMessage(a.state.diagnosticEvents[1])),'English fallback contains no Chinese');
+a.renderPanel();
+const link=document.querySelector('.spga-github-link');
+check(link.title==='View GitHub project','English GitHub label');
+check(link.target==='_blank' && link.rel.includes('noopener'),'GitHub opens safely in a new tab');
+check(link.href==='https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper','GitHub destination');
+check(link.getBoundingClientRect().width>=32,'GitHub click target');
+a.state.locale='zh';a.renderPanel();check(document.querySelector('.spga-github-link').title==='查看 GitHub 项目','Chinese GitHub label');
+a.state.locale='en';a.renderPanel();
+a.state.locale='zh';a.state.diagnosticsOpen=false;a.state.directUpdaterReady=true;a.groupUI.message='';a.renderPanel();
+const previewButton=document.createElement('button');previewButton.textContent='预览成功弹窗';previewButton.id='preview-success';previewButton.onclick=()=>{a.state.successModalShownForGifId='';a.showSuccessCelebration(a.state.selected.gifId,'示例群');};document.body.append(previewButton);
+const updateButton=document.createElement('button');updateButton.textContent='预览更新弹窗';updateButton.id='preview-update';updateButton.onclick=()=>{a.state.lastSeenUpdateNoticeVersion='';a.showUpdateNotice();};document.body.append(updateButton);
+check(getComputedStyle(document.querySelector('[data-action="enable"]')).backgroundImage==='none','primary button uses solid blue');
+document.querySelector('#result').textContent='PASS '+checks.length+'\n'+checks.join('\n');
+} catch(e){document.querySelector('#result').textContent='FAIL '+e.stack}
+</script>
