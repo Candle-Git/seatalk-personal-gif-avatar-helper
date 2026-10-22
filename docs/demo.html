@@ -1,0 +1,40 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src data:; connect-src 'none';">
+<title>SeaTalk GIF 助手 5.0 · 界面示例</title>
+<style>
+body{margin:0;background:#edf2f8;color:#24354c;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:760px;margin:90px auto;padding:40px;background:#fff;border-radius:24px;box-shadow:0 14px 60px #14294a12}h1{font-size:30px}p{line-height:1.8;color:#586b83}button{font:inherit;padding:12px 22px;border-radius:10px;border:1px solid #0866c6;background:#0866c6;color:#fff;cursor:pointer;margin:6px}.pill{display:inline-block;padding:6px 12px;border-radius:100px;background:#e8f2ff;color:#0866c6}#preview-note{position:fixed;bottom:0;left:0;right:0;background:#142b47;color:white;padding:8px 20px;font-size:12px;z-index:2147483647;pointer-events:none}
+</style>
+<main><span class="pill">5.0.0 · 交互示例</span><h1>SeaTalk GIF 助手 5.0</h1><p>个人／群 GIF 头像与收藏表情批量管理，放进同一个助手。先预览，再决定是否安装测试。</p><button id="showFavorites">预览「我的收藏」</button><button id="showAvatar">预览「头像助手」</button><p>本页使用虚构收藏与示意缩略图，供查看布局、筛选、多选和分享口令。不会连接 SeaTalk，也不会修改真实账号。实际动图、个人头像更新和收藏删除请安装预览版后验收。</p></main>
+<div class="sealabs-stickers-panel"><div class="sealabs-sticker"></div></div>
+<div id="preview-note">界面预览 · 示例数据 · 未连接真实账号</div>
+<script>window.__SPGA_TEST_MODE__=true;window.GM_setValue=()=>{};window.unsafeWindow=window;</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<script>
+const api=window.__SPGA_TEST_API__;
+const demoLayout=new URLSearchParams(location.search).get('split')==='1';
+if(demoLayout){
+ const intro=document.querySelector('main');intro.remove();
+ const sheet=document.createElement('style');sheet.textContent=`
+ #root{position:fixed;inset:0;background:linear-gradient(135deg,#e5edf5,#f7f4ef)}.home-app,.page-container{height:100%}.home-default-page{height:100%;display:flex;align-items:center;justify-content:center}.home-main-window{width:1024px;height:800px;background:#fff;display:flex;border-radius:7px;overflow:hidden;box-shadow:0 4px 24px #17203316}.demo-rail{width:68px;flex-shrink:0;background:#e8eef5;padding:24px 12px;font-size:24px;display:flex;flex-direction:column;gap:30px}.demo-chats{width:260px;flex-shrink:0;background:#f8fafc;border-right:1px solid #e4e7ec;padding:20px 12px}.demo-chat-item{padding:16px 12px;border-radius:8px;margin:10px 0;color:#667085}.demo-chat-item.active{background:#e6f1ff;color:#0866c6}.demo-thread{min-width:0;flex:1;display:flex;flex-direction:column}.demo-thread header{padding:20px;border-bottom:1px solid #e4e7ec;font-weight:600}.demo-messages{padding:28px;flex:1;overflow:auto}.demo-bubble{max-width:70%;padding:14px 16px;border-radius:12px;background:#f2f4f7;line-height:1.7;font-size:14px;margin:20px 0}.demo-bubble.mine{margin-left:auto;background:#e6f1ff;color:#0866c6}.demo-composer{margin:16px;padding:16px;border:1px solid #d0d5dd;border-radius:10px;min-height:100px;color:#98a2b3;font-size:14px}.demo-caption{font-size:12px;color:#98a2b3;padding:0 20px 12px}.home-main-window p{font-size:13px}.demo-chats strong{font-size:16px}@media(max-width:1024px),(max-height:800px){.home-main-window{width:100%;height:100%}}`;
+ document.head.append(sheet);
+ const frame=document.createElement('div');frame.id='root';frame.innerHTML=`<div class="home-app"><div class="page-container"><div class="home-default-page loggedIn"><div class="home-main-window hbox"><aside class="demo-rail"><span>💬</span><span>👥</span><span>⚙</span></aside><aside class="demo-chats"><strong>SeaTalk · 示例界面</strong><p>仅展示布局，不连接账号</p><div class="demo-chat-item active">示例聊天</div><div class="demo-chat-item">项目讨论</div><div class="demo-chat-item">灵感收藏</div></aside><section class="demo-thread"><header>示例聊天 · 未连接真实账号</header><div class="demo-messages"><div class="demo-bubble">打开助手时，聊天区使用左侧空间。</div><div class="demo-bubble mine">右侧整理表情，同时保留左侧聊天。</div><div class="demo-bubble">收起或关闭助手后，聊天窗口恢复原来的居中布局。</div></div><div class="demo-composer">模拟输入区 · 可以在这里观察聊天区域剩余空间</div><div class="demo-caption">此页全部为示例，不是实际 SeaTalk 聊天内容。</div></section></div></div></div></div>`;
+ document.body.prepend(frame);
+}
+const emojis=['🐱','🐸','🐶','🐼','🐰','🦊','🐹','🐨','🐯','🦄','🐥','🐵'];
+const labels=['猫猫点头','悲伤蛙','小狗开心','熊猫打招呼','兔兔加油','狐狸问号','仓鼠吃饭','考拉摸鱼','老虎冲鸭','独角兽开心','小鸡早安','猴猴跳舞'];
+const demo=Array.from({length:60},(_,n)=>{const id='a'.repeat(33)+'b0705'+String(n).padStart(26,'0');return {id,url:'https://f.haiserve.com/download/'+id+'_300',name:labels[n%12]+(n>=12?' '+(Math.floor(n/12)+1):'')}});
+let list=demo;
+const actions={actionRemoveCustomStickers(ids){list=list.filter(s=>!ids.includes(s.id));seed.__reactFiber$preview.memoizedProps.stickers=list;}};
+actions.actionAddCustomStickerFromMessage=({content})=>{list.push({id:content.fileId,url:'https://f.haiserve.com/download/'+content.fileId+'_300',name:'收到的表情'});};
+window.__SPGA_SHARE_FIXTURE_SERVICES__={actions,session:{loggedIn:true,userId:1},store:{getState:()=>({messages:{customStickers:list}})},tag:'fixture-sticker',fileUrl:id=>'https://f.haiserve.com/download/'+id+'_300'};
+const seed=document.querySelector('.sealabs-sticker');seed.__reactFiber$preview={memoizedProps:{stickers:list,isCustomTab:true},return:{memoizedProps:{actions}}};
+api.installHelperLayout();api.state.locale='zh';api.injectStyles();api.createPanel();api.bindPanelEvents();
+window.addEventListener('spga:collections-back',()=>document.getElementById('seatalk-personal-gif-avatar-panel').classList.add('spga-open'));
+function decorate(){const host=document.getElementById('st-favorites-curator');if(!host)return;const root=host.shadowRoot;
+for(const image of root.querySelectorAll('img')){if(image.src.startsWith('data:'))continue;const i=Number(((image.src.match(/download\/([^/]+)_300/)||[])[1]||'0').slice(-26))%12;image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180"><rect width="240" height="180" rx="16" fill="${['#f1f6ff','#fff4ed','#f0f8f3'][i%3]}"/><text x="120" y="115" text-anchor="middle" font-size="84">${emojis[i]}</text></svg>`);}
+}
+function showFavorites(){api.openCollectionsWorkspace();decorate();const root=document.getElementById('st-favorites-curator').shadowRoot;if(!root.previewObserver){root.previewObserver=new MutationObserver(decorate);root.previewObserver.observe(root,{childList:true,subtree:true});}}
+document.getElementById('showFavorites')?.addEventListener('click',showFavorites);
+document.getElementById('showAvatar')?.addEventListener('click',()=>{const host=document.getElementById('st-favorites-curator');if(host&&host.__close?.(true)===false)return;document.getElementById('seatalk-personal-gif-avatar-panel').classList.add('spga-open')});
+showFavorites();
+</script></html>

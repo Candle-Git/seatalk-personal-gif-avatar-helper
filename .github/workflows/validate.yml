@@ -1,0 +1,26 @@
+name: Validate userscript
+on:
+  push:
+    branches: [main, 'codex/release-*']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Rebuild and check deterministic output
+        run: |
+          python3 tools/build-userscript.py
+          git diff --exit-code -- SeaTalk-Personal-GIF-Avatar-Helper.user.js
+      - name: Parse userscript and run regression checks
+        run: |
+          node --check SeaTalk-Personal-GIF-Avatar-Helper.user.js
+          node --test tests/*.test.mjs
