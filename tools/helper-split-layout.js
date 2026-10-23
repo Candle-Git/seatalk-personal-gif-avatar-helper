@@ -50,11 +50,12 @@ function installHelperLayout() {
       if (node.dataset.docked !== next) node.dataset.docked = next;
     }
     if (favorites) {
+      const text = (zh, en) => favorites.dataset.locale === 'en' ? en : zh;
       const button = favorites.shadowRoot?.getElementById('dockToggle'), divider = favorites.shadowRoot?.getElementById('dockDivider');
       if (button) {
         button.disabled = !planHelperSplit(innerWidth, 'favorites', preferred, available);
-        button.textContent = docked && kind === 'favorites' ? '浮窗' : '分栏';
-        button.title = button.disabled ? '当前页面或窗口宽度不适合分栏，将使用浮窗' : docked && kind === 'favorites' ? '切换为可拖动浮窗' : '在右侧分栏，SeaTalk 使用左侧空间';
+        button.textContent = docked && kind === 'favorites' ? text('浮窗', 'Float') : text('分栏', 'Split view');
+        button.title = button.disabled ? text('当前页面或窗口宽度不适合分栏，将使用浮窗', 'Split view is unavailable at this window size or on this page; using a floating window') : docked && kind === 'favorites' ? text('切换为可拖动浮窗', 'Switch to a draggable floating window') : text('在右侧分栏，SeaTalk 使用左侧空间', 'Open a sidebar on the right, with SeaTalk on the left');
       }
       if (divider) {
         divider.hidden = !(docked && kind === 'favorites');

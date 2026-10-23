@@ -1,0 +1,54 @@
+<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="img-src data:;connect-src 'none'"><title>SeaTalk 5.1 offline checks</title><style>body{font:14px system-ui}pre{white-space:pre-wrap;max-width:700px}.messages-message-editor{padding:10px}</style><h1>5.1 · Offline UI checks</h1><pre id="result">Running…</pre><div class="messages-message-editor">Mock composer only</div><div class="sealabs-stickers-panel"><div class="sealabs-sticker"></div></div>
+<script>window.__SPGA_TEST_MODE__=true;window.unsafeWindow=window;window.GM_setValue=()=>{};</script><script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script><script>
+(async()=>{
+const api=window.__SPGA_TEST_API__,checks=[],result=document.getElementById('result');
+const check=(ok,name)=>{if(!ok)throw Error(name);checks.push(name);};
+const wait=()=>new Promise(r=>setTimeout(r,20));const until=async fn=>{for(let n=0;n<300;n++){if(fn())return;await wait();}throw Error('Timed out waiting for UI');};
+const id=n=>'a'.repeat(33)+'b0705'+String(n).padStart(26,'0');
+const list=[0,1,2].map(n=>({id:id(n),url:'https://f.haiserve.com/download/'+id(n)+'_300',name:'Sticker '+n}));
+let snapshot={schema:1,revision:0,items:[]},sends=0,adds=0,target={id:42,type:'group'},messages={},cid=0;const subscribers=new Set();
+const store={getState:()=>({messages:{customStickers:list,messages,selectedSession:target,currentThreadId:null},contact:{groupInfo:{42:{name:'Demo group'},43:{name:'Other group'}}}}),subscribe(fn){subscribers.add(fn);return()=>subscribers.delete(fn);}};
+const actions={actionRemoveCustomStickers(){throw Error('Not part of this check');},actionAddCustomStickerFromMessage({content}){adds++;list.push({id:content.fileId,url:'https://f.haiserve.com/download/'+content.fileId+'_300',name:'Imported'});}};
+window.__SPGA_SHARE_FIXTURE_SERVICES__={actions,store,session:{loggedIn:true,userId:1},tag:'sticker',fileUrl:id=>'https://f.haiserve.com/download/'+id+'_300',previewDimensions:()=>({width:170,height:170}),sendSticker:async({session,customSticker})=>{sends++;const key='fixture-'+(++cid);messages['group-'+session.id+'-'+key]={cid:key,mid:cid.toString(16).padStart(16,'0'),serverTimeStamp:Date.now(),senderId:1,tag:'sticker',content:{fileId:customSticker.url}};for(const fn of subscribers)fn();}};
+window.__SPGA_PERSONAL_SETTINGS_FIXTURE__={request(request){if(request.kind==='save'){if(snapshot.revision!==request.revision)throw Error('METADATA_CHANGED');snapshot={schema:1,revision:snapshot.revision+1,items:request.items};}return JSON.parse(JSON.stringify(snapshot));}};
+document.querySelector('.sealabs-sticker').__reactFiber$fixture={memoizedProps:{isCustomTab:true,stickers:list},return:{memoizedProps:{actions}}};
+const root=()=>document.getElementById('st-favorites-curator').shadowRoot,q=selector=>root().querySelector(selector),all=selector=>[...root().querySelectorAll(selector)];
+const change=(selector,value)=>{q(selector).value=value;q(selector).dispatchEvent(new Event('input',{bubbles:true}));};
+function code(rows){return 'STGIF2.'+btoa(Array.from(new TextEncoder().encode(JSON.stringify({v:2,stickers:rows})),v=>String.fromCharCode(v)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function chooseFile(doc){const transfer=new DataTransfer();transfer.items.add(new File([JSON.stringify(doc)],'synthetic-notes.json',{type:'application/json'}));q('#personalImportFile').files=transfer.files;q('#personalImportFile').dispatchEvent(new Event('change'));}
+try{
+api.state.locale='en';api.injectStyles();api.createPanel();api.bindPanelEvents();api.openCollectionsWorkspace();await until(()=>q('#settingsOpen')&&!q('#settingsOpen').disabled);
+check(q('#summary').textContent==='My stickers: 3','English favorites inherit the avatar locale');
+check(q('#sendSelected').disabled&&q('#personalSave'),'send and persistent note controls are present');
+all('.preview')[0].click();check(q('#zoom').open&&!q('#sendZoom').disabled&&q('#count').textContent==='0 selected','first sticker preview enables sending without selection or an earlier send');q('#sendZoom').click();await until(()=>q('#sendConfirmation').open);check(sends===0&&q('#sendTarget').textContent.includes('Demo group'),'first preview opens destination confirmation without sending');q('#sendCancel').click();
+all('.preview')[1].click();check(!q('#sendZoom').disabled,'reopening another preview keeps sending available');q('#zoomClose').click();
+all('.edit-name')[0].click();check(q('#personalEditor').open&&q('#personalEditorTitle').textContent==='Edit notes and keywords','note editor is translated');
+q('#personalName').value='Office cat';q('#personalKeywords').value='work, 上班';q('#personalVisibleText').value='开工';q('#personalNote').value='private example';q('#personalSave').click();await until(()=>!q('#personalEditor').open);
+check(snapshot.items.length===1&&snapshot.items[0].note==='private example','notes persist through the account-bound storage adapter');
+check(q('.card-name').textContent==='Office cat','saved note appears on the sticker card');
+change('#search','上班');check(all('.card').length===1,'keyword search finds a note');change('#search','开工');check(all('.card').length===1,'visible-text search finds a note');change('#search','');
+all('.card-bottom input')[0].click();q('#backAvatar').click();
+const panel=document.getElementById('seatalk-personal-gif-avatar-panel');panel.querySelector('[data-action="set-locale"][data-locale="zh"]').click();api.openCollectionsWorkspace();
+check(q('#count').textContent==='已选择 1 个'&&q('#settingsOpen').textContent==='设置','switching to Chinese keeps selection and updates new controls');
+q('#backAvatar').click();panel.querySelector('[data-action="set-locale"][data-locale="en"]').click();api.openCollectionsWorkspace();
+check(q('#count').textContent==='1 selected'&&q('.card-name').textContent==='Office cat','switching back preserves personal names and selection');
+q('#guideOpen').click();check(q('.guide').textContent.includes('Notes, backups and sending'),'new guide section is English');q('#guideClose').click();
+q('#shareOpen').click();const payload=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(q('#shareCode').value.slice(7).replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))));
+check(payload.v===2&&payload.stickers[0].keywords.includes('上班')&&payload.stickers[0].visibleText==='开工','share v2 includes names, keywords and visible text');
+check(!q('#shareCode').value.includes('private')&&!JSON.stringify(payload).includes('private example')&&!('note' in payload.stickers[0]),'private note is absent from the share payload');
+q('#shareIncludeMetadata').click();check(q('#shareCode').value.startsWith('STGIF1.'),'disabling metadata produces a legacy-compatible code');q('#shareClose').click();
+q('#importOpen').click();change('#importCode',code([{gifId:id(0),label:'Friend name',keywords:['office'],visibleText:'office text'}]));q('#importParse').click();await until(()=>all('.import-card').length===1);await wait();
+check(!all('.import-card input')[0].disabled,'an existing favorite can import notes even when image preview is unavailable');all('.import-card input')[0].click();q('#importConfirm').click();await until(()=>!q('#importConfirm').disabled || q('#importStatus').textContent.includes('Saved 1 notes'));
+check(adds===0&&snapshot.items[0].name==='Office cat'&&snapshot.items[0].keywords.includes('office'),'shared metadata merges without adding duplicate favorites or replacing a personal name');q('#importCancel').click();
+q('#settingsOpen').click();chooseFile({metadata:{},items:[{gifId:id(0),index:0,name:'Backup name',keywords:['backup'],visibleText:'',confidence:'high',needsReview:false,reviewReason:''},{gifId:id(2),index:2,name:'Uncertain AI',keywords:[],visibleText:'',confidence:'low',needsReview:true,reviewReason:'Unclear'}]});await until(()=>all('.metadata-import-row').length===2);
+check(all('.metadata-import-row input')[0].checked&&!all('.metadata-import-row input')[1].checked,'AI items needing review are not selected by default');
+check(all('.metadata-import-row select')[0].value==='keep','restore defaults to keeping the local note');q('#personalImportConfirm').click();await until(()=>q('#personalImportPanel').hidden);
+check(snapshot.items.length===1&&snapshot.items[0].name==='Office cat'&&snapshot.items[0].keywords.includes('backup'),'restore merges keywords and preserves manual notes');q('#personalSettings [data-close]').click();
+q('#sendSelected').click();await until(()=>q('#sendConfirmation').open);check(sends===0&&q('#sendTarget').textContent.includes('Demo group'),'send confirmation names the destination before any native send');q('#sendConfirm').click();await until(()=>q('#sendStatus').textContent.includes('SeaTalk confirmed 1 stickers.'));
+check(sends===1&&q('#sendConfirm').disabled&&q('#count').textContent==='0 selected','one confirmed send clears its selection and cannot be double-submitted');q('#sendCancel').click();
+all('.card-bottom input')[0].click();q('#sendSelected').click();await until(()=>q('#sendConfirmation').open);target={id:43,type:'group'};for(const fn of subscribers)fn();
+check(q('#sendConfirm').disabled&&q('#sendStatus').textContent.includes('changed'),'conversation changes invalidate the pending confirmation');target={id:42,type:'group'};for(const fn of subscribers)fn();check(q('#sendConfirm').disabled&&sends===1,'switching back does not revive an invalid confirmation');q('#sendCancel').click();
+check(!all('dialog[open]').length,'flows finish with no stacked dialogs');
+result.textContent='PASS '+checks.length+'\n'+checks.join('\n');document.title='PASS '+checks.length+' · SeaTalk 5.1 UI';
+}catch(error){result.textContent='FAIL after '+checks.length+'\n'+error.stack+'\n'+checks.join('\n');document.title='FAIL · SeaTalk 5.1 UI';}
+})();</script>
