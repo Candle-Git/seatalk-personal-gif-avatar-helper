@@ -2,6 +2,7 @@
 function createFavoritesLocalizer(initialLocale = 'zh') {
   let locale = initialLocale === 'en' ? 'en' : 'zh';
   const labels = {
+    "点一下，有小惊喜": "Click for a little surprise",
     "Yixin.Zhong × Codex 制作": "Made by Yixin.Zhong × Codex",
     "查看 GitHub 项目": "View GitHub project",
     "窗口布局": "Window layout",

@@ -72,6 +72,11 @@ locale_bridge = '''  function setHelperLocale(locale) {
     window.dispatchEvent(new CustomEvent("spga:locale-change", {detail:locale}));
   }
   if (typeof window !== "undefined") window.addEventListener("spga:locale-request", event => setHelperLocale(event.detail));
+  if (typeof window !== "undefined") window.addEventListener("spga:credit-celebrate", () => {
+    const host = document.getElementById("st-favorites-curator");
+    const trigger = host?.shadowRoot?.getElementById("helperCredit");
+    if (host?.dataset.open === "true" && trigger) showCreditEasterEgg(trigger);
+  });
 '''
 source = source.replace('  function init() {', locale_bridge + '  function init() {', 1)
 
