@@ -41,13 +41,19 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     }
     throw Error(tr('请先打开 SeaTalk 爱心收藏面板，再重新操作。'));
   };
+  function isFavoritePreviewUrl(url, id) {
+    const path = '/download/' + id;
+    // Native signed URLs may use a suffix; fileUrl(id) may return the exact ID path.
+    return url.protocol === 'https:' && url.hostname === 'f.haiserve.com' &&
+      (url.pathname === path || url.pathname.startsWith(path + '_'));
+  }
   const known = new Map(presets.map(item => [item.gifId, item.label]));
   const items = [], seen = new Set();
   for (const item of source) {
     if (typeof item.id !== 'string' || !/^[a-zA-Z0-9]{32,}$/.test(item.id) || seen.has(item.id)) continue;
     let url;
     try { url = new URL(item.url); } catch (_) { continue; }
-    if (url.protocol !== 'https:' || url.hostname !== 'f.haiserve.com' || !url.pathname.startsWith('/download/' + item.id + '_')) continue;
+    if (!isFavoritePreviewUrl(url, item.id)) continue;
     seen.add(item.id);
     const number = items.length + 1, providedName = known.get(item.id) || item.name;
     const generatedName = providedName ? null : ui(`收藏 ${number}`, `Favorite ${number}`);
@@ -91,7 +97,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     .filter-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.filter-toolbar label{display:flex;flex:1;min-width:115px;flex-direction:column;gap:4px;font-size:12px;color:#667085}.filter-toolbar select{width:100%;min-width:0;font-size:13px}.metadata-form label{display:flex;flex-direction:column;gap:6px;margin:0 0 14px;font-size:13px}.metadata-form textarea{height:75px;font:inherit}.metadata-choice{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px}.file-label{font-size:12px}.file-label input{display:block;max-width:100%;margin-top:6px}.metadata-import-list{max-height:38dvh;overflow:auto;margin-top:12px}.metadata-import-row{padding:10px 0;border-top:1px solid #e4e7ec}.metadata-import-row label{display:flex;align-items:center;gap:8px}.metadata-import-row p{font-size:12px;overflow-wrap:anywhere}.metadata-import-row select{max-width:100%}.import-card select{width:100%;font-size:11px;padding:5px}.selection-bar{flex-wrap:wrap}.selection-message{min-width:100%;display:flex;align-items:center;gap:10px}.selection-bar>.spacer{display:none}
   </style>
   <button id="dockDivider" role="separator" aria-orientation="vertical" aria-label="调整侧栏宽度" hidden></button><section class="app">
-    <div id="dragHandle" title="拖动此栏移动窗口"><span class="grip" aria-hidden="true">⠿</span><h1>SeaTalk 表情助手</h1><div class="window-controls"><div class="workspace-language" role="group" aria-label="语言"><button data-workspace-locale="zh" aria-pressed="false">中文</button><button data-workspace-locale="en" aria-pressed="false">EN</button></div><button id="guideOpen">使用指南</button><button id="settingsOpen">设置</button><button id="dockToggle" aria-label="切换分栏与浮窗" disabled>分栏</button><button id="resetPosition" class="icon-button" aria-label="恢复默认位置和大小" title="恢复默认位置和大小">↺</button><button id="minimize" class="icon-button" aria-label="收起我的表情" title="收起，保留当前选择">−</button><button id="close" class="danger-fill" aria-label="关闭批量管理">✕ 关闭</button></div></div>
+    <div id="dragHandle" title="拖动此栏移动窗口"><span class="grip" aria-hidden="true">⠿</span><h1>SeaTalk 表情助手</h1><div class="window-controls"><div class="workspace-language" role="group" aria-label="语言"><button data-workspace-locale="zh" aria-pressed="false">中文</button><button data-workspace-locale="en" aria-pressed="false">EN</button></div><button id="guideOpen">使用指南</button><button id="settingsOpen">设置</button><button id="dockToggle" aria-label="切换分栏与浮窗" disabled>分栏</button><button id="resetPosition" aria-label="重置布局" title="恢复默认分栏、窗口位置和大小">重置布局</button><button id="minimize" class="icon-button" aria-label="收起我的表情" title="收起，保留当前选择">−</button><button id="close" class="danger-fill" aria-label="关闭批量管理">✕ 关闭</button></div></div>
     <nav class="workspace-tabs" aria-label="助手功能" role="tablist"><button id="backAvatar" role="tab" aria-selected="false">GIF 头像</button><button role="tab" aria-selected="true" aria-current="page">我的表情</button></nav>
     <header><p id="summary"></p><div class="toolbar"><input id="search" type="search" placeholder="搜索名称、关键词或表情文字" aria-label="搜索收藏"><select id="filter" aria-label="显示范围"><option value="all">全部收藏</option><option value="selected">已选择</option></select><button id="syncFavorites">同步收藏</button><button id="scan">识别动图</button><button id="importOpen">导入口令</button></div><div class="filter-toolbar"><label>图片形式<select id="animation" aria-label="图片形式"><option value="all">全部形式</option><option value="animated">动图</option><option value="static">静态图</option><option value="unknown">未知</option></select></label><label>备注状态<select id="metadataFilter" aria-label="备注状态"><option value="all">全部备注</option><option value="annotated">已备注</option><option value="unannotated">未备注</option><option value="review">需复核</option></select></label><label>检测状态<select id="detectionFilter" aria-label="检测状态"><option value="all">全部检测状态</option><option value="unknown">未检测</option><option value="recognized">已识别</option><option value="failed">识别失败</option></select></label></div><div class="status-row"><span id="syncStatus" role="status">收藏自动同步；无需刷新网页。</span></div><div class="status-row"><span id="scanStatus" role="status">浏览和分享无需先识别动图。</span><button id="scanStop" hidden>停止识别</button></div><details id="hiddenTools" hidden><summary>开发工具</summary><button id="export">导出已选 JSON</button></details></header>
     <main><div class="grid"></div><div id="emptyState" class="empty" hidden><h2 id="emptyTitle"></h2><p id="emptyMessage"></p><button id="emptyScan" hidden>识别动图</button><button id="emptyReset">查看全部收藏</button></div></main>
@@ -413,7 +419,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
       if (typeof entry.id !== 'string' || !/^[a-zA-Z0-9]{32,}$/.test(entry.id) || ids.has(entry.id)) continue;
       let url;
       try { url = new URL(entry.url); } catch (_) { continue; }
-      if (url.protocol !== 'https:' || url.hostname !== 'f.haiserve.com' || !url.pathname.startsWith('/download/' + entry.id + '_')) continue;
+      if (!isFavoritePreviewUrl(url, entry.id)) continue;
       ids.add(entry.id);
       const number = next.length + 1, providedName = known.get(entry.id) || entry.name;
       let item = current.get(entry.id);

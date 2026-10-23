@@ -2,6 +2,8 @@
 function createFavoritesLocalizer(initialLocale = 'zh') {
   let locale = initialLocale === 'en' ? 'en' : 'zh';
   const labels = {
+    "重置布局": "Reset layout",
+    "恢复默认分栏、窗口位置和大小": "Restore default split view, window position and size",
     "同步收藏": "Sync favorites",
     "收藏自动同步；无需刷新网页。": "Favorites sync automatically; no page reload needed.",
     "收藏同步": "Favorites sync",
