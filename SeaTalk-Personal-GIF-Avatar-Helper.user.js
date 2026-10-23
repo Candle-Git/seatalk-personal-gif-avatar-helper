@@ -5856,8 +5856,10 @@ async function sendSelectedStickers(selected, adapters) {
 function currentStickerSendTarget(services, editorVisible) {
   const state = services.store.getState(), session = state.messages?.selectedSession;
   if (!editorVisible || !session || !['buddy','group'].includes(session.type) || !Number.isSafeInteger(session.id) || session.id <= 0 || state.messages.currentThreadId) throw Error('SEND_TARGET_UNAVAILABLE');
-  const info = (session.type === 'group' ? state.contact?.groupInfo : state.contact?.buddyInfo)?.[session.id];
-  const name = info?.name || info?.raw?.n || info?.n || session.name;
+  // Native buddyInfo stores relationship/settings; display names live in userInfo.
+  const info = (session.type === 'group' ? state.contact?.groupInfo : state.contact?.userInfo)?.[session.id];
+  const buddy = session.type === 'buddy' ? state.contact?.buddyInfo?.[session.id] : null;
+  const name = info?.name || info?.raw?.n || info?.n || buddy?.alias || session.name;
   if (typeof name !== 'string' || !name.trim()) throw Error('SEND_TARGET_UNAVAILABLE');
   return Object.freeze({id:session.id,type:session.type,name:name.slice(0,150)});
 }
