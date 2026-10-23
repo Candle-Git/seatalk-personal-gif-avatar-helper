@@ -2,7 +2,7 @@
 
 ![SeaTalk Sticker Helper](docs/images/seatalk-sticker-helper-banner.en.png)
 
-# SeaTalk Sticker Helper · 5.2.0
+# SeaTalk Sticker Helper · 5.2.1
 
 > **The GIF avatar tool has grown into SeaTalk Sticker Helper.**
 >
@@ -12,7 +12,7 @@
 ## Install or update
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) and allow user scripts.
-2. Install/update the [existing Greasy Fork script](https://greasyfork.org/en/scripts/588931), checking version **5.2.0**.
+2. Install/update the [existing Greasy Fork script](https://greasyfork.org/en/scripts/588931), checking version **5.2.1**.
 3. Disable other previews, reload [SeaTalk Web](https://seatalkweb.com/) and open SeaTalk Sticker Helper.
 
 **Chrome / Edge permission path:** Right-click the Tampermonkey icon → Manage extension → enable **Allow User Scripts**. If this option is unavailable, enable **Developer mode** on the browser extension-management page. Return to SeaTalk and reload.
@@ -34,7 +34,7 @@ Personal and group GIF avatars remain available under **GIF avatars**.
 
 ## My stickers
 
-1. Open SeaTalk's sticker picker and its heart **Favorites** tab, then open **My stickers**. Keep the native picker mounted.
+1. Open SeaTalk's sticker picker and its heart **Favorites** tab, then open **My stickers**. Sync continues after the picker closes; batch removal still needs the native Favorites picker mounted.
 2. Edit a sticker's name, keywords, text, private note or image format. Saving confirms its notes and clears Needs review.
 3. Search and filter. Selections survive paging; Review selected includes items outside the current filter.
 4. Send from a preview or Send selected. Verify the destination and images, then confirm. Up to 100 stickers per operation; ordinary direct and group chats only, without threads.
@@ -49,7 +49,7 @@ Codes with notes use `STGIF2` and require 5.2 or compatible previews. Uncheck me
 
 ## Personal backup
 
-Settings → Export personal backup saves JSON. On another computer, choose a backup or labels file, preview, select and confirm. Existing notes are kept by default, with keyword merging; choose replacement per item when needed.
+Settings → Personal data → Export personal backup saves JSON. On another computer, choose a backup or labels file, preview, select and confirm. Existing notes are kept by default, with keyword merging; choose replacement per item when needed.
 
 Backups include private notes: keep them safe. Notes are stored per account in Tampermonkey. Clearing extension storage or uninstalling may remove them. Restore changes only personal notes and format labels; it never adds, removes or sends stickers and does not back up image files.
 
@@ -61,7 +61,9 @@ This removes your favorites, not chat messages. The helper cannot undo removal, 
 
 ## Window and language
 
-Both modules have **中文 / EN** controls. Switching keeps your search, filters and selections. Wide screens use split view; drag the divider to resize, or choose **Float** to move and resize the window. Minimize keeps the current workspace state. Closing or minimizing restores SeaTalk's layout. Reloading clears selections and inspection progress but preserves saved notes.
+My stickers uses **Settings → Language**; GIF avatars keeps its title-bar language controls. Both modules share the same language setting, preserving your search, filters and selections. Use **Settings → Window layout** in My stickers for split view, floating mode or Reset layout. Wide screens use split view; drag the divider to resize. Floating windows can be moved and resized. Minimize keeps the current workspace state. Closing or minimizing restores SeaTalk's layout. Reloading clears selections and inspection progress but preserves saved notes.
+
+While open, the helper reads the current account's local SeaTalk favorites state every 1.5 seconds; you can also choose **Sync favorites**. Sync continues when the native picker closes and pauses during operations and dialogs. It updates the helper list without fetching server data; uncertain results still require a SeaTalk reload to verify saved changes. Exports, sync and batch operations show explicit feedback. Check browser downloads to confirm a file was saved.
 
 ## GIF avatars
 
@@ -71,6 +73,6 @@ Preview a random example or capture a GIF sent with SeaTalk's sticker picker, th
 
 Runs only on SeaTalk Web using SeaTalk's own image and business services. No independent tracking service or upload of chats, passwords or cookies to other services. Sending requires your confirmation and uses native SeaTalk actions; uncertain results stop without retries.
 
-The release contains features only, without private candidate labels or a sticker market. See the [5.2.0 release record](docs/RELEASE_5.2.0.md) for evidence and compatibility limits. Unofficial tool, not affiliated with or endorsed by SeaTalk.
+The release contains features only, without private candidate labels or a sticker market. See the [5.2.1 release record](docs/RELEASE_5.2.1.md) for evidence and compatibility limits. Unofficial tool, not affiliated with or endorsed by SeaTalk.
 
-[GitHub Release · 5.2.0](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/tag/v5.2.0) · [Issues](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues) · [中文](README.md)
+[GitHub Release · 5.2.1](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/tag/v5.2.1) · [Issues](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues) · [中文](README.md)
