@@ -38,8 +38,8 @@ for (const [name, content] of [
 
 assert.match(changelog, /## 5\.2\.0 - 2026-10-23/, "更新日志缺少 5.2.0 正式发布日期");
 
-const bannerZh = "docs/images/seatalk-sticker-helper-banner.zh.svg";
-const bannerEn = "docs/images/seatalk-sticker-helper-banner.en.svg";
+const bannerZh = "docs/images/seatalk-sticker-helper-banner.zh.png";
+const bannerEn = "docs/images/seatalk-sticker-helper-banner.en.png";
 assert.match(readmeZh, new RegExp(bannerZh.replaceAll(".", "\\.")), "中文 README 没有引用无版本横幅");
 assert.match(readmeEn, new RegExp(bannerEn.replaceAll(".", "\\.")), "英文 README 没有引用无版本横幅");
 assert.ok(fs.statSync(path.join(projectDirectory, bannerZh)).size > 500, "中文无版本横幅不存在或文件异常");

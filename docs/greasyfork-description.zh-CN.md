@@ -1,3 +1,5 @@
+![SeaTalk Sticker Helper](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.zh.png)
+
 # SeaTalk 表情助手 · 5.2.0
 
 > **从 GIF 头像工具，升级为 SeaTalk 表情助手 / SeaTalk Sticker Helper。**
