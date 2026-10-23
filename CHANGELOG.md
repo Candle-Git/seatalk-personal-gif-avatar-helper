@@ -4,6 +4,30 @@
 
 This file records public releases of SeaTalk Personal GIF Avatar Helper.
 
+## 5.0.0 - 2026-10-22
+
+### 中文
+
+- 适配个人 GIF 头像：使用 SeaTalk 原生资源登记流程，确认登记前后内容完全一致后再更新，保留昵称。群头像继续保留目标群核对和二次确认。
+- 正式加入「我的收藏」批量管理：搜索、放大预览、识别动图、跨页选择、查看已选、首页／末页和跳页。
+- 用分享口令分享 1–100 个表情；导入先预览和选择，再确认添加，重新检查并跳过已有收藏。JSON 导出不作为用户操作入口。
+- 批量删除展示所有已选图片和数量，包括当前筛选之外的选择；结果不确定时停止后续操作，提示刷新核对。删除无法在助手撤销。
+- 统一窗口配色和顶栏，加入红色关闭、收起恢复、浮窗拖动／缩放和分段使用指南。无选择时禁用分享和删除，重复识别不再累计状态文案。
+- 宽屏打开时自动将 SeaTalk 与助手左右分栏，分隔线可调宽；收起／关闭恢复原布局，空间不足使用浮窗。
+- 不包含表情包市场。头像助手保持中英文，新增收藏管理界面目前为中文。
+- 个人头像底层流程已在 SeaTalk 3.71.1 实际账号浏览器中成功；预览验收含 76 项自动化检查、99 项模拟浏览器断言及响应式操作检查。完整正式安装包账号流程与跨账号导入仍需验证，详见 [发布验证记录](docs/RELEASE_5.0.0.md)。
+
+### English
+
+- Adapt personal GIF avatars using SeaTalk's native resource registration, verify identical file contents before applying, and preserve the name. Group avatars retain target checks and confirmation.
+- Add **My favorites** batch management: search, enlarged previews, animation inspection, selections across pages, selected-item review, first/last page and page jumps.
+- Share 1–100 stickers per code. Import previews and selects before confirmation, rechecks favorites and skips existing entries. JSON export is hidden from normal use.
+- Removal confirms all selected images and count, including items outside the current filter. Uncertain results stop later operations and request a reload to verify. Removal cannot be undone in the helper.
+- Unify colors and title bars with red close buttons, minimize/restore, floating-window dragging/resizing and a structured guide. Disable share/removal when empty and prevent repeated scan messages from accumulating.
+- Automatically place SeaTalk and the helper side by side on wide screens, with a resizable divider. Minimize/close restores the original layout; smaller screens use a floating window.
+- Exclude the sticker market. The avatar helper remains bilingual; the new favorites workspace currently uses Chinese labels.
+- The underlying personal-avatar flow succeeded in a real SeaTalk 3.71.1 account session. Preview acceptance included 76 automated checks, 99 simulated browser assertions and responsive interaction checks. Full packaged account workflows and cross-account imports still need validation; see the [release validation record](docs/RELEASE_5.0.0.md).
+
 ## 4.0.1 - 2026-09-30
 
 - 修复英文自检日志混入中文，保留启动模块信息。

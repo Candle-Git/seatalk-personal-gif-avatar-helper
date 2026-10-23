@@ -1,0 +1,51 @@
+<!doctype html><meta charset="utf-8"><title>SeaTalk 分栏布局验证</title>
+<style>body{margin:0;background:#eef2f6;font:14px system-ui}#root{height:100vh;display:flex;align-items:center;justify-content:center}.home-main-window{width:1024px;height:800px;max-height:100vh;display:flex;background:white}.sidebar{width:340px;background:#edf2f7;flex:none}.thread{flex:1;min-width:0;padding:20px}#seatalk-personal-gif-avatar-panel{display:none;position:fixed;right:18px;top:18px;width:390px;height:600px;background:#fff}#seatalk-personal-gif-avatar-panel.spga-open{display:block}#st-favorites-curator{position:fixed;right:24px;top:40px;width:820px;height:700px;background:white}#result{position:fixed;bottom:0;left:0;z-index:2147483647;background:white;max-height:60vh;overflow:auto;margin:0;padding:12px;white-space:pre-wrap}</style>
+<div id="root"><div class="home-main-window hbox"><aside class="sidebar">本地模拟原生侧栏</aside><section class="thread"><input id="composer" value="本地模拟草稿，不发送"><p>本页不连接账号</p></section></div></div>
+<section id="seatalk-personal-gif-avatar-panel"></section><section id="st-favorites-curator" data-open="false" style="display:none"></section>
+<pre id="result">Running…</pre>
+<script>window.__SPGA_TEST_MODE__=true;window.GM_setValue=()=>{};window.unsafeWindow=window;</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<script>
+(async()=>{
+ const checks=[],check=(value,name)=>{if(!value)throw Error(name);checks.push(name)},wait=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+ const root=document.documentElement,original=document.querySelector('.home-main-window'),composer=document.getElementById('composer'),avatar=document.getElementById('seatalk-personal-gif-avatar-panel'),favorites=document.getElementById('st-favorites-curator');
+ const shadow=favorites.attachShadow({mode:'open'});shadow.innerHTML='<button id="dockToggle">分栏</button><button id="dockDivider" hidden></button>';
+ const before=original.getBoundingClientRect(),originalInline=original.getAttribute('style');
+ const rect=el=>el.getBoundingClientRect();
+ try{
+  const controller=__SPGA_TEST_API__.installHelperLayout();
+  check(!root.dataset.spgaDockKind,'no active helper preserves the original layout');
+  check(__SPGA_TEST_API__.installHelperLayout()===controller&&document.querySelectorAll('#spga-helper-split-layout').length===1,'layout installation is idempotent');
+  avatar.classList.add('spga-open');controller.refresh();
+  check(root.dataset.spgaDockKind==='avatar'&&rect(original).right+10<rect(avatar).left,'avatar helper reserves a separate right sidebar');
+  check(rect(original).width>=899&&rect(avatar).height>innerHeight-26,'chat keeps minimum width and sidebar uses available height');
+  avatar.classList.remove('spga-open');controller.refresh();
+  check(!root.dataset.spgaDockKind&&Math.abs(rect(original).width-before.width)<2,'closing avatar restores native width');
+  favorites.dataset.open=favorites.dataset.managed='true';favorites.style.display='';controller.refresh();
+  check(root.dataset.spgaDockKind==='favorites'&&rect(original).right+10<rect(favorites).left,'favorites opens alongside native chat without overlap');
+  check(shadow.getElementById('dockToggle').textContent==='浮窗'&&!shadow.getElementById('dockDivider').hidden,'side panel exposes floating-mode switch and divider');
+  favorites.dataset.dockWidth='99999';controller.refresh();
+  check(rect(original).width>=899&&rect(favorites).width<=801,'extreme divider width protects native chat');
+  favorites.dataset.dockWidth='-100';controller.refresh();
+  check(Math.abs(rect(favorites).width-460)<2,'divider cannot collapse the side panel');
+  favorites.dataset.open='false';favorites.style.display='none';controller.refresh();
+  check(!root.dataset.spgaDockKind&&!root.style.getPropertyValue('--spga-dock-width'),'minimize removes the reserved width immediately');
+  check(Math.abs(rect(original).left-before.left)<2&&Math.abs(rect(original).height-before.height)<2,'minimize restores native position and height');
+  favorites.dataset.open='true';favorites.style.display='';controller.refresh();
+  check(root.dataset.spgaDockKind==='favorites'&&Math.abs(rect(favorites).width-460)<2,'reopen restores the selected divider width');
+  favorites.dataset.layout='floating';controller.refresh();
+  check(!root.dataset.spgaDockKind&&Math.abs(rect(original).width-before.width)<2,'floating mode restores native layout');
+  favorites.dataset.layout='auto';controller.refresh();
+  check(root.dataset.spgaDockKind==='favorites','switching back resumes side-by-side layout');
+  const duplicate=original.cloneNode(false);document.getElementById('root').append(duplicate);controller.refresh();
+  check(!root.dataset.spgaDockKind,'ambiguous native containers disable layout overrides');duplicate.remove();controller.refresh();
+  original.style.display='none';controller.refresh();check(!root.dataset.spgaDockKind,'hidden or logged-out native window never docks');original.style.removeProperty('display');controller.refresh();
+  check(document.getElementById('composer')===composer&&composer.value==='本地模拟草稿，不发送','chat DOM identity and draft survive layout transitions');
+  check((original.getAttribute('style')||'')===(originalInline||''),'native inline styles are untouched');
+  controller.dispose();await wait();
+  check(!root.dataset.spgaDockKind&&!document.getElementById('spga-helper-split-layout'),'dispose fully removes layout rules');
+  check(Math.abs(rect(original).left-before.left)<2&&Math.abs(rect(original).width-before.width)<2,'dispose restores exact original geometry');
+  document.getElementById('result').textContent='PASS '+checks.length+'\n'+checks.join('\n');
+ }catch(error){document.getElementById('result').textContent='FAIL '+error.stack}
+})();
+</script>
