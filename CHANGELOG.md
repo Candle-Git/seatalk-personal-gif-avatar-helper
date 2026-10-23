@@ -1,8 +1,8 @@
 # 更新日志 / Changelog
 
-本文件记录 SeaTalk 个人 GIF 头像助手的公开版本变化。
+本文件记录 SeaTalk 表情助手（原 SeaTalk 个人 GIF 头像助手）的公开版本变化。
 
-This file records public releases of SeaTalk Personal GIF Avatar Helper.
+This file records public releases of SeaTalk Sticker Helper (formerly SeaTalk Personal GIF Avatar Helper).
 
 ## 5.2.0 - 2026-10-23
 
