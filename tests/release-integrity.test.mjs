@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { inflateSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 // 这项发布检查只读取仓库里的公开文件，不连接 SeaTalk、GitHub 或 Greasy Fork。
@@ -38,17 +39,50 @@ for (const [name, content] of [
 
 assert.match(changelog, /## 5\.2\.0 - 2026-10-23/, "更新日志缺少 5.2.0 正式发布日期");
 
-const bannerZh = "docs/images/seatalk-sticker-helper-banner.zh.svg";
-const bannerEn = "docs/images/seatalk-sticker-helper-banner.en.svg";
+const bannerZh = "docs/images/seatalk-sticker-helper-banner.zh.png";
+const bannerEn = "docs/images/seatalk-sticker-helper-banner.en.png";
 assert.match(readmeZh, new RegExp(bannerZh.replaceAll(".", "\\.")), "中文 README 没有引用无版本横幅");
 assert.match(readmeEn, new RegExp(bannerEn.replaceAll(".", "\\.")), "英文 README 没有引用无版本横幅");
 assert.ok(fs.statSync(path.join(projectDirectory, bannerZh)).size > 500, "中文无版本横幅不存在或文件异常");
 assert.ok(fs.statSync(path.join(projectDirectory, bannerEn)).size > 500, "英文无版本横幅不存在或文件异常");
 
+// Inspect authored PNG metadata, not compressed image bytes or C2PA certificates.
+// Arbitrary binary pixel data can coincidentally resemble an email address.
+function bannerMetadataText(bytes) {
+  if (bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) {
+    const values = [];
+    let offset = 8;
+    while (offset + 12 <= bytes.length) {
+      const length = bytes.readUInt32BE(offset), end = offset + 12 + length;
+      assert.ok(end <= bytes.length, "PNG chunk is truncated");
+      const type = bytes.toString("ascii", offset + 4, offset + 8);
+      const data = bytes.subarray(offset + 8, end - 4);
+      if (type === "tEXt" || type === "eXIf") values.push(data.toString("utf8"));
+      if (type === "zTXt") {
+        const split = data.indexOf(0);
+        assert.ok(split >= 0 && data[split + 1] === 0, "Invalid zTXt");
+        values.push(inflateSync(data.subarray(split + 2), {maxOutputLength: 1024 * 1024}).toString("utf8"));
+      }
+      if (type === "iTXt") {
+        const split = data.indexOf(0), compressed = data[split + 1];
+        assert.ok(split >= 0 && [0,1].includes(compressed) && data[split + 2] === 0, "Invalid iTXt");
+        const languageEnd = data.indexOf(0, split + 3), translatedEnd = data.indexOf(0, languageEnd + 1);
+        assert.ok(languageEnd >= 0 && translatedEnd >= 0, "Invalid iTXt fields");
+        const text = data.subarray(translatedEnd + 1);
+        values.push((compressed ? inflateSync(text, {maxOutputLength: 1024 * 1024}) : text).toString("utf8"));
+      }
+      offset = end;
+      if (type === "IEND") break;
+    }
+    return values.join("\n");
+  }
+  return bytes.toString("utf8");
+}
+
 // 公开横幅不能夹带本机路径、邮箱、带签名图片参数或聊天图片域名。
 for (const bannerPath of [bannerZh, bannerEn]) {
   const bannerBytes = fs.readFileSync(path.join(projectDirectory, bannerPath));
-  const searchableBannerText = bannerBytes.toString("utf8");
+  const searchableBannerText = bannerMetadataText(bannerBytes);
   assert.doesNotMatch(searchableBannerText, /C:\\Users\\|candl/i, `${bannerPath} 包含本机路径信息`);
   assert.doesNotMatch(searchableBannerText, /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/, `${bannerPath} 包含邮箱格式信息`);
   assert.doesNotMatch(searchableBannerText, /userid=[0-9]+|token=[a-f0-9]{16,}/i, `${bannerPath} 包含带签名图片参数`);
