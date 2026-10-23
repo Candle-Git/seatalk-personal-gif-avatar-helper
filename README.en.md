@@ -1,3 +1,5 @@
+[简体中文](README.md) | **English**
+
 ![SeaTalk Sticker Helper](docs/images/seatalk-sticker-helper-banner.en.png)
 
 # SeaTalk Sticker Helper · 5.2.0
@@ -13,9 +15,11 @@
 2. Install/update the [existing Greasy Fork script](https://greasyfork.org/en/scripts/588931), checking version **5.2.0**.
 3. Disable other previews, reload [SeaTalk Web](https://seatalkweb.com/) and open SeaTalk Sticker Helper.
 
+**Chrome / Edge permission path:** Right-click the Tampermonkey icon → Manage extension → enable **Allow User Scripts**. If this option is unavailable, enable **Developer mode** on the browser extension-management page. Return to SeaTalk and reload.
+
 The original installation name/update identity and existing notes are preserved. The manager may show the old name while the UI uses the new brand.
 
-![Installation](docs/images/install-in-3-steps.dark.png)
+![Installation](docs/images/install-sticker-helper.en.png)
 
 ## A new chapter
 
@@ -48,6 +52,16 @@ Codes with notes use `STGIF2` and require 5.2 or compatible previews. Uncheck me
 Settings → Export personal backup saves JSON. On another computer, choose a backup or labels file, preview, select and confirm. Existing notes are kept by default, with keyword merging; choose replacement per item when needed.
 
 Backups include private notes: keep them safe. Notes are stored per account in Tampermonkey. Clearing extension storage or uninstalling may remove them. Restore changes only personal notes and format labels; it never adds, removes or sends stickers and does not back up image files.
+
+## Remove favorites in batches
+
+Select stickers → **Remove selected** → review the images and count → **Confirm removal**. Use Review selected to check items outside the current filter; those items are included in the removal list too.
+
+This removes your favorites, not chat messages. The helper cannot undo removal, and sharing codes do not guarantee recovery. If a result is unconfirmed, reload SeaTalk and check before retrying. Stop waits for the current item before stopping later operations.
+
+## Window and language
+
+Both modules have **中文 / EN** controls. Switching keeps your search, filters and selections. Wide screens use split view; drag the divider to resize, or choose **Float** to move and resize the window. Minimize keeps the current workspace state. Closing or minimizing restores SeaTalk's layout. Reloading clears selections and inspection progress but preserves saved notes.
 
 ## GIF avatars
 
