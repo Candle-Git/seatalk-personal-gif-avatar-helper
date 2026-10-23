@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 // 它用于防止版本号、横幅链接、中英文说明和隐私边界在发布时漏改。
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(testDirectory, "..");
-const releaseVersion = "5.0.0";
+const releaseVersion = "5.2.0";
 
 function readProjectFile(relativePath) {
   return fs.readFileSync(path.join(projectDirectory, relativePath), "utf8");
@@ -36,14 +36,14 @@ for (const [name, content] of [
   assert.match(content, new RegExp(releaseVersion.replaceAll(".", "\\.")), `${name} 没有写入当前版本`);
 }
 
-assert.match(changelog, /## 5\.0\.0 - 2026-10-22/, "更新日志缺少 5.0.0 正式发布日期");
+assert.match(changelog, /## 5\.2\.0 - 2026-10-23/, "更新日志缺少 5.2.0 正式发布日期");
 
-const bannerZh = "docs/images/seatalk-gif-avatar-helper-banner.dark.png";
-const bannerEn = "docs/images/seatalk-gif-avatar-helper-banner.dark.en.png";
+const bannerZh = "docs/images/seatalk-sticker-helper-banner.zh.svg";
+const bannerEn = "docs/images/seatalk-sticker-helper-banner.en.svg";
 assert.match(readmeZh, new RegExp(bannerZh.replaceAll(".", "\\.")), "中文 README 没有引用无版本横幅");
 assert.match(readmeEn, new RegExp(bannerEn.replaceAll(".", "\\.")), "英文 README 没有引用无版本横幅");
-assert.ok(fs.statSync(path.join(projectDirectory, bannerZh)).size > 100_000, "中文无版本横幅不存在或文件异常");
-assert.ok(fs.statSync(path.join(projectDirectory, bannerEn)).size > 100_000, "英文无版本横幅不存在或文件异常");
+assert.ok(fs.statSync(path.join(projectDirectory, bannerZh)).size > 500, "中文无版本横幅不存在或文件异常");
+assert.ok(fs.statSync(path.join(projectDirectory, bannerEn)).size > 500, "英文无版本横幅不存在或文件异常");
 
 // 公开横幅不能夹带本机路径、邮箱、带签名图片参数或聊天图片域名。
 for (const bannerPath of [bannerZh, bannerEn]) {
@@ -80,4 +80,4 @@ for (const [name, content] of [
 const connectHosts = Array.from(script.matchAll(/^\/\/ @connect\s+([^\s]+)$/gm), (match) => match[1]);
 assert.deepEqual(connectHosts, ["f.haiserve.com"], "跨域读取权限必须只允许 SeaTalk 图片域名");
 
-console.log("5.0.0 发布完整性检查通过：版本、双语文档、无版本横幅和隐私边界均已同步。");
+console.log("5.2.0 发布完整性检查通过：版本、双语文档、无版本横幅和隐私边界均已同步。");
