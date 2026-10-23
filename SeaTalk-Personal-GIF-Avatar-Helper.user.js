@@ -2,7 +2,7 @@
 // @name         SeaTalk 个人 GIF 头像助手
 // @name:en      SeaTalk Personal GIF Avatar Helper
 // @namespace    https://seatalkweb.com/
-// @version      5.2.0
+// @version      5.2.1
 // @description  SeaTalk 表情助手：备注搜索、分享口令、备份恢复、确认后发送与 GIF 头像。
 // @description:en SeaTalk Sticker Helper: searchable notes, sharing codes, backups, confirmed sending and GIF avatars.
 // @author       Yixin.Zhong × Codex
@@ -44,7 +44,7 @@
   const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
   const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
   // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
-  const SCRIPT_VERSION = "5.2.0";
+  const SCRIPT_VERSION = "5.2.1";
   const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
 
   // 动图验证只读取 SeaTalk 图片域名中的候选文件，不会上传、保存或打印带签名参数的地址。
@@ -205,12 +205,12 @@
       successClose: "好耶！",
       updateBadge: "NEW",
       updateVersion: "版本 {version}",
-      updateTitle: "升级为 SeaTalk 表情助手",
-      updateSubtitle: "整理、搜索、分享你的收藏表情，也能设置 GIF 头像。",
-      updateHighlightOne: "我的表情：备注、关键词搜索与独立筛选，快速找到想发的表情",
-      updateHighlightTwo: "预览单张或勾选多张，核对当前会话后确认发送",
-      updateHighlightThree: "分享口令携带名称和关键词；个人备份支持换电脑恢复",
-      updateHighlightFour: "手动标注动图／静态图，中英文同步；个人与群 GIF 头像继续保留",
+      updateTitle: "收藏同步与交互优化",
+      updateSubtitle: "SeaTalk 表情助手 5.2.1：同步更及时，操作反馈更明确。",
+      updateHighlightOne: "自动同步当前账号收藏，也可主动同步；保留备注、筛选和选择",
+      updateHighlightTwo: "修复原生表情面板黑色空白，导出及批量操作增加结果提示",
+      updateHighlightThree: "我的表情：语言、窗口布局及个人备份集中到设置",
+      updateHighlightFour: "两模块统一作者、版本与 GitHub 入口",
       updateClose: "知道了，去试试！",
       toggleLabel: "语言",
       helperToggle: "SeaTalk 表情助手",
@@ -286,12 +286,12 @@
       successClose: "Love it!",
       updateBadge: "NEW",
       updateVersion: "Version {version}",
-      updateTitle: "Meet SeaTalk Sticker Helper",
-      updateSubtitle: "Organize, search and share your favorite stickers, and set GIF avatars.",
-      updateHighlightOne: "My stickers: notes, keyword search and separate filters to find the right sticker",
-      updateHighlightTwo: "Preview one or select several, check the destination and confirm sending",
-      updateHighlightThree: "Share names and keywords with a code; back up personal settings for another computer",
-      updateHighlightFour: "Manual image-format labels and shared language settings; personal and group GIF avatars remain available",
+      updateTitle: "Favorites sync and UI improvements",
+      updateSubtitle: "SeaTalk Sticker Helper 5.2.1: timely favorites sync and clear action feedback.",
+      updateHighlightOne: "Sync favorites automatically or on demand, keeping notes, filters and selections",
+      updateHighlightTwo: "Keep the native picker visible and show export and batch-operation results",
+      updateHighlightThree: "My stickers: language, window layout and personal backups are grouped in Settings",
+      updateHighlightFour: "Consistent module credits, version badges and GitHub links",
       updateClose: "Got it — let me try!",
       toggleLabel: "Language",
       helperToggle: "SeaTalk Sticker Helper",
@@ -5491,6 +5491,19 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
 function createFavoritesLocalizer(initialLocale = 'zh') {
   let locale = initialLocale === 'en' ? 'en' : 'zh';
   const labels = {
+    "点一下，有小惊喜": "Click for a little surprise",
+    "Yixin.Zhong × Codex 制作": "Made by Yixin.Zhong × Codex",
+    "查看 GitHub 项目": "View GitHub project",
+    "窗口布局": "Window layout",
+    "个人数据": "Personal data",
+    "备份与恢复": "Backup and restore",
+    "分栏让 SeaTalk 与助手并排显示；浮窗可自由拖动。重置布局恢复默认分栏、位置和大小，不会刷新收藏。": "Split view places SeaTalk and the helper side by side. Floating windows can be dragged freely. Reset layout restores the default split view, position and size without reloading favorites.",
+    "重置布局": "Reset layout",
+    "恢复默认分栏、窗口位置和大小": "Restore default split view, window position and size",
+    "同步收藏": "Sync favorites",
+    "收藏自动同步；无需刷新网页。": "Favorites sync automatically; no page reload needed.",
+    "收藏同步": "Favorites sync",
+    "助手打开时，每 1.5 秒读取 SeaTalk 当前账号的收藏状态，自动同步新增和移除；也可点击「同步收藏」。原生表情面板关闭后仍可同步。这只更新右侧列表，保留备注、筛选和仍在收藏中的勾选，不会刷新网页或重新请求服务器。发送、添加、删除、识别或弹窗打开期间暂停同步，结束后恢复。操作结果不确定时，仍需刷新网页核对服务器保存结果。": "While open, the helper reads the current account’s SeaTalk favorites state every 1.5 seconds to sync additions and removals, even if the native picker is closed. You can also choose Sync favorites. This updates the helper list without reloading or requesting server data, preserving notes, filters and selections still in favorites. Sync pauses during sending, adding, removal, inspection or an open dialog, then resumes. Uncertain operations still require a page reload to verify server persistence.",
     "整理、搜索、分享你的 SeaTalk 收藏表情，也能设置 GIF 头像。": "Organize, search and share your SeaTalk favorite stickers, and set GIF avatars.",
     "语言": "Language",
     "图片形式": "Image format",
@@ -5579,7 +5592,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "选择表情 → 点击「删除所选表情」→ 核对图片和数量 → 确认删除。": "Select stickers → Remove selected → Check the images and count → Confirm removal.",
     "删除只影响你的收藏，不会删除聊天消息。本助手无法撤销删除，分享口令也不保证能恢复。筛选之外的已选表情也会包括在确认清单中。": "Removal affects only your favorites, not chat messages. The helper cannot undo removal, and a share code does not guarantee recovery. The confirmation includes selected stickers outside the current filter.",
     "收起、关闭和结果核对": "Minimize, close and check results",
-    "点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。点击「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。": "Use − to minimize while keeping your page, filters, selections and inspection progress. Click the small entry to restore. Wide screens use split view with SeaTalk on the left; drag the divider to resize. Choose Float to move the window by its title bar or resize its lower-right corner. Closing or minimizing restores SeaTalk's original layout.",
+    "点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。在「设置 → 窗口布局」选择「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。": "Use − to minimize while keeping your page, filters, selections and inspection progress. Click the small entry to restore. Wide screens use split view with SeaTalk on the left; drag the divider to resize. Choose Settings → Window layout → Float to move the window by its title bar or resize its lower-right corner. Closing or minimizing restores SeaTalk's original layout.",
     "操作结果不确定时，先刷新 SeaTalk 核对收藏，再决定是否重试。刷新会清空本次勾选。添加或删除进行中时，停止会等待当前表情的结果，再停止后续操作。": "If a result is uncertain, reload SeaTalk and check favorites before retrying. Reloading clears selections. During add or removal, Stop waits for the current sticker result before stopping later items.",
     "知道了，返回管理": "Got it",
     "表情预览": "Sticker preview",
@@ -5752,6 +5765,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
 
   const language = createFavoritesLocalizer(initialLocale);
   const { ui, tr } = language;
+  const helperVersion = "5.2.1";
 /* Metadata only. This module never stores preview URLs, credentials or account identifiers in exports. */
 function validMetadataId(id) { return typeof id === 'string' && /^[a-zA-Z0-9]{64}$/.test(id) && ['b0701','b0702','b0705'].includes(id.slice(33,38)); }
 function metadataText(value, max, multiline = false) {
@@ -5965,6 +5979,13 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
   if (!seed) throw Error(tr('请先打开 SeaTalk 表情面板，切换到爱心「收藏」，再打开「我的表情」。'));
   function readSource(element, requireActions = true) {
     let fiber = element?.[Object.keys(element).find(key => key.startsWith('__reactFiber$') || key.startsWith('__reactInternalInstance$'))];
+    // DOM pointers can retain the previous React branch after a commit.
+    const isCurrent = node => {
+      let top = node;
+      while (top?.return) top = top.return;
+      return top?.stateNode?.current === top;
+    };
+    if (fiber?.alternate && !isCurrent(fiber) && isCurrent(fiber.alternate)) fiber = fiber.alternate;
     let list, actions;
     for (let count = 0; fiber && count < 24; count++, fiber = fiber.return) {
       const props = fiber.memoizedProps;
@@ -5975,14 +5996,29 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     return { list, actions };
   }
   const source = readSource(seed, false).list;
-  const liveSource = () => readSource(document.querySelector(pickerSelector));
+  const liveSource = (requireActions = true) => {
+    const first = document.querySelector(pickerSelector);
+    if (first) return readSource(first, requireActions);
+    // An empty favorites tab has no sticker node. Look for its mounted container.
+    const panel = document.querySelector('.sealabs-stickers-panel');
+    for (const node of panel ? [panel, ...Array.from(panel.querySelectorAll('*')).slice(0, 80)] : []) {
+      try { return readSource(node, requireActions); } catch (_) { /* Try the next mounted container. */ }
+    }
+    throw Error(tr('请先打开 SeaTalk 爱心收藏面板，再重新操作。'));
+  };
+  function isFavoritePreviewUrl(url, id) {
+    const path = '/download/' + id;
+    // Native signed URLs may use a suffix; fileUrl(id) may return the exact ID path.
+    return url.protocol === 'https:' && url.hostname === 'f.haiserve.com' &&
+      (url.pathname === path || url.pathname.startsWith(path + '_'));
+  }
   const known = new Map(presets.map(item => [item.gifId, item.label]));
   const items = [], seen = new Set();
   for (const item of source) {
     if (typeof item.id !== 'string' || !/^[a-zA-Z0-9]{32,}$/.test(item.id) || seen.has(item.id)) continue;
     let url;
     try { url = new URL(item.url); } catch (_) { continue; }
-    if (url.protocol !== 'https:' || url.hostname !== 'f.haiserve.com' || !url.pathname.startsWith('/download/' + item.id + '_')) continue;
+    if (!isFavoritePreviewUrl(url, item.id)) continue;
     seen.add(item.id);
     const number = items.length + 1, providedName = known.get(item.id) || item.name;
     const generatedName = providedName ? null : ui(`收藏 ${number}`, `Favorite ${number}`);
@@ -6007,8 +6043,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
   let visibilityStyle = document.getElementById(visibilityId);
   if (!visibilityStyle) { visibilityStyle = document.createElement('style'); visibilityStyle.id = visibilityId; document.head.append(visibilityStyle); }
   visibilityStyle.textContent = `body:has(#st-favorites-curator[data-managed="true"]) #seatalk-personal-gif-avatar-panel {display:none!important}
-    body:has(#st-favorites-curator[data-managed="true"]) #seatalk-personal-gif-avatar-toggle {visibility:hidden!important}
-    body:has(#st-favorites-curator[data-open="true"]) .sealabs-stickers-panel {visibility:hidden!important;pointer-events:none!important}`;
+    body:has(#st-favorites-curator[data-managed="true"]) #seatalk-personal-gif-avatar-toggle {visibility:hidden!important}`;
   document.getElementById('seatalk-personal-gif-avatar-panel')?.classList.remove('spga-open');
   document.body.append(host, mini);
   const root = host.attachShadow({ mode: 'open' });
@@ -6021,25 +6056,29 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     footer{flex-shrink:0;background:#fff;border-top:1px solid #e4e7ec}.pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-bottom:1px solid #f2f4f7;font-size:12px}.pagination button{font-size:12px;padding:5px 9px;min-height:30px}.pagination label{display:flex;gap:5px;align-items:center;white-space:nowrap}.pagination input{width:54px;padding:5px;min-height:30px}.selection-bar{display:flex;align-items:center;gap:8px;padding:10px 16px 16px}.selection-bar button{font-size:12px;padding:6px 10px}#count{font-size:13px;font-weight:600;white-space:nowrap}.selection-message{flex:1;min-width:0}#selectionHint{font-size:11px;color:#667085;line-height:1.5}#resizeHandle{position:absolute;right:1px;bottom:1px;min-height:15px;width:15px;height:15px;border:0;padding:0;background:linear-gradient(135deg,transparent 52%,#98a2b3 52%,#98a2b3 60%,transparent 60%,transparent 72%,#98a2b3 72%,#98a2b3 80%,transparent 80%);cursor:nwse-resize;touch-action:none;border-radius:0 0 10px 0}
     dialog{width:min(680px,calc(100vw - 32px));max-height:calc(100dvh - 40px);padding:0;border:1px solid #e4e7ec;border-radius:14px;box-shadow:0 16px 70px #17203340;color:#172033;overflow:auto}dialog::backdrop{background:#17203366}.dialog-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #e4e7ec;background:#fff}.dialog-header h2{font-size:18px;flex:1;margin:0}.dialog-header button{font-size:18px;padding:3px 9px;min-height:30px}.dialog-body{padding:16px 18px}.dialog-actions{position:sticky;bottom:0;display:flex;justify-content:space-between;gap:8px;padding:12px 18px;border-top:1px solid #e4e7ec;background:white}.dialog-actions .right-actions{display:flex;gap:8px}dialog textarea{width:100%;height:150px;resize:vertical;min-height:90px;font:12px/1.5 monospace;overflow-wrap:anywhere}.guide section{padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid #f2f4f7}.guide h3{font-size:15px;margin:0 0 7px}.guide p{font-size:13px;margin:5px 0}.guide ol{font-size:13px;color:#667085;padding-left:20px;line-height:1.8}.guide section:last-child{border:0;margin-bottom:0;padding:0}.thumb-list{display:flex;flex-wrap:wrap;gap:8px;max-height:36dvh;overflow:auto}.thumb-list img{width:72px;height:72px;object-fit:contain}.zoom-image{display:block;max-width:100%;max-height:55dvh;margin:auto;object-fit:contain}.import-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-height:35dvh;overflow:auto;margin:12px 0}.import-card{border:1px solid #e4e7ec;border-radius:10px;padding:10px;min-width:0}.import-card img{display:block;width:90px;height:90px;object-fit:contain;margin:0 auto 8px}.import-card label{display:flex;align-items:center;gap:6px;font-size:12px;overflow-wrap:anywhere}.import-card p{font-size:12px}.inline-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.notice{padding:10px 12px;border-radius:8px;background:#f2f6fc;color:#42526b;font-size:12px;line-height:1.7}#hiddenTools{font-size:12px;margin-top:8px}.error{color:#b42318!important}
     #dockDivider{position:absolute;left:-8px;top:0;bottom:0;width:12px;border:0;background:transparent;border-radius:0;padding:0;cursor:col-resize;touch-action:none;z-index:3}#dockDivider:hover,#dockDivider:focus-visible{background:#0866c633}:host([data-docked=true]) #resizeHandle{display:none}:host([data-docked=true]) #dragHandle{cursor:default}:host([data-docked=true]) .grip{display:none}
-    @container(max-width:650px){#dragHandle{padding:8px 10px;gap:6px}#dragHandle h1{font-size:14px}.grip{display:none}.window-controls{gap:3px}.window-controls button{font-size:12px;padding:5px 6px}#resetPosition{display:none}.toolbar{flex-wrap:wrap}.toolbar input[type=search]{flex-basis:100%}.toolbar select{flex:1;max-width:none}.toolbar button{font-size:12px}.grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}.preview{height:105px}.pagination{flex-wrap:wrap;gap:4px;padding:7px}.pagination button{padding:5px 6px}.selection-bar{flex-wrap:wrap;padding:8px 10px 16px}.selection-message{min-width:100%;display:flex;align-items:center;gap:8px}.selection-bar>.spacer{display:none}}
-    @media(max-width:1000px){:host{left:50%;right:auto;transform:translate(-50%,-50%)}}@media(max-width:650px){:host{width:calc(100vw - 24px);max-width:calc(100vw - 24px);height:calc(100dvh - 40px)}#dragHandle{padding:8px 10px;gap:8px}#dragHandle h1{font-size:14px}.grip{display:none}.window-controls{gap:4px}.window-controls button{font-size:12px;padding:5px 6px}#resetPosition{display:none}.workspace-tabs{margin:8px 10px 0}header{padding:10px}.toolbar{flex-wrap:wrap}.toolbar input[type=search]{flex-basis:100%;}.toolbar select{flex:1;max-width:none}.toolbar button{font-size:12px}.grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}main{padding:10px}.preview{height:105px}.pagination{flex-wrap:wrap;gap:4px;padding:7px}.pagination button{padding:5px 6px}.selection-bar{flex-wrap:wrap;padding:8px 10px 16px}.selection-message{min-width:100%;display:flex;align-items:center;gap:8px}.selection-bar>.spacer{display:none}dialog .dialog-body{padding:12px}.card-title{gap:2px}}@media(max-height:560px){:host{height:calc(100dvh - 24px);max-height:calc(100dvh - 24px)}#summary{margin-bottom:6px}.workspace-tabs{margin-top:6px}.status-row{margin-top:4px}#dragHandle{min-height:44px;padding-top:6px;padding-bottom:6px}.selection-bar{padding-top:6px;padding-bottom:10px}.pagination{padding-top:5px;padding-bottom:5px}}
-    .workspace-language{display:flex;gap:2px;padding:3px;border:1px solid #d0d5dd;border-radius:10px;background:#edf2f7}.workspace-language button{border:0;background:transparent;color:#59677b;font-size:12px;padding:5px 8px;min-height:28px}.workspace-language [aria-pressed=true]{background:#fff;color:#0866c6;font-weight:600;box-shadow:0 1px 4px #152b4620}@container(max-width:700px){#dragHandle{flex-wrap:wrap}#dragHandle h1{flex-basis:calc(100% - 30px)}.window-controls{width:100%;justify-content:flex-end;flex-wrap:wrap}.workspace-language{margin-right:auto}}
+    @container(max-width:650px){#dragHandle{padding:8px 10px;gap:6px}#dragHandle h1{font-size:14px}.grip{display:none}.window-controls{gap:3px}.window-controls button{font-size:12px;padding:5px 6px}.toolbar{flex-wrap:wrap}.toolbar input[type=search]{flex-basis:100%}.toolbar select{flex:1;max-width:none}.toolbar button{font-size:12px}.grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}.preview{height:105px}.pagination{flex-wrap:wrap;gap:4px;padding:7px}.pagination button{padding:5px 6px}.selection-bar{flex-wrap:wrap;padding:8px 10px 16px}.selection-message{min-width:100%;display:flex;align-items:center;gap:8px}.selection-bar>.spacer{display:none}}
+    @media(max-width:1000px){:host{left:50%;right:auto;transform:translate(-50%,-50%)}}@media(max-width:650px){:host{width:calc(100vw - 24px);max-width:calc(100vw - 24px);height:calc(100dvh - 40px)}#dragHandle{padding:8px 10px;gap:8px}#dragHandle h1{font-size:14px}.grip{display:none}.window-controls{gap:4px}.window-controls button{font-size:12px;padding:5px 6px}.workspace-tabs{margin:8px 10px 0}header{padding:10px}.toolbar{flex-wrap:wrap}.toolbar input[type=search]{flex-basis:100%;}.toolbar select{flex:1;max-width:none}.toolbar button{font-size:12px}.grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}main{padding:10px}.preview{height:105px}.pagination{flex-wrap:wrap;gap:4px;padding:7px}.pagination button{padding:5px 6px}.selection-bar{flex-wrap:wrap;padding:8px 10px 16px}.selection-message{min-width:100%;display:flex;align-items:center;gap:8px}.selection-bar>.spacer{display:none}dialog .dialog-body{padding:12px}.card-title{gap:2px}}@media(max-height:560px){:host{height:calc(100dvh - 24px);max-height:calc(100dvh - 24px)}#summary{margin-bottom:6px}.workspace-tabs{margin-top:6px}.status-row{margin-top:4px}#dragHandle{min-height:44px;padding-top:6px;padding-bottom:6px}.selection-bar{padding-top:6px;padding-bottom:10px}.pagination{padding-top:5px;padding-bottom:5px}}
+    .workspace-language{display:flex;gap:2px;padding:3px;border:1px solid #d0d5dd;border-radius:10px;background:#edf2f7}.workspace-language button{border:0;background:transparent;color:#59677b;font-size:12px;padding:5px 8px;min-height:28px}.workspace-language [aria-pressed=true]{background:#fff;color:#0866c6;font-weight:600;box-shadow:0 1px 4px #152b4620}@container(max-width:450px){#dragHandle{flex-wrap:wrap}#dragHandle h1{flex-basis:calc(100% - 30px)}.window-controls{width:100%;justify-content:flex-end;flex-wrap:wrap}}
     .filter-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.filter-toolbar label{display:flex;flex:1;min-width:115px;flex-direction:column;gap:4px;font-size:12px;color:#667085}.filter-toolbar select{width:100%;min-width:0;font-size:13px}.metadata-form label{display:flex;flex-direction:column;gap:6px;margin:0 0 14px;font-size:13px}.metadata-form textarea{height:75px;font:inherit}.metadata-choice{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px}.file-label{font-size:12px}.file-label input{display:block;max-width:100%;margin-top:6px}.metadata-import-list{max-height:38dvh;overflow:auto;margin-top:12px}.metadata-import-row{padding:10px 0;border-top:1px solid #e4e7ec}.metadata-import-row label{display:flex;align-items:center;gap:8px}.metadata-import-row p{font-size:12px;overflow-wrap:anywhere}.metadata-import-row select{max-width:100%}.import-card select{width:100%;font-size:11px;padding:5px}.selection-bar{flex-wrap:wrap}.selection-message{min-width:100%;display:flex;align-items:center;gap:10px}.selection-bar>.spacer{display:none}
+    .settings-section{padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid #e4e7ec}.settings-section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}.settings-section h3{margin:0 0 10px;font-size:14px;color:#172033}.settings-section .workspace-language{width:fit-content}.settings-section .inline-actions{flex-wrap:wrap}
+    .helper-credit-row{display:flex;align-items:center;gap:8px;padding:4px 16px 8px;background:#fff;border-top:1px solid #edf2f7;font-size:11px;color:#7b8ba8;flex-wrap:wrap}.helper-version{border:1px solid #dce4f0;border-radius:999px;background:#f8fafc;padding:2px 6px;font-size:10px;white-space:nowrap}.helper-github{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-left:auto;color:#667085;border-radius:6px}.helper-github:hover,.helper-github:focus-visible{color:#0866c6;background:#edf2f7}.helper-github:focus-visible{outline:2px solid #0866c6;outline-offset:2px}
+    .helper-credit{font:inherit;color:inherit;min-height:24px;padding:0;border:0;background:transparent}.helper-credit:hover{color:#0866c6;background:transparent}.helper-credit.spga-credit-celebrating{animation:helper-credit-bounce .72s ease both}@keyframes helper-credit-bounce{40%{transform:translateY(-4px)}70%{transform:translateY(1px)}}@media(prefers-reduced-motion:reduce){.helper-credit.spga-credit-celebrating{animation:none}}
   </style>
   <button id="dockDivider" role="separator" aria-orientation="vertical" aria-label="调整侧栏宽度" hidden></button><section class="app">
-    <div id="dragHandle" title="拖动此栏移动窗口"><span class="grip" aria-hidden="true">⠿</span><h1>SeaTalk 表情助手</h1><div class="window-controls"><div class="workspace-language" role="group" aria-label="语言"><button data-workspace-locale="zh" aria-pressed="false">中文</button><button data-workspace-locale="en" aria-pressed="false">EN</button></div><button id="guideOpen">使用指南</button><button id="settingsOpen">设置</button><button id="dockToggle" aria-label="切换分栏与浮窗" disabled>分栏</button><button id="resetPosition" class="icon-button" aria-label="恢复默认位置和大小" title="恢复默认位置和大小">↺</button><button id="minimize" class="icon-button" aria-label="收起我的表情" title="收起，保留当前选择">−</button><button id="close" class="danger-fill" aria-label="关闭批量管理">✕ 关闭</button></div></div>
+    <div id="dragHandle" title="拖动此栏移动窗口"><span class="grip" aria-hidden="true">⠿</span><h1>SeaTalk 表情助手</h1><div class="window-controls"><button id="guideOpen">使用指南</button><button id="settingsOpen">设置</button><button id="minimize" class="icon-button" aria-label="收起我的表情" title="收起，保留当前选择">−</button><button id="close" class="danger-fill" aria-label="关闭批量管理">✕ 关闭</button></div></div>
     <nav class="workspace-tabs" aria-label="助手功能" role="tablist"><button id="backAvatar" role="tab" aria-selected="false">GIF 头像</button><button role="tab" aria-selected="true" aria-current="page">我的表情</button></nav>
-    <header><p id="summary"></p><div class="toolbar"><input id="search" type="search" placeholder="搜索名称、关键词或表情文字" aria-label="搜索收藏"><select id="filter" aria-label="显示范围"><option value="all">全部收藏</option><option value="selected">已选择</option></select><button id="scan">识别动图</button><button id="importOpen">导入口令</button></div><div class="filter-toolbar"><label>图片形式<select id="animation" aria-label="图片形式"><option value="all">全部形式</option><option value="animated">动图</option><option value="static">静态图</option><option value="unknown">未知</option></select></label><label>备注状态<select id="metadataFilter" aria-label="备注状态"><option value="all">全部备注</option><option value="annotated">已备注</option><option value="unannotated">未备注</option><option value="review">需复核</option></select></label><label>检测状态<select id="detectionFilter" aria-label="检测状态"><option value="all">全部检测状态</option><option value="unknown">未检测</option><option value="recognized">已识别</option><option value="failed">识别失败</option></select></label></div><div class="status-row"><span id="scanStatus" role="status">浏览和分享无需先识别动图。</span><button id="scanStop" hidden>停止识别</button></div><details id="hiddenTools" hidden><summary>开发工具</summary><button id="export">导出已选 JSON</button></details></header>
+    <header><p id="summary"></p><div class="toolbar"><input id="search" type="search" placeholder="搜索名称、关键词或表情文字" aria-label="搜索收藏"><select id="filter" aria-label="显示范围"><option value="all">全部收藏</option><option value="selected">已选择</option></select><button id="syncFavorites">同步收藏</button><button id="scan">识别动图</button><button id="importOpen">导入口令</button></div><div class="filter-toolbar"><label>图片形式<select id="animation" aria-label="图片形式"><option value="all">全部形式</option><option value="animated">动图</option><option value="static">静态图</option><option value="unknown">未知</option></select></label><label>备注状态<select id="metadataFilter" aria-label="备注状态"><option value="all">全部备注</option><option value="annotated">已备注</option><option value="unannotated">未备注</option><option value="review">需复核</option></select></label><label>检测状态<select id="detectionFilter" aria-label="检测状态"><option value="all">全部检测状态</option><option value="unknown">未检测</option><option value="recognized">已识别</option><option value="failed">识别失败</option></select></label></div><div class="status-row"><span id="syncStatus" role="status">收藏自动同步；无需刷新网页。</span></div><div class="status-row"><span id="scanStatus" role="status">浏览和分享无需先识别动图。</span><button id="scanStop" hidden>停止识别</button></div><details id="hiddenTools" hidden><summary>开发工具</summary><button id="export">导出已选 JSON</button></details></header>
     <main><div class="grid"></div><div id="emptyState" class="empty" hidden><h2 id="emptyTitle"></h2><p id="emptyMessage"></p><button id="emptyScan" hidden>识别动图</button><button id="emptyReset">查看全部收藏</button></div></main>
-    <footer><div class="pagination"><button id="first">首页</button><button id="prev">上一页</button><span id="page"></span><button id="next">下一页</button><button id="last">末页</button><label>跳至 <input id="jump" type="number" min="1" step="1" value="1" aria-label="跳转页码"> 页</label><button id="jumpGo">跳转</button></div><div class="selection-bar"><div class="selection-message"><span id="count">已选择 0 个</span><div id="selectionHint">先选择要分享或删除的表情。</div></div><button id="selectPage">全选本页</button><button id="viewSelected">查看已选</button><button id="clear">清空选择</button><span class="spacer"></span><button id="sendSelected" class="primary">发送所选表情</button><button id="shareOpen">生成分享口令</button><button id="remove" class="danger">删除所选表情</button></div></footer><button id="resizeHandle" aria-label="调整窗口大小" title="拖动调整大小，也可用方向键调整"></button>
+    <footer><div class="pagination"><button id="first">首页</button><button id="prev">上一页</button><span id="page"></span><button id="next">下一页</button><button id="last">末页</button><label>跳至 <input id="jump" type="number" min="1" step="1" value="1" aria-label="跳转页码"> 页</label><button id="jumpGo">跳转</button></div><div class="selection-bar"><div class="selection-message"><span id="count">已选择 0 个</span><div id="selectionHint">先选择要分享或删除的表情。</div></div><button id="selectPage">全选本页</button><button id="viewSelected">查看已选</button><button id="clear">清空选择</button><span class="spacer"></span><button id="sendSelected" class="primary">发送所选表情</button><button id="shareOpen">生成分享口令</button><button id="remove" class="danger">删除所选表情</button></div><div class="helper-credit-row"><button id="helperCredit" class="helper-credit" title="点一下，有小惊喜">Yixin.Zhong × Codex 制作</button><span class="helper-version" title="SeaTalk Sticker Helper">v${helperVersion}</span><a class="helper-github" href="https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper" target="_blank" rel="noopener noreferrer" title="查看 GitHub 项目" aria-label="查看 GitHub 项目"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a></div></footer><button id="resizeHandle" aria-label="调整窗口大小" title="拖动调整大小，也可用方向键调整"></button>
   </section>
   <dialog id="guideDialog" aria-labelledby="guideTitle"><div class="dialog-header"><h2 id="guideTitle">我的表情使用指南</h2><button data-close="guideDialog" aria-label="关闭使用指南">×</button></div><div class="dialog-body guide"><p>整理、搜索、分享你的 SeaTalk 收藏表情，也能设置 GIF 头像。</p>
     <section><h3>开始前</h3><p>在 SeaTalk 打开表情面板，切换到爱心「收藏」页签，再打开助手的「我的表情」。</p></section>
+    <section><h3>收藏同步</h3><p>助手打开时，每 1.5 秒读取 SeaTalk 当前账号的收藏状态，自动同步新增和移除；也可点击「同步收藏」。原生表情面板关闭后仍可同步。这只更新右侧列表，保留备注、筛选和仍在收藏中的勾选，不会刷新网页或重新请求服务器。发送、添加、删除、识别或弹窗打开期间暂停同步，结束后恢复。操作结果不确定时，仍需刷新网页核对服务器保存结果。</p></section>
     <section><h3>选择和查看表情</h3><p>点击图片可放大，勾选复选框可选择。「全选本页」只选择当前页；翻页或切换筛选后，之前的选择仍会保留。点击「查看已选」可统一核对。</p><p>「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在备注编辑中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。</p></section>
     <section><h3>分享给朋友</h3><p>选择表情 → 点击「生成分享口令」→ 复制完整口令发给朋友。</p><p>每次最多分享 100 个。表情越多，口令越长。点击名称旁的编辑按钮可保存备注、关键词和表情文字，用于搜索，不会修改 SeaTalk 原收藏。</p></section>
     <section><h3>添加朋友分享的表情</h3><p>点击「导入口令」→ 粘贴完整口令 → 点击「解析并预览」→ 选择表情 → 确认添加。</p><p>已收藏的表情不会重复添加，但可以导入备注。已有备注默认保留，并合并去重关键词；也可逐条选择使用朋友的备注。预览失败的新表情暂时不能添加。</p></section>
     <section><h3>删除不需要的收藏</h3><p>选择表情 → 点击「删除所选表情」→ 核对图片和数量 → 确认删除。</p><p>删除只影响你的收藏，不会删除聊天消息。本助手无法撤销删除，分享口令也不保证能恢复。筛选之外的已选表情也会包括在确认清单中。</p></section>
-    <section><h3>收起、关闭和结果核对</h3><p>点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。点击「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。</p><p>操作结果不确定时，先刷新 SeaTalk 核对收藏，再决定是否重试。刷新会清空本次勾选。添加或删除进行中时，停止会等待当前表情的结果，再停止后续操作。</p></section>
+    <section><h3>收起、关闭和结果核对</h3><p>点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。在「设置 → 窗口布局」选择「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。</p><p>操作结果不确定时，先刷新 SeaTalk 核对收藏，再决定是否重试。刷新会清空本次勾选。添加或删除进行中时，停止会等待当前表情的结果，再停止后续操作。</p></section>
 <section><h3>备注、备份与发送</h3><p>备注自动保存在当前账号的油猴本地存储。可在「设置」导出备份或预览导入标签文件。分享可附带备注，但不包含私人说明。含备注的分享口令需要 5.1 或更新版本；取消附带备注可生成兼容旧版的口令。预览或选择表情后，核对目标会话并确认发送；切换账号或会话后停止。</p></section></div><div class="dialog-actions"><span></span><button id="guideClose" class="primary">知道了，返回管理</button></div></dialog>
   <dialog id="zoom" aria-labelledby="zoomTitle"><div class="dialog-header"><h2 id="zoomTitle">表情预览</h2><button data-close="zoom" aria-label="关闭预览">×</button></div><div class="dialog-body"><img class="zoom-image" alt="放大预览"><p></p></div><div class="dialog-actions"><span></span><button id="zoomClose">返回管理</button><button id="sendZoom" class="primary">发送到当前会话</button></div></dialog>
   <dialog id="sharing" aria-labelledby="shareTitle"><div class="dialog-header"><h2 id="shareTitle">分享所选表情</h2><button data-close="sharing" aria-label="关闭分享">×</button></div><div class="dialog-body"><p>复制完整口令发给朋友，对方可在「导入口令」中预览并添加。</p><label class="metadata-choice"><input id="shareIncludeMetadata" type="checkbox" checked> 附带备注名称、关键词与表情文字（不含私人说明）</label><textarea id="shareCode" readonly aria-label="分享口令"></textarea><p id="shareStatus" role="status"></p></div><div class="dialog-actions"><button id="shareClose">返回管理</button><button id="shareCopy" class="primary">复制分享口令</button></div></dialog>
@@ -6048,13 +6087,37 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
   <dialog id="output" aria-labelledby="exportTitle"><div class="dialog-header"><h2 id="exportTitle">开发者导出</h2><button data-close="output" aria-label="关闭导出">×</button></div><div class="dialog-body"><textarea readonly aria-label="导出 JSON"></textarea><p id="message"></p></div><div class="dialog-actions"><button id="outputClose">返回管理</button><div class="right-actions"><button id="download">下载 JSON</button><button id="copy" class="primary">复制 JSON</button></div></div></dialog>
 
 <dialog id="personalEditor" aria-labelledby="personalEditorTitle"><div class="dialog-header"><h2 id="personalEditorTitle">编辑备注与关键词</h2><button data-close="personalEditor" aria-label="关闭备注编辑">×</button></div><div class="dialog-body metadata-form"><label>备注名称<input id="personalName" maxlength="80" required></label><label>关键词<input id="personalKeywords" maxlength="2000" placeholder="用逗号分隔，例如：工作，上班，打工人"></label><label>图片形式<select id="personalAnimation"><option value="auto">自动识别</option><option value="animated">动图（手动）</option><option value="static">静态图（手动）</option><option value="unknown">未知（手动）</option></select></label><p id="personalDetectionStatus"></p><p>手动标注优先于检测结果；选择「自动识别」可撤销手动标注。未检测或识别失败也能编辑备注。保存备注后将解除「需复核」。</p><label>表情文字<textarea id="personalVisibleText" maxlength="500"></textarea></label><label>私人说明（默认不分享）<textarea id="personalNote" maxlength="1000"></textarea></label><p>保存在当前账号的油猴本地存储中，不会修改 SeaTalk 收藏原名称。</p><p id="personalEditorStatus" role="status"></p></div><div class="dialog-actions"><button data-close="personalEditor">取消</button><button id="personalSave" class="primary">保存到本机</button></div></dialog>
-<dialog id="personalSettings" aria-labelledby="personalSettingsTitle"><div class="dialog-header"><h2 id="personalSettingsTitle">个人备注备份与恢复</h2><button data-close="personalSettings" aria-label="关闭个人设置">×</button></div><div class="dialog-body"><p>备份包含全部备注、关键词、表情文字与私人说明，不含图片、账号或登录凭据。导入只恢复备注，不会添加、删除或发送表情。</p><div class="inline-actions"><button id="personalExport">导出个人备份</button><label class="file-label">选择备份或标签文件<input id="personalImportFile" type="file" accept=".json,application/json"></label></div><p id="personalSettingsStatus" role="status"></p><section id="personalImportPanel" hidden><p>已有备注默认保留；可逐条选择使用导入备注。AI 需复核项默认不勾选。</p><label><input id="personalMergeKeywords" type="checkbox" checked> 合并并去重关键词</label><div class="inline-actions"><button id="personalSelectAll">全选（含需复核项）</button><button id="personalSelectSafe">选择无需复核项</button><button id="personalClearImport">清空勾选</button></div><div id="personalImportRows" class="metadata-import-list"></div></section></div><div class="dialog-actions"><button data-close="personalSettings">返回管理</button><button id="personalImportConfirm" class="primary" disabled>确认导入备注</button></div></dialog>
+<dialog id="personalSettings" aria-labelledby="personalSettingsTitle"><div class="dialog-header"><h2 id="personalSettingsTitle">设置</h2><button data-close="personalSettings" aria-label="关闭个人设置">×</button></div><div class="dialog-body"><section class="settings-section"><h3>语言</h3><div class="workspace-language" role="group" aria-label="语言"><button data-workspace-locale="zh" aria-pressed="false">中文</button><button data-workspace-locale="en" aria-pressed="false">EN</button></div></section><section class="settings-section"><h3>窗口布局</h3><div class="inline-actions"><button id="dockToggle" aria-label="切换分栏与浮窗" disabled>分栏</button><button id="resetPosition" aria-label="重置布局" title="恢复默认分栏、窗口位置和大小">重置布局</button></div><p>分栏让 SeaTalk 与助手并排显示；浮窗可自由拖动。重置布局恢复默认分栏、位置和大小，不会刷新收藏。</p></section><section class="settings-section"><h3>个人数据</h3><p>备份与恢复</p><p>备份包含全部备注、关键词、表情文字与私人说明，不含图片、账号或登录凭据。导入只恢复备注，不会添加、删除或发送表情。</p><div class="inline-actions"><button id="personalExport">导出个人备份</button><label class="file-label">选择备份或标签文件<input id="personalImportFile" type="file" accept=".json,application/json"></label></div><p id="personalSettingsStatus" role="status"></p><section id="personalImportPanel" hidden><p>已有备注默认保留；可逐条选择使用导入备注。AI 需复核项默认不勾选。</p><label><input id="personalMergeKeywords" type="checkbox" checked> 合并并去重关键词</label><div class="inline-actions"><button id="personalSelectAll">全选（含需复核项）</button><button id="personalSelectSafe">选择无需复核项</button><button id="personalClearImport">清空勾选</button></div><div id="personalImportRows" class="metadata-import-list"></div></section></section></div><div class="dialog-actions"><button data-close="personalSettings">返回管理</button><button id="personalImportConfirm" class="primary" disabled>确认导入备注</button></div></dialog>
 <dialog id="sendConfirmation" aria-labelledby="sendTitle"><div class="dialog-header"><h2 id="sendTitle">确认发送表情</h2><button id="sendClose" aria-label="关闭发送确认">×</button></div><div class="dialog-body"><p id="sendTarget" class="notice"></p><p id="sendSummary"></p><div id="sendPreview" class="thumb-list"></div><p id="sendStatus" role="status"></p><p>只发送本次确认的表情；切换账号或会话后停止。结果未确认时不会自动重发。</p></div><div class="dialog-actions"><button id="sendCancel">取消</button><div class="right-actions"><button id="sendStop" hidden>停止后续发送</button><button id="sendConfirm" class="primary">确认发送</button></div></div></dialog>
 `;
   const applyStaticLocale = language.bindStatic(root);
   applyStaticLocale();
   root.querySelector('.app').lang = language.locale;
   const $ = selector => root.querySelector(selector);
+  $('#helperCredit').onclick = () => window.dispatchEvent(new CustomEvent('spga:credit-celebrate'));
+  let actionNotice = null, noticeTimer = null;
+  function dismissActionNotice() {
+    clearTimeout(noticeTimer);
+    if (actionNotice?.matches(':popover-open')) actionNotice.hidePopover();
+    actionNotice?.remove(); actionNotice = null;
+  }
+  function notifyAction(message, tone = 'success') {
+    dismissActionNotice();
+    const notice = document.createElement('div');
+    notice.setAttribute('popover', 'manual');
+    notice.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+    notice.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');
+    notice.style.cssText = 'position:fixed;inset:20px 20px auto auto;margin:0;max-width:min(460px,calc(100vw - 40px));padding:14px 16px;border-radius:10px;border:1px solid;box-shadow:0 8px 30px #17203330;z-index:2147483647;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;gap:12px;align-items:flex-start;overflow-wrap:anywhere';
+    const colors = tone === 'error' ? ['#fff2f0','#b42318','#f2b8b1'] : tone === 'info' ? ['#eff6ff','#175398','#b9d8f4'] : ['#edf9f1','#21633c','#b7dfc5'];
+    [notice.style.background,notice.style.color,notice.style.borderColor] = colors;
+    const text = document.createElement('span'); text.textContent = message;
+    const close = document.createElement('button'); close.textContent = '×'; close.setAttribute('aria-label', ui('关闭提示','Dismiss notification'));
+    close.style.cssText = 'min-height:24px;padding:0 5px;border:0;background:transparent;color:inherit;font-size:20px'; close.onclick = dismissActionNotice;
+    notice.append(text,close);
+    (root.querySelector('dialog[open]') || $('.app')).append(notice); actionNotice = notice;
+    try { notice.showPopover(); } catch (_) { /* Keep the visible inline fallback. */ }
+    noticeTimer = setTimeout(dismissActionNotice, tone === 'success' ? 5000 : 9000);
+  }
   const activeItems = () => items.filter(item => !item.deleted);
   const selection = () => items.filter(item => item.selected && !item.deleted);
   const matches = item => {
@@ -6101,9 +6164,10 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     $('#viewSelected').textContent = selectedView ? tr('返回筛选') : tr('查看已选');
     $('#selectPage').disabled = locked || !filtered().length;
     $('#scan').disabled = locked || scanning;
+    $('#syncFavorites').disabled = locked || scanning || workspaceAccountState !== 'ready';
     $('#importOpen').disabled = locked || scanning || !accountReady || !personalReady;
     for (const selector of ['#search', '#filter', '#animation', '#metadataFilter', '#detectionFilter']) $(selector).disabled = locked;
-    $('#settingsOpen').disabled = locked || !personalReady || !accountReady;
+    $('#settingsOpen').disabled = locked;
     $('#sendSelected').disabled = locked || scanning || sendUncertain || !selected.length || selected.length > 100 || !accountReady;
     $('#sendZoom').disabled = locked || sendUncertain || !zoomItem || !accountReady;
     $('#personalImportFile').disabled = $('#personalExport').disabled = metadataSaving || !personalReady || !accountReady;
@@ -6203,6 +6267,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     host.dataset.open = host.dataset.managed = 'true'; host.style.display = ''; mini.hidden = true;
     document.getElementById('seatalk-personal-gif-avatar-panel')?.classList.remove('spga-open');
     if (geometryCustom) { const rect = host.getBoundingClientRect(); clampWindow(rect.left, rect.top); }
+    startFavoritesSync(); syncFavorites();
     count(); window.dispatchEvent(new CustomEvent('spga:layout-change'));
   }
   function setWorkspaceLocale(value) {
@@ -6216,7 +6281,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
       }
     }
     for (const item of imported) item.check.setAttribute('aria-label', tr('添加 ') + item.label);
-    for (const selector of ['#scanStatus', '#shareStatus', '#importStatus', '#deleteSummary', '#deleteProgress', '#message', '#personalEditorStatus', '#personalDetectionStatus', '#personalSettingsStatus', '#sendStatus', '#sendSummary']) {
+    for (const selector of ['#syncStatus', '#scanStatus', '#shareStatus', '#importStatus', '#deleteSummary', '#deleteProgress', '#message', '#personalEditorStatus', '#personalDetectionStatus', '#personalSettingsStatus', '#sendStatus', '#sendSummary']) {
       const node = $(selector); node.textContent = tr(node.textContent);
     }
     for (const node of root.querySelectorAll('.import-card p,.import-card select option,.metadata-import-row select option')) node.textContent = tr(node.textContent);
@@ -6237,6 +6302,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
   host.__close = hideWorkspace;
   function minimizeWorkspace() {
     if (root.querySelector('dialog[open]')) return;
+    dismissActionNotice(); stopFavoritesSync();
     host.dataset.open = 'false'; host.style.display = 'none'; mini.hidden = false; count(); window.dispatchEvent(new CustomEvent('spga:layout-change')); mini.focus();
   }
   mini.onclick = () => { if (!host.isConnected) { mini.remove(); return; } revealWorkspace(); $('#minimize').focus(); };
@@ -6246,6 +6312,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     }
     scanCancelled = true; activeRequests.forEach(controller => controller.abort());
     for (const dialog of root.querySelectorAll('dialog[open]')) closeDialog(dialog);
+    dismissActionNotice(); stopFavoritesSync();
     host.dataset.open = host.dataset.managed = 'false'; host.style.display = 'none'; mini.hidden = true;
     window.dispatchEvent(new CustomEvent('spga:layout-change'));
     if (back) window.dispatchEvent(new CustomEvent('spga:collections-back'));
@@ -6264,8 +6331,15 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     $('#output textarea').value = JSON.stringify(selected.map(item => ({ label: item.label.trim(), gifId: item.gifId })), null, 2);
     $('#message').textContent = ui(`共 ${selected.length} 个，仅含名称与表情标识。`, `${selected.length} stickers; names and resource IDs only.`); openDialog($('#output'));
   };
-  $('#copy').onclick = async () => { try { await navigator.clipboard.writeText($('#output textarea').value); $('#message').textContent = tr('已复制'); } catch (_) { $('#output textarea').select(); $('#message').textContent = tr('请按 ⌘C / Ctrl+C 复制'); } };
-  $('#download').onclick = () => { const url = URL.createObjectURL(new Blob([$('#output textarea').value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = 'seatalk-selected-stickers.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+  $('#copy').onclick = async () => { try { await navigator.clipboard.writeText($('#output textarea').value); $('#message').textContent = tr('已复制'); notifyAction($('#message').textContent); } catch (_) { $('#output textarea').select(); $('#message').textContent = tr('请按 ⌘C / Ctrl+C 复制'); notifyAction($('#message').textContent, 'info'); } };
+  $('#download').onclick = () => {
+    try {
+      const text = $('#output textarea').value, total = JSON.parse(text).length;
+      downloadMetadata(text, 'seatalk-selected-stickers.json');
+      $('#message').textContent = ui(`已发起导出 ${total} 个表情：seatalk-selected-stickers.json。请查看浏览器下载。`, `Download requested for ${total} stickers: seatalk-selected-stickers.json. Check browser downloads.`);
+      notifyAction($('#message').textContent);
+    } catch (_) { $('#message').textContent = ui('导出失败，请重试。','Export failed. Try again.'); notifyAction($('#message').textContent, 'error'); }
+  };
 
   let personalSnapshot = {schema:1,revision:0,items:[]}, personalReady = false, personalAccount = null;
   let editorItem = null, personalDraft = null, personalImportGeneration = 0;
@@ -6348,16 +6422,21 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
   };
   function downloadMetadata(text,filename) {
     const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));
-    const link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const link=document.createElement('a');link.href=url;link.download=filename;try { document.body.append(link); link.click(); } finally { link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
   }
   $('#settingsOpen').onclick=()=>{
-    if(busy() || !personalReady)return;
-    $('#personalSettingsStatus').textContent=ui(`当前账号已保存 ${personalSnapshot.items.length} 条个人备注。`,`This account has ${personalSnapshot.items.length} saved notes.`);
+    if(busy())return;
+    $('#personalSettingsStatus').textContent=personalReady && workspaceAccountState === 'ready' ? ui(`当前账号已保存 ${personalSnapshot.items.length} 条个人备注。`,`This account has ${personalSnapshot.items.length} saved notes.`) : ui('个人数据暂不可用；语言与窗口布局仍可调整。','Personal data is unavailable. Language and window layout settings remain available.');
     openDialog($('#personalSettings'));
   };
   $('#personalExport').onclick=()=>{
-    try{assertWorkspaceAccount();downloadMetadata(exportPersonalSettings(personalSnapshot.items),'seatalk-personal-settings-'+new Date().toISOString().slice(0,10)+'.json');}
-    catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);}
+    try{assertWorkspaceAccount();
+      const filename='seatalk-personal-settings-'+new Date().toISOString().slice(0,10)+'.json';
+      downloadMetadata(exportPersonalSettings(personalSnapshot.items),filename);
+      $('#personalSettingsStatus').textContent=ui(`已发起导出 ${personalSnapshot.items.length} 条备注及图片形式设置：${filename}。请查看浏览器下载。`,`Download requested for ${personalSnapshot.items.length} notes and image-format settings: ${filename}. Check browser downloads.`);
+      notifyAction($('#personalSettingsStatus').textContent);
+    }
+    catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);notifyAction($('#personalSettingsStatus').textContent,'error');}
   };
   const importedFormatText = value => ({animated:ui('动图（手动）','Animated (manual)'),static:ui('静态图（手动）','Still image (manual)'),unknown:ui('未知（手动）','Unknown (manual)')})[value];
   function updatePersonalImportCount() {
@@ -6396,8 +6475,8 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
       const rows=personalRecords();let count=0;
       for(const entry of personalDraft.rows){if(!entry.check.checked)continue;rows.set(entry.row.gifId,mergePersonalRecord(rows.get(entry.row.gifId),entry.row,entry.mode.value==='replace',$('#personalMergeKeywords').checked));count++;}
       $('#personalImportConfirm').disabled=true;await savePersonalRows([...rows.values()]);personalDraft=null;$('#personalImportPanel').hidden=true;$('#personalImportRows').replaceChildren();
-      $('#personalSettingsStatus').textContent=ui(`已保存 ${count} 条备注；没有更改 SeaTalk 收藏。`,`Saved ${count} notes. SeaTalk favorites were not changed.`);
-    }catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);}
+      $('#personalSettingsStatus').textContent=ui(`已保存 ${count} 条备注；没有更改 SeaTalk 收藏。`,`Saved ${count} notes. SeaTalk favorites were not changed.`);notifyAction($('#personalSettingsStatus').textContent);
+    }catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);notifyAction($('#personalSettingsStatus').textContent,'error');}
     finally{updatePersonalImportCount();}
   };
 
@@ -6455,7 +6534,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     if(busy() || sendUncertain || !sendDraft || sendDraft.invalid)return;
     const draft=sendDraft;try{guardSend(draft);}catch(error){$('#sendStatus').textContent=sendMessage(error.message);return;}
     sendingBusy=true;sendStopped=false;$('#sendConfirm').disabled=true;$('#sendStop').hidden=false;render();
-    let issued=0,completed=0;
+    let issued=0,completed=0,sendFailed=false;
     try{
       const result=await sendSelectedStickers(draft.items,{
         guard:()=>guardSend(draft),stopped:()=>sendStopped,pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
@@ -6489,8 +6568,8 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
         },
       });
       $('#sendStatus').textContent=ui(`SeaTalk 已确认 ${result.sent} 张表情${result.stopped?'，已停止后续发送':''}。`,`SeaTalk confirmed ${result.sent} stickers.${result.stopped?' Later sends stopped.':''}`);
-    }catch(error){sendUncertain=issued>completed && error.message!=='SEND_FAILED';$('#sendStatus').textContent=sendMessage(error.message)+(sendUncertain && error.message!=='SEND_UNCONFIRMED'?' '+sendMessage('SEND_UNCONFIRMED'):'');}
-    finally{sendingBusy=false;$('#sendStop').hidden=true;$('#sendConfirm').disabled=true;stopSendMonitor();render();}
+    }catch(error){sendFailed=true;sendUncertain=issued>completed && error.message!=='SEND_FAILED';$('#sendStatus').textContent=sendMessage(error.message)+(sendUncertain && error.message!=='SEND_UNCONFIRMED'?' '+sendMessage('SEND_UNCONFIRMED'):'');}
+    finally{notifyAction($('#sendStatus').textContent,sendFailed || sendUncertain || issued>completed?'error':sendStopped?'info':'success');sendingBusy=false;$('#sendStop').hidden=true;$('#sendConfirm').disabled=true;stopSendMonitor();render();}
   };
 
   async function detect(item) {
@@ -6546,6 +6625,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
       const failures = activeItems().filter(item => item.animation === 'failed').length;
       $('#scanStatus').textContent = scanCancelled ? tr('已停止识别，已完成的分类仍然保留。') : queue.length
         ? ui(`识别完成${failures ? `，${failures} 个未能识别，可再次点击重试` : ''}。`, `Inspection complete.${failures ? ` ${failures} could not be identified. Inspect again to retry.` : ''}`) : tr('已经完成分类，无需重复检测。');
+      notifyAction($('#scanStatus').textContent, scanCancelled || failures ? 'info' : 'success');
       updateSummary();
       if ($('#animation').value !== 'all' || $('#detectionFilter').value !== 'all') { const scroll = $('main').scrollTop; render(); $('main').scrollTop = scroll; }
       else { count(); renderEmpty(); }
@@ -6600,6 +6680,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
       deleting = false; deleteNeedsReview = Boolean(error); $('#deleteStop').hidden = true; $('#deleteCancel').disabled = false;
       $('#deleteCancel').textContent = tr('返回管理');
       $('#deleteProgress').textContent = ui(`页面收藏已观察到移除 ${done} / ${pending.length} 个。${language.textFor(error, 'zh') || (stop ? '已停止后续删除。' : '')}请刷新 SeaTalk 核对保存结果。`, `Removal observed for ${done} / ${pending.length} favorites. ${language.textFor(error, 'en') || (stop ? 'Later removals stopped. ' : '')} Reload SeaTalk to check saved results.`);
+      notifyAction($('#deleteProgress').textContent, error ? 'error' : stop ? 'info' : 'success');
       render();
     }
   };
@@ -6660,6 +6741,7 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     for (const property of ['left', 'right', 'top', 'width', 'height', 'transform']) host.style.removeProperty(property);
     geometryCustom = false; delete host.dataset.dockWidth; host.dataset.layout = 'auto';
     window.dispatchEvent(new CustomEvent('spga:layout-change'));
+    notifyAction(ui('已恢复默认布局、窗口位置和大小。收藏列表未重新加载。','Default layout, window position and size restored. Favorites were not reloaded.'), 'info');
   };
   window.addEventListener('resize', () => {
     if (!host.isConnected || host.dataset.open !== 'true' || !geometryCustom) return;
@@ -6810,8 +6892,8 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
   };
   $('#shareIncludeMetadata').onchange = () => $('#shareOpen').onclick();
   $('#shareCopy').onclick = async () => {
-    try { await navigator.clipboard.writeText($('#shareCode').value); $('#shareStatus').textContent = tr('分享口令已复制，发给朋友即可。'); }
-    catch (_) { $('#shareCode').focus(); $('#shareCode').select(); $('#shareStatus').textContent = tr('请按 ⌘C / Ctrl+C 复制完整口令。'); }
+    try { await navigator.clipboard.writeText($('#shareCode').value); $('#shareStatus').textContent = tr('分享口令已复制，发给朋友即可。'); notifyAction($('#shareStatus').textContent); }
+    catch (_) { $('#shareCode').focus(); $('#shareCode').select(); $('#shareStatus').textContent = tr('请按 ⌘C / Ctrl+C 复制完整口令。'); notifyAction($('#shareStatus').textContent, 'info'); }
   };
   $('#shareClose').onclick = () => closeDialog($('#sharing'));
   const updateImportButton = () => {
@@ -6936,8 +7018,8 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
         for(const [id,row] of metadataPlan){const savedId=savedStickerId(id);if(savedId){const mapped=normalizePersonalRecord({...row,gifId:savedId});const choice=selected.find(item=>item.gifId===id);records.set(savedId,mergePersonalRecord(records.get(savedId),mapped,choice?.metadataPolicy==='replace',true));notes++;}}
         if(notes)await savePersonalRows([...records.values()]);
       }
-      $('#importStatus').textContent = ui(`已保存 ${notes} 条备注。`, `Saved ${notes} notes. `) + ui(`页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`, `Addition observed for ${result.added} stickers; ${result.skipped} skipped.${result.stopped ? ' Later additions stopped.' : ''} Reload SeaTalk to check saved results.`);
-    } catch (error) { importNeedsReview = true; $('#importStatus').textContent = error.message.startsWith('METADATA_') ? metadataMessage(error.message) : tr(error.message); }
+      $('#importStatus').textContent = ui(`已保存 ${notes} 条备注。`, `Saved ${notes} notes. `) + ui(`页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`, `Addition observed for ${result.added} stickers; ${result.skipped} skipped.${result.stopped ? ' Later additions stopped.' : ''} Reload SeaTalk to check saved results.`); notifyAction($('#importStatus').textContent, result.stopped ? 'info' : 'success');
+    } catch (error) { importNeedsReview = true; $('#importStatus').textContent = error.message.startsWith('METADATA_') ? metadataMessage(error.message) : tr(error.message); notifyAction($('#importStatus').textContent, 'error'); }
     finally {
       stopObservingRefresh();
       importingBusy = false; $('#importStop').hidden = true;
@@ -6962,9 +7044,87 @@ function createWorkspaceAccountGuard(services, originalSource, currentSource) {
     }
   });
 
+  let favoritesSyncTimer = null, favoritesSyncServices = null;
+  function stopFavoritesSync() {
+    if (favoritesSyncTimer !== null) clearInterval(favoritesSyncTimer);
+    favoritesSyncTimer = null;
+  }
+  function startFavoritesSync() {
+    if (favoritesSyncTimer !== null) return;
+    favoritesSyncTimer = setInterval(() => {
+      if (!host.isConnected) { dismissActionNotice(); stopFavoritesSync(); return; }
+      syncFavorites();
+    }, 1500);
+  }
+  function syncFavorites(manual = false) {
+    if (!host.isConnected || host.dataset.open !== 'true' || document.hidden) return;
+    if (busy() || scanning || root.querySelector('dialog[open]') || workspaceAccountState !== 'ready') {
+      if (manual) notifyAction(ui('暂不能同步：请等待当前操作完成、关闭弹窗，并确认账号已就绪。','Sync unavailable. Wait for the current operation, close dialogs and check account readiness.'), 'info');
+      return;
+    }
+    try { assertWorkspaceAccount(); }
+    catch (_) {
+      workspaceAccountState = 'failed'; stopFavoritesSync(); count();
+      $('#syncStatus').textContent = ui('账号已变化，自动同步已停止。请刷新网页后重新打开。', 'Account changed. Sync stopped. Reload the page and reopen the helper.');
+      if (manual) notifyAction($('#syncStatus').textContent, 'error');
+      return;
+    }
+    let latest;
+    try {
+      const stored = favoritesSyncServices?.store.getState()?.messages?.customStickers;
+      if (Array.isArray(stored)) {
+        latest = stored.map(entry => {
+          const id = [entry.id, entry.url].find(value => validMetadataId(value));
+          if (!id) throw Error('UNREADABLE_FAVORITE');
+          return { id, name: entry.name, url: validPreviewUrl(favoritesSyncServices.fileUrl, id) };
+        });
+      } else latest = liveSource(false).list;
+    }
+    catch (_) {
+      $('#syncStatus').textContent = ui('暂时无法读取收藏，已保留当前列表。可打开爱心收藏面板后点击同步收藏。', 'Favorites are temporarily unavailable. List kept; open SeaTalk’s Favorites tab and choose Sync favorites.');
+      if (manual) notifyAction($('#syncStatus').textContent, 'error');
+      return;
+    }
+    const current = new Map(items.filter(item => !item.deleted).map(item => [item.gifId, item]));
+    const next = [], ids = new Set();
+    for (const entry of latest) {
+      if (typeof entry.id !== 'string' || !/^[a-zA-Z0-9]{32,}$/.test(entry.id) || ids.has(entry.id)) continue;
+      let url;
+      try { url = new URL(entry.url); } catch (_) { continue; }
+      if (!isFavoritePreviewUrl(url, entry.id)) continue;
+      ids.add(entry.id);
+      const number = next.length + 1, providedName = known.get(entry.id) || entry.name;
+      let item = current.get(entry.id);
+      if (!item) {
+        const generatedName = providedName ? null : ui(`收藏 ${number}`, `Favorite ${number}`);
+        item = { gifId: entry.id, url: url.href, label: String(providedName || generatedName).slice(0,80), originalLabel: String(providedName || generatedName).slice(0,80), number, generatedName, existing: known.has(entry.id), selected: false, animation: 'unknown' };
+      }
+      next.push({ item, url: url.href, number });
+    }
+    // Never replace the workspace with a partially validated native collection.
+    if (ids.size !== new Set(latest.map(entry => entry.id)).size) {
+      $('#syncStatus').textContent = ui('部分收藏数据暂不可读，已保留当前列表。稍后重试同步。', 'Some favorites are unreadable. Current list kept; sync will retry.');
+      if (manual) notifyAction($('#syncStatus').textContent, 'error');
+      return;
+    }
+    const active = activeItems();
+    const changed = active.length !== next.length || next.some((row,index) => active[index] !== row.item || row.item.url !== row.url);
+    if (changed) {
+      const added = next.filter(row => !current.has(row.item.gifId)).length;
+      const removed = active.filter(item => !ids.has(item.gifId)).length;
+      for (const old of items) if (!ids.has(old.gifId)) { old.deleted = true; old.selected = false; }
+      items.splice(0, items.length, ...next.map(({item,url,number}) => { item.url = url; item.number = number; return item; }));
+      refreshPersonalLabels();
+      $('#syncStatus').textContent = ui(`收藏已同步：新增 ${added} 个，移除 ${removed} 个。`, `Favorites synced: ${added} added, ${removed} removed.`);
+    } else if (manual || !$('#syncStatus').textContent.includes(ui('收藏已同步', 'Favorites synced'))) {
+      $('#syncStatus').textContent = ui('收藏已同步，无新增或移除。', 'Favorites synced. No additions or removals.');
+    }
+    if (manual) notifyAction($('#syncStatus').textContent);
+  }
+  $('#syncFavorites').onclick = () => syncFavorites(true);
   discoverShareServices().then(async services => {
     workspaceAccountCheck = createWorkspaceAccountGuard(services, source, () => liveSource().list);
-    workspaceAccountState = 'ready'; await loadPersonalSettings(services); count();
+    favoritesSyncServices = services; workspaceAccountState = 'ready'; await loadPersonalSettings(services); count(); startFavoritesSync(); syncFavorites();
   }).catch(() => {
     workspaceAccountState = 'failed';
     $('#scanStatus').textContent = tr('无法核对当前账号，添加和删除已停用。请刷新 SeaTalk 后重新打开。'); count();
@@ -6993,7 +7153,6 @@ function planHelperSplit(viewportWidth, kind, preferredWidth, nativeAvailable = 
     position:fixed!important;left:12px!important;top:12px!important;right:auto!important;bottom:auto!important;
     width:calc(100vw - var(--spga-dock-width) - 36px)!important;height:calc(100dvh - 24px)!important;
     min-width:0!important;max-width:none!important;max-height:none!important;margin:0!important;transform:none!important;border-radius:7px!important;}
-    html[data-spga-dock-kind] #root .misc-info {visibility:hidden!important}
     html[data-spga-dock-kind="favorites"] #st-favorites-curator,
     html[data-spga-dock-kind="avatar"] #seatalk-personal-gif-avatar-panel {
       position:fixed!important;left:auto!important;right:12px!important;top:12px!important;bottom:auto!important;
@@ -7176,6 +7335,11 @@ function installPersonalSettingsBridge() {
     window.dispatchEvent(new CustomEvent("spga:locale-change", {detail:locale}));
   }
   if (typeof window !== "undefined") window.addEventListener("spga:locale-request", event => setHelperLocale(event.detail));
+  if (typeof window !== "undefined") window.addEventListener("spga:credit-celebrate", () => {
+    const host = document.getElementById("st-favorites-curator");
+    const trigger = host?.shadowRoot?.getElementById("helperCredit");
+    if (host?.dataset.open === "true" && trigger) showCreditEasterEgg(trigger);
+  });
   function startHelperLayout() {
     try {
       if (typeof unsafeWindow !== "undefined" && typeof unsafeWindow.Function === "function") {

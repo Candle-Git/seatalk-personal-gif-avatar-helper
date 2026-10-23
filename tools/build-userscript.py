@@ -7,7 +7,7 @@ import tempfile
 
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description='Build the formal SeaTalk GIF helper from reviewed local sources.')
-parser.add_argument('--version', default='5.2.0')
+parser.add_argument('--version', default='5.2.1')
 parser.add_argument('--output', default='SeaTalk-Personal-GIF-Avatar-Helper.user.js')
 args = parser.parse_args()
 version = args.version
@@ -39,6 +39,8 @@ for old, new in replacements.items():
 start = source.index('function launchFavoritesGallery(')
 end = source.index('\n  function init()', start)
 workspace = (root / 'tools/favorites-workspace.js').read_text()
+# Both module badges use the same build version as the userscript metadata.
+workspace = workspace.replace('/* HELPER_BUILD_VERSION */ "dev"', __import__('json').dumps(version))
 workspace = workspace.replace('  /* FAVORITES_I18N */', (root / 'tools/favorites-i18n.js').read_text())
 workspace = workspace.replace('  /* PERSONAL_CORE */', (root / 'tools/personal-settings-core.js').read_text())
 workspace = workspace.replace('  /* SEND_CORE */', (root / 'tools/sticker-send-core.js').read_text())
@@ -70,6 +72,11 @@ locale_bridge = '''  function setHelperLocale(locale) {
     window.dispatchEvent(new CustomEvent("spga:locale-change", {detail:locale}));
   }
   if (typeof window !== "undefined") window.addEventListener("spga:locale-request", event => setHelperLocale(event.detail));
+  if (typeof window !== "undefined") window.addEventListener("spga:credit-celebrate", () => {
+    const host = document.getElementById("st-favorites-curator");
+    const trigger = host?.shadowRoot?.getElementById("helperCredit");
+    if (host?.dataset.open === "true" && trigger) showCreditEasterEgg(trigger);
+  });
 '''
 source = source.replace('  function init() {', locale_bridge + '  function init() {', 1)
 
@@ -147,6 +154,14 @@ source = ''.join(product_lines)
 # Show the product upgrade once for this release using the existing versioned notice.
 import re
 release_copy = {'updateTitle': ['升级为 SeaTalk 表情助手', 'Meet SeaTalk Sticker Helper'], 'updateSubtitle': ['整理、搜索、分享你的收藏表情，也能设置 GIF 头像。', 'Organize, search and share your favorite stickers, and set GIF avatars.'], 'updateHighlightOne': ['我的表情：备注、关键词搜索与独立筛选，快速找到想发的表情', 'My stickers: notes, keyword search and separate filters to find the right sticker'], 'updateHighlightTwo': ['预览单张或勾选多张，核对当前会话后确认发送', 'Preview one or select several, check the destination and confirm sending'], 'updateHighlightThree': ['分享口令携带名称和关键词；个人备份支持换电脑恢复', 'Share names and keywords with a code; back up personal settings for another computer'], 'updateHighlightFour': ['手动标注动图／静态图，中英文同步；个人与群 GIF 头像继续保留', 'Manual image-format labels and shared language settings; personal and group GIF avatars remain available']}
+release_copy.update({
+    'updateTitle': ['收藏同步与交互优化', 'Favorites sync and UI improvements'],
+    'updateSubtitle': ['SeaTalk 表情助手 5.2.1：同步更及时，操作反馈更明确。', 'SeaTalk Sticker Helper 5.2.1: timely favorites sync and clear action feedback.'],
+    'updateHighlightOne': ['自动同步当前账号收藏，也可主动同步；保留备注、筛选和选择', 'Sync favorites automatically or on demand, keeping notes, filters and selections'],
+    'updateHighlightTwo': ['修复原生表情面板黑色空白，导出及批量操作增加结果提示', 'Keep the native picker visible and show export and batch-operation results'],
+    'updateHighlightThree': ['我的表情：语言、窗口布局及个人备份集中到设置', 'My stickers: language, window layout and personal backups are grouped in Settings'],
+    'updateHighlightFour': ['两模块统一作者、版本与 GitHub 入口', 'Consistent module credits, version badges and GitHub links'],
+})
 for key, values in release_copy.items():
     pattern = re.compile(r'(^      ' + key + r': )"[^\n]*",', re.M)
     matches = list(pattern.finditer(source))

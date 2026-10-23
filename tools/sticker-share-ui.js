@@ -109,8 +109,8 @@
   };
   $('#shareIncludeMetadata').onchange = () => $('#shareOpen').onclick();
   $('#shareCopy').onclick = async () => {
-    try { await navigator.clipboard.writeText($('#shareCode').value); $('#shareStatus').textContent = tr('分享口令已复制，发给朋友即可。'); }
-    catch (_) { $('#shareCode').focus(); $('#shareCode').select(); $('#shareStatus').textContent = tr('请按 ⌘C / Ctrl+C 复制完整口令。'); }
+    try { await navigator.clipboard.writeText($('#shareCode').value); $('#shareStatus').textContent = tr('分享口令已复制，发给朋友即可。'); notifyAction($('#shareStatus').textContent); }
+    catch (_) { $('#shareCode').focus(); $('#shareCode').select(); $('#shareStatus').textContent = tr('请按 ⌘C / Ctrl+C 复制完整口令。'); notifyAction($('#shareStatus').textContent, 'info'); }
   };
   $('#shareClose').onclick = () => closeDialog($('#sharing'));
   const updateImportButton = () => {
@@ -235,8 +235,8 @@
         for(const [id,row] of metadataPlan){const savedId=savedStickerId(id);if(savedId){const mapped=normalizePersonalRecord({...row,gifId:savedId});const choice=selected.find(item=>item.gifId===id);records.set(savedId,mergePersonalRecord(records.get(savedId),mapped,choice?.metadataPolicy==='replace',true));notes++;}}
         if(notes)await savePersonalRows([...records.values()]);
       }
-      $('#importStatus').textContent = ui(`已保存 ${notes} 条备注。`, `Saved ${notes} notes. `) + ui(`页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`, `Addition observed for ${result.added} stickers; ${result.skipped} skipped.${result.stopped ? ' Later additions stopped.' : ''} Reload SeaTalk to check saved results.`);
-    } catch (error) { importNeedsReview = true; $('#importStatus').textContent = error.message.startsWith('METADATA_') ? metadataMessage(error.message) : tr(error.message); }
+      $('#importStatus').textContent = ui(`已保存 ${notes} 条备注。`, `Saved ${notes} notes. `) + ui(`页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`, `Addition observed for ${result.added} stickers; ${result.skipped} skipped.${result.stopped ? ' Later additions stopped.' : ''} Reload SeaTalk to check saved results.`); notifyAction($('#importStatus').textContent, result.stopped ? 'info' : 'success');
+    } catch (error) { importNeedsReview = true; $('#importStatus').textContent = error.message.startsWith('METADATA_') ? metadataMessage(error.message) : tr(error.message); notifyAction($('#importStatus').textContent, 'error'); }
     finally {
       stopObservingRefresh();
       importingBusy = false; $('#importStop').hidden = true;

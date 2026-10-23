@@ -54,6 +54,7 @@
     for (const property of ['left', 'right', 'top', 'width', 'height', 'transform']) host.style.removeProperty(property);
     geometryCustom = false; delete host.dataset.dockWidth; host.dataset.layout = 'auto';
     window.dispatchEvent(new CustomEvent('spga:layout-change'));
+    notifyAction(ui('已恢复默认布局、窗口位置和大小。收藏列表未重新加载。','Default layout, window position and size restored. Favorites were not reloaded.'), 'info');
   };
   window.addEventListener('resize', () => {
     if (!host.isConnected || host.dataset.open !== 'true' || !geometryCustom) return;

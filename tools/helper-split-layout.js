@@ -17,7 +17,6 @@ function installHelperLayout() {
     position:fixed!important;left:12px!important;top:12px!important;right:auto!important;bottom:auto!important;
     width:calc(100vw - var(--spga-dock-width) - 36px)!important;height:calc(100dvh - 24px)!important;
     min-width:0!important;max-width:none!important;max-height:none!important;margin:0!important;transform:none!important;border-radius:7px!important;}
-    html[data-spga-dock-kind] #root .misc-info {visibility:hidden!important}
     html[data-spga-dock-kind="favorites"] #st-favorites-curator,
     html[data-spga-dock-kind="avatar"] #seatalk-personal-gif-avatar-panel {
       position:fixed!important;left:auto!important;right:12px!important;top:12px!important;bottom:auto!important;

@@ -52,7 +52,7 @@
     if(busy() || sendUncertain || !sendDraft || sendDraft.invalid)return;
     const draft=sendDraft;try{guardSend(draft);}catch(error){$('#sendStatus').textContent=sendMessage(error.message);return;}
     sendingBusy=true;sendStopped=false;$('#sendConfirm').disabled=true;$('#sendStop').hidden=false;render();
-    let issued=0,completed=0;
+    let issued=0,completed=0,sendFailed=false;
     try{
       const result=await sendSelectedStickers(draft.items,{
         guard:()=>guardSend(draft),stopped:()=>sendStopped,pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
@@ -86,6 +86,6 @@
         },
       });
       $('#sendStatus').textContent=ui(`SeaTalk 已确认 ${result.sent} 张表情${result.stopped?'，已停止后续发送':''}。`,`SeaTalk confirmed ${result.sent} stickers.${result.stopped?' Later sends stopped.':''}`);
-    }catch(error){sendUncertain=issued>completed && error.message!=='SEND_FAILED';$('#sendStatus').textContent=sendMessage(error.message)+(sendUncertain && error.message!=='SEND_UNCONFIRMED'?' '+sendMessage('SEND_UNCONFIRMED'):'');}
-    finally{sendingBusy=false;$('#sendStop').hidden=true;$('#sendConfirm').disabled=true;stopSendMonitor();render();}
+    }catch(error){sendFailed=true;sendUncertain=issued>completed && error.message!=='SEND_FAILED';$('#sendStatus').textContent=sendMessage(error.message)+(sendUncertain && error.message!=='SEND_UNCONFIRMED'?' '+sendMessage('SEND_UNCONFIRMED'):'');}
+    finally{notifyAction($('#sendStatus').textContent,sendFailed || sendUncertain || issued>completed?'error':sendStopped?'info':'success');sendingBusy=false;$('#sendStop').hidden=true;$('#sendConfirm').disabled=true;stopSendMonitor();render();}
   };

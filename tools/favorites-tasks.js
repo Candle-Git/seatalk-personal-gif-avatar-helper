@@ -51,6 +51,7 @@
       const failures = activeItems().filter(item => item.animation === 'failed').length;
       $('#scanStatus').textContent = scanCancelled ? tr('已停止识别，已完成的分类仍然保留。') : queue.length
         ? ui(`识别完成${failures ? `，${failures} 个未能识别，可再次点击重试` : ''}。`, `Inspection complete.${failures ? ` ${failures} could not be identified. Inspect again to retry.` : ''}`) : tr('已经完成分类，无需重复检测。');
+      notifyAction($('#scanStatus').textContent, scanCancelled || failures ? 'info' : 'success');
       updateSummary();
       if ($('#animation').value !== 'all' || $('#detectionFilter').value !== 'all') { const scroll = $('main').scrollTop; render(); $('main').scrollTop = scroll; }
       else { count(); renderEmpty(); }
@@ -105,6 +106,7 @@
       deleting = false; deleteNeedsReview = Boolean(error); $('#deleteStop').hidden = true; $('#deleteCancel').disabled = false;
       $('#deleteCancel').textContent = tr('返回管理');
       $('#deleteProgress').textContent = ui(`页面收藏已观察到移除 ${done} / ${pending.length} 个。${language.textFor(error, 'zh') || (stop ? '已停止后续删除。' : '')}请刷新 SeaTalk 核对保存结果。`, `Removal observed for ${done} / ${pending.length} favorites. ${language.textFor(error, 'en') || (stop ? 'Later removals stopped. ' : '')} Reload SeaTalk to check saved results.`);
+      notifyAction($('#deleteProgress').textContent, error ? 'error' : stop ? 'info' : 'success');
       render();
     }
   };

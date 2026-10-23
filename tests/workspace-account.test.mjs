@@ -20,7 +20,7 @@ function fixture({binding=true,switchOnRemove=false,throwOnRemove=false}={}){
  const check=binding?bind({accountId:()=>account},original,()=>list):()=>{throw Error('not bound')};
  const context=vm.createContext({items,scanning:false,deleting:false,stop:false,deleteNeedsReview:false,pending:[],importingBusy:false,sendingBusy:false,metadataSaving:false,tr:value=>value,ui:(zh,en)=>zh,language:{textFor:value=>value},
   busy:()=>false,selection:()=>items.filter(i=>i.selected&&!i.deleted),selectionOutside:()=>0,assertWorkspaceAccount:check,
-  $:node,document:{createElement:()=>({})},count(){},render(){},openDialog(){node('#deletion').open=true;return true},closeDialog(){},
+  $:node,document:{createElement:()=>({})},count(){},render(){},notifyAction(){},openDialog(){node('#deletion').open=true;return true},closeDialog(){},
   setTimeout:fn=>queueMicrotask(fn),
   liveSource:()=>({list,actions:{async actionRemoveCustomStickers(ids){calls.push([...ids]);if(throwOnRemove)throw Error('private');list=list.filter(i=>!ids.includes(i.id));if(switchOnRemove){account=2;list=[{id:'one'},{id:'two'}];}}}}),
  });
