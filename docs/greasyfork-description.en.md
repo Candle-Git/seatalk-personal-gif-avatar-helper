@@ -1,53 +1,60 @@
-![SeaTalk GIF Avatar Helper](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-gif-avatar-helper-banner.dark.en.png)
+# SeaTalk Sticker Helper · 5.2.0
 
-# SeaTalk GIF Avatar Helper · 5.0.0
+> **The GIF avatar tool has grown into SeaTalk Sticker Helper.**
+>
+> Organize, search and share your favorite SeaTalk stickers, and set GIF avatars.
 
-Use chat GIF stickers as personal or group avatars, and organize and share favorite stickers in batches.
 
-**[Full visual guide and FAQ](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.en.md)**
+## Install or update
 
-## New in 5.0
+1. Install [Tampermonkey](https://www.tampermonkey.net/) and allow user scripts.
+2. Install/update the [existing Greasy Fork script](https://greasyfork.org/en/scripts/588931), checking version **5.2.0**.
+3. Disable other previews, reload [SeaTalk Web](https://seatalkweb.com/) and open SeaTalk Sticker Helper.
 
-- **Personal-avatar compatibility:** Register the resource for avatar use and verify identical file contents before applying, preserving animation and name.
-- **My favorites:** Search, enlarge previews, identify animation, select across pages, review selections and remove after confirmation.
-- **Share codes:** Share 1–100 stickers. Recipients paste, preview, select and confirm; existing favorites are skipped.
-- **Automatic split view:** On wide screens, SeaTalk stays left and the helper opens right. Close/minimize restores the original layout; smaller screens use a floating window.
-- **Consistent controls:** Clear title bars, red close buttons, minimize/restore, floating-window dragging/resizing and an always-available guide.
+The original installation name/update identity and existing notes are preserved. The manager may show the old name while the UI uses the new brand.
 
-The sticker market is excluded. The avatar helper is bilingual; the favorites workspace currently uses Chinese labels.
+![Installation](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-in-3-steps.dark.png)
 
-## Install and upgrade
+## A new chapter
 
-![Install in three steps](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-in-3-steps.dark.en.png)
+- **Find the right sticker** with searchable names, keywords, visible text and private notes.
+- **Send with confirmation** from a single preview or a selection. Check the conversation, images and count before sending one at a time.
+- **Share useful context**: codes can carry names, keywords and sticker text. Keep personal notes and merge keywords by default.
+- **Take your settings with you**: export and restore personal notes and manual image-format labels. AI items needing review start unchecked; Select all is available.
+- **Filter clearly**: image format, note status and inspection status are separate. Edit notes without inspection; manually label an animation or still image when needed.
+- **One interface**: both modules share Chinese / EN settings, consistent names and split/floating layouts.
 
-1. Install and enable the extension from the [Tampermonkey website](https://www.tampermonkey.net/).
-2. **Right-click** its icon, choose **Manage extension**, and enable **Allow User Scripts**. If unavailable, enable **Developer mode** on the browser extension page.
-3. Click **Install this script** above and reload [SeaTalk Web](https://seatalkweb.com/). Open the **GIF Avatar** button.
+Personal and group GIF avatars remain available under **GIF avatars**.
 
-The original installation identity is preserved. Disable other beta/preview copies, keep one helper enabled, then update and reload. Review any permission prompt.
+## My stickers
 
-![Allow User Scripts permission guide](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.en.png)
+1. Open SeaTalk's sticker picker and its heart **Favorites** tab, then open **My stickers**. Keep the native picker mounted.
+2. Edit a sticker's name, keywords, text, private note or image format. Saving confirms its notes and clears Needs review.
+3. Search and filter. Selections survive paging; Review selected includes items outside the current filter.
+4. Send from a preview or Send selected. Verify the destination and images, then confirm. Up to 100 stickers per operation; ordinary direct and group chats only, without threads.
 
-## How to use
+Changing accounts or conversations stops later sends. Unconfirmed results stop without automatic retries. Check the chat and reload before continuing.
 
-**Avatars:** Preview a random GIF and apply with the main button. Or send a GIF through SeaTalk's sticker button and capture it from chat. Group changes require editable group settings to stay open and confirmation of the group name and image.
+## Share and import
 
-**Favorites:** Open the native heart **Favorites** tab before opening **我的收藏 (My favorites)**. Keep the native panel mounted and do not switch chats during operations. The helper hides it temporarily, then restores it when minimized or closed.
+Select 1–100 stickers → Share code → copy and send it yourself. Recipients use Import code → Parse and preview → select → confirm adding. Existing favorites are not added again but can receive notes; new stickers need a successful preview.
 
-- Browsing and sharing need no scan. For animated-only filtering, choose **识别动图 (Identify animation)** first.
-- Paging and filtering retain selections. **全选本页** selects only the current page; **查看已选** reviews all selections.
-- Share: Select → **生成分享口令** → copy the complete code and send it yourself. Limit: 100 stickers per code.
-- Add: **导入口令** → paste → **解析并预览** → select → confirm. Existing favorites are skipped; failed previews cannot be added.
-- Remove: Select → **删除所选表情** → review images and count → confirm. This removes your favorites only, not chat messages. It cannot be undone in the helper, and codes do not guarantee recovery.
+Codes with notes use `STGIF2` and require 5.2 or compatible previews. Uncheck metadata for legacy `STGIF1`. Private notes and manual format labels are excluded. Codes contain readable resource IDs and optional metadata; availability is not guaranteed forever.
 
-If an add/removal result is unconfirmed, reload SeaTalk and verify before retrying. Stopping waits for the current item result; reloading clears selections.
+## Personal backup
+
+Settings → Export personal backup saves JSON. On another computer, choose a backup or labels file, preview, select and confirm. Existing notes are kept by default, with keyword merging; choose replacement per item when needed.
+
+Backups include private notes: keep them safe. Notes are stored per account in Tampermonkey. Clearing extension storage or uninstalling may remove them. Restore changes only personal notes and format labels; it never adds, removes or sends stickers and does not back up image files.
+
+## GIF avatars
+
+Preview a random example or capture a GIF sent with SeaTalk's sticker picker, then apply. For group avatars, keep editable group settings open and confirm the group and image. Check uncertain results before retrying.
 
 ## Privacy and compatibility
 
-The interface runs only on SeaTalk Web. Capture, inspection, preview, avatar registration and adding favorites use SeaTalk's image/business services. There is no separate analytics or tracking service and no upload of chats, passwords or cookies to other services. Session credentials stay in the page. Codes contain resource identifiers and share names, not accounts, credentials or signed image URLs. Codes are not encrypted, cannot guarantee permanent resource availability, and are never sent automatically.
+Runs only on SeaTalk Web using SeaTalk's own image and business services. No independent tracking service or upload of chats, passwords or cookies to other services. Sending requires your confirmation and uses native SeaTalk actions; uncertain results stop without retries.
 
-The underlying personal-avatar flow succeeded in a real SeaTalk 3.71.1 browser session and survived reload. See the separate automated, simulated UI and packaged-account scope in the [5.0.0 validation record](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/docs/RELEASE_5.0.0.md). Cross-account imports still need further validation.
+The release contains features only, without private candidate labels or a sticker market. See the [5.2.0 release record](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/docs/RELEASE_5.2.0.md) for evidence and compatibility limits. Unofficial tool, not affiliated with or endorsed by SeaTalk.
 
-For problems, copy sanitized diagnostics from **Status and diagnostics** and report through [GitHub Issues](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues). Redact names, chats and image-URL parameters.
-
-This is an unofficial tool, unaffiliated with and not endorsed by SeaTalk.
+[GitHub Release · 5.2.0](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/tag/v5.2.0) · [Issues](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues) · [中文](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper)
