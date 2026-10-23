@@ -7173,7 +7173,7 @@ function installPersonalSettingsBridge() {
     renderPanel();
     window.dispatchEvent(new CustomEvent("spga:locale-change", {detail:locale}));
   }
-  window.addEventListener("spga:locale-request", event => setHelperLocale(event.detail));
+  if (typeof window !== "undefined") window.addEventListener("spga:locale-request", event => setHelperLocale(event.detail));
   function startHelperLayout() {
     try {
       if (typeof unsafeWindow !== "undefined" && typeof unsafeWindow.Function === "function") {
