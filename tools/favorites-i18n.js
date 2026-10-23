@@ -2,6 +2,12 @@
 function createFavoritesLocalizer(initialLocale = 'zh') {
   let locale = initialLocale === 'en' ? 'en' : 'zh';
   const labels = {
+    "Yixin.Zhong × Codex 制作": "Made by Yixin.Zhong × Codex",
+    "查看 GitHub 项目": "View GitHub project",
+    "窗口布局": "Window layout",
+    "个人数据": "Personal data",
+    "备份与恢复": "Backup and restore",
+    "分栏让 SeaTalk 与助手并排显示；浮窗可自由拖动。重置布局恢复默认分栏、位置和大小，不会刷新收藏。": "Split view places SeaTalk and the helper side by side. Floating windows can be dragged freely. Reset layout restores the default split view, position and size without reloading favorites.",
     "重置布局": "Reset layout",
     "恢复默认分栏、窗口位置和大小": "Restore default split view, window position and size",
     "同步收藏": "Sync favorites",
@@ -96,7 +102,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "选择表情 → 点击「删除所选表情」→ 核对图片和数量 → 确认删除。": "Select stickers → Remove selected → Check the images and count → Confirm removal.",
     "删除只影响你的收藏，不会删除聊天消息。本助手无法撤销删除，分享口令也不保证能恢复。筛选之外的已选表情也会包括在确认清单中。": "Removal affects only your favorites, not chat messages. The helper cannot undo removal, and a share code does not guarantee recovery. The confirmation includes selected stickers outside the current filter.",
     "收起、关闭和结果核对": "Minimize, close and check results",
-    "点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。点击「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。": "Use − to minimize while keeping your page, filters, selections and inspection progress. Click the small entry to restore. Wide screens use split view with SeaTalk on the left; drag the divider to resize. Choose Float to move the window by its title bar or resize its lower-right corner. Closing or minimizing restores SeaTalk's original layout.",
+    "点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。在「设置 → 窗口布局」选择「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。": "Use − to minimize while keeping your page, filters, selections and inspection progress. Click the small entry to restore. Wide screens use split view with SeaTalk on the left; drag the divider to resize. Choose Settings → Window layout → Float to move the window by its title bar or resize its lower-right corner. Closing or minimizing restores SeaTalk's original layout.",
     "操作结果不确定时，先刷新 SeaTalk 核对收藏，再决定是否重试。刷新会清空本次勾选。添加或删除进行中时，停止会等待当前表情的结果，再停止后续操作。": "If a result is uncertain, reload SeaTalk and check favorites before retrying. Reloading clears selections. During add or removal, Stop waits for the current sticker result before stopping later items.",
     "知道了，返回管理": "Got it",
     "表情预览": "Sticker preview",

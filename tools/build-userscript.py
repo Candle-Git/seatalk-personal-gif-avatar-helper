@@ -39,6 +39,8 @@ for old, new in replacements.items():
 start = source.index('function launchFavoritesGallery(')
 end = source.index('\n  function init()', start)
 workspace = (root / 'tools/favorites-workspace.js').read_text()
+# Both module badges use the same build version as the userscript metadata.
+workspace = workspace.replace('/* HELPER_BUILD_VERSION */ "dev"', __import__('json').dumps(version))
 workspace = workspace.replace('  /* FAVORITES_I18N */', (root / 'tools/favorites-i18n.js').read_text())
 workspace = workspace.replace('  /* PERSONAL_CORE */', (root / 'tools/personal-settings-core.js').read_text())
 workspace = workspace.replace('  /* SEND_CORE */', (root / 'tools/sticker-send-core.js').read_text())

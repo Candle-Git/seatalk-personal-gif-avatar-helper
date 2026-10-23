@@ -83,8 +83,8 @@
     const link=document.createElement('a');link.href=url;link.download=filename;try { document.body.append(link); link.click(); } finally { link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
   }
   $('#settingsOpen').onclick=()=>{
-    if(busy() || !personalReady)return;
-    $('#personalSettingsStatus').textContent=ui(`当前账号已保存 ${personalSnapshot.items.length} 条个人备注。`,`This account has ${personalSnapshot.items.length} saved notes.`);
+    if(busy())return;
+    $('#personalSettingsStatus').textContent=personalReady && workspaceAccountState === 'ready' ? ui(`当前账号已保存 ${personalSnapshot.items.length} 条个人备注。`,`This account has ${personalSnapshot.items.length} saved notes.`) : ui('个人数据暂不可用；语言与窗口布局仍可调整。','Personal data is unavailable. Language and window layout settings remain available.');
     openDialog($('#personalSettings'));
   };
   $('#personalExport').onclick=()=>{
