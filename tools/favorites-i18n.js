@@ -2,6 +2,10 @@
 function createFavoritesLocalizer(initialLocale = 'zh') {
   let locale = initialLocale === 'en' ? 'en' : 'zh';
   const labels = {
+    "同步收藏": "Sync favorites",
+    "收藏自动同步；无需刷新网页。": "Favorites sync automatically; no page reload needed.",
+    "收藏同步": "Favorites sync",
+    "助手打开时，每 1.5 秒读取 SeaTalk 当前账号的收藏状态，自动同步新增和移除；也可点击「同步收藏」。原生表情面板关闭后仍可同步。这只更新右侧列表，保留备注、筛选和仍在收藏中的勾选，不会刷新网页或重新请求服务器。发送、添加、删除、识别或弹窗打开期间暂停同步，结束后恢复。操作结果不确定时，仍需刷新网页核对服务器保存结果。": "While open, the helper reads the current account’s SeaTalk favorites state every 1.5 seconds to sync additions and removals, even if the native picker is closed. You can also choose Sync favorites. This updates the helper list without reloading or requesting server data, preserving notes, filters and selections still in favorites. Sync pauses during sending, adding, removal, inspection or an open dialog, then resumes. Uncertain operations still require a page reload to verify server persistence.",
     "整理、搜索、分享你的 SeaTalk 收藏表情，也能设置 GIF 头像。": "Organize, search and share your SeaTalk favorite stickers, and set GIF avatars.",
     "语言": "Language",
     "图片形式": "Image format",

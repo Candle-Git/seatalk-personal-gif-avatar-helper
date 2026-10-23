@@ -14,6 +14,13 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
   if (!seed) throw Error(tr('请先打开 SeaTalk 表情面板，切换到爱心「收藏」，再打开「我的表情」。'));
   function readSource(element, requireActions = true) {
     let fiber = element?.[Object.keys(element).find(key => key.startsWith('__reactFiber$') || key.startsWith('__reactInternalInstance$'))];
+    // DOM pointers can retain the previous React branch after a commit.
+    const isCurrent = node => {
+      let top = node;
+      while (top?.return) top = top.return;
+      return top?.stateNode?.current === top;
+    };
+    if (fiber?.alternate && !isCurrent(fiber) && isCurrent(fiber.alternate)) fiber = fiber.alternate;
     let list, actions;
     for (let count = 0; fiber && count < 24; count++, fiber = fiber.return) {
       const props = fiber.memoizedProps;
@@ -24,7 +31,16 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     return { list, actions };
   }
   const source = readSource(seed, false).list;
-  const liveSource = () => readSource(document.querySelector(pickerSelector));
+  const liveSource = (requireActions = true) => {
+    const first = document.querySelector(pickerSelector);
+    if (first) return readSource(first, requireActions);
+    // An empty favorites tab has no sticker node. Look for its mounted container.
+    const panel = document.querySelector('.sealabs-stickers-panel');
+    for (const node of panel ? [panel, ...Array.from(panel.querySelectorAll('*')).slice(0, 80)] : []) {
+      try { return readSource(node, requireActions); } catch (_) { /* Try the next mounted container. */ }
+    }
+    throw Error(tr('请先打开 SeaTalk 爱心收藏面板，再重新操作。'));
+  };
   const known = new Map(presets.map(item => [item.gifId, item.label]));
   const items = [], seen = new Set();
   for (const item of source) {
@@ -56,8 +72,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
   let visibilityStyle = document.getElementById(visibilityId);
   if (!visibilityStyle) { visibilityStyle = document.createElement('style'); visibilityStyle.id = visibilityId; document.head.append(visibilityStyle); }
   visibilityStyle.textContent = `body:has(#st-favorites-curator[data-managed="true"]) #seatalk-personal-gif-avatar-panel {display:none!important}
-    body:has(#st-favorites-curator[data-managed="true"]) #seatalk-personal-gif-avatar-toggle {visibility:hidden!important}
-    body:has(#st-favorites-curator[data-open="true"]) .sealabs-stickers-panel {visibility:hidden!important;pointer-events:none!important}`;
+    body:has(#st-favorites-curator[data-managed="true"]) #seatalk-personal-gif-avatar-toggle {visibility:hidden!important}`;
   document.getElementById('seatalk-personal-gif-avatar-panel')?.classList.remove('spga-open');
   document.body.append(host, mini);
   const root = host.attachShadow({ mode: 'open' });
@@ -78,12 +93,13 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
   <button id="dockDivider" role="separator" aria-orientation="vertical" aria-label="调整侧栏宽度" hidden></button><section class="app">
     <div id="dragHandle" title="拖动此栏移动窗口"><span class="grip" aria-hidden="true">⠿</span><h1>SeaTalk 表情助手</h1><div class="window-controls"><div class="workspace-language" role="group" aria-label="语言"><button data-workspace-locale="zh" aria-pressed="false">中文</button><button data-workspace-locale="en" aria-pressed="false">EN</button></div><button id="guideOpen">使用指南</button><button id="settingsOpen">设置</button><button id="dockToggle" aria-label="切换分栏与浮窗" disabled>分栏</button><button id="resetPosition" class="icon-button" aria-label="恢复默认位置和大小" title="恢复默认位置和大小">↺</button><button id="minimize" class="icon-button" aria-label="收起我的表情" title="收起，保留当前选择">−</button><button id="close" class="danger-fill" aria-label="关闭批量管理">✕ 关闭</button></div></div>
     <nav class="workspace-tabs" aria-label="助手功能" role="tablist"><button id="backAvatar" role="tab" aria-selected="false">GIF 头像</button><button role="tab" aria-selected="true" aria-current="page">我的表情</button></nav>
-    <header><p id="summary"></p><div class="toolbar"><input id="search" type="search" placeholder="搜索名称、关键词或表情文字" aria-label="搜索收藏"><select id="filter" aria-label="显示范围"><option value="all">全部收藏</option><option value="selected">已选择</option></select><button id="scan">识别动图</button><button id="importOpen">导入口令</button></div><div class="filter-toolbar"><label>图片形式<select id="animation" aria-label="图片形式"><option value="all">全部形式</option><option value="animated">动图</option><option value="static">静态图</option><option value="unknown">未知</option></select></label><label>备注状态<select id="metadataFilter" aria-label="备注状态"><option value="all">全部备注</option><option value="annotated">已备注</option><option value="unannotated">未备注</option><option value="review">需复核</option></select></label><label>检测状态<select id="detectionFilter" aria-label="检测状态"><option value="all">全部检测状态</option><option value="unknown">未检测</option><option value="recognized">已识别</option><option value="failed">识别失败</option></select></label></div><div class="status-row"><span id="scanStatus" role="status">浏览和分享无需先识别动图。</span><button id="scanStop" hidden>停止识别</button></div><details id="hiddenTools" hidden><summary>开发工具</summary><button id="export">导出已选 JSON</button></details></header>
+    <header><p id="summary"></p><div class="toolbar"><input id="search" type="search" placeholder="搜索名称、关键词或表情文字" aria-label="搜索收藏"><select id="filter" aria-label="显示范围"><option value="all">全部收藏</option><option value="selected">已选择</option></select><button id="syncFavorites">同步收藏</button><button id="scan">识别动图</button><button id="importOpen">导入口令</button></div><div class="filter-toolbar"><label>图片形式<select id="animation" aria-label="图片形式"><option value="all">全部形式</option><option value="animated">动图</option><option value="static">静态图</option><option value="unknown">未知</option></select></label><label>备注状态<select id="metadataFilter" aria-label="备注状态"><option value="all">全部备注</option><option value="annotated">已备注</option><option value="unannotated">未备注</option><option value="review">需复核</option></select></label><label>检测状态<select id="detectionFilter" aria-label="检测状态"><option value="all">全部检测状态</option><option value="unknown">未检测</option><option value="recognized">已识别</option><option value="failed">识别失败</option></select></label></div><div class="status-row"><span id="syncStatus" role="status">收藏自动同步；无需刷新网页。</span></div><div class="status-row"><span id="scanStatus" role="status">浏览和分享无需先识别动图。</span><button id="scanStop" hidden>停止识别</button></div><details id="hiddenTools" hidden><summary>开发工具</summary><button id="export">导出已选 JSON</button></details></header>
     <main><div class="grid"></div><div id="emptyState" class="empty" hidden><h2 id="emptyTitle"></h2><p id="emptyMessage"></p><button id="emptyScan" hidden>识别动图</button><button id="emptyReset">查看全部收藏</button></div></main>
     <footer><div class="pagination"><button id="first">首页</button><button id="prev">上一页</button><span id="page"></span><button id="next">下一页</button><button id="last">末页</button><label>跳至 <input id="jump" type="number" min="1" step="1" value="1" aria-label="跳转页码"> 页</label><button id="jumpGo">跳转</button></div><div class="selection-bar"><div class="selection-message"><span id="count">已选择 0 个</span><div id="selectionHint">先选择要分享或删除的表情。</div></div><button id="selectPage">全选本页</button><button id="viewSelected">查看已选</button><button id="clear">清空选择</button><span class="spacer"></span><button id="sendSelected" class="primary">发送所选表情</button><button id="shareOpen">生成分享口令</button><button id="remove" class="danger">删除所选表情</button></div></footer><button id="resizeHandle" aria-label="调整窗口大小" title="拖动调整大小，也可用方向键调整"></button>
   </section>
   <dialog id="guideDialog" aria-labelledby="guideTitle"><div class="dialog-header"><h2 id="guideTitle">我的表情使用指南</h2><button data-close="guideDialog" aria-label="关闭使用指南">×</button></div><div class="dialog-body guide"><p>整理、搜索、分享你的 SeaTalk 收藏表情，也能设置 GIF 头像。</p>
     <section><h3>开始前</h3><p>在 SeaTalk 打开表情面板，切换到爱心「收藏」页签，再打开助手的「我的表情」。</p></section>
+    <section><h3>收藏同步</h3><p>助手打开时，每 1.5 秒读取 SeaTalk 当前账号的收藏状态，自动同步新增和移除；也可点击「同步收藏」。原生表情面板关闭后仍可同步。这只更新右侧列表，保留备注、筛选和仍在收藏中的勾选，不会刷新网页或重新请求服务器。发送、添加、删除、识别或弹窗打开期间暂停同步，结束后恢复。操作结果不确定时，仍需刷新网页核对服务器保存结果。</p></section>
     <section><h3>选择和查看表情</h3><p>点击图片可放大，勾选复选框可选择。「全选本页」只选择当前页；翻页或切换筛选后，之前的选择仍会保留。点击「查看已选」可统一核对。</p><p>「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在备注编辑中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。</p></section>
     <section><h3>分享给朋友</h3><p>选择表情 → 点击「生成分享口令」→ 复制完整口令发给朋友。</p><p>每次最多分享 100 个。表情越多，口令越长。点击名称旁的编辑按钮可保存备注、关键词和表情文字，用于搜索，不会修改 SeaTalk 原收藏。</p></section>
     <section><h3>添加朋友分享的表情</h3><p>点击「导入口令」→ 粘贴完整口令 → 点击「解析并预览」→ 选择表情 → 确认添加。</p><p>已收藏的表情不会重复添加，但可以导入备注。已有备注默认保留，并合并去重关键词；也可逐条选择使用朋友的备注。预览失败的新表情暂时不能添加。</p></section>
@@ -146,6 +162,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     $('#viewSelected').textContent = selectedView ? tr('返回筛选') : tr('查看已选');
     $('#selectPage').disabled = locked || !filtered().length;
     $('#scan').disabled = locked || scanning;
+    $('#syncFavorites').disabled = locked || scanning || workspaceAccountState !== 'ready';
     $('#importOpen').disabled = locked || scanning || !accountReady || !personalReady;
     for (const selector of ['#search', '#filter', '#animation', '#metadataFilter', '#detectionFilter']) $(selector).disabled = locked;
     $('#settingsOpen').disabled = locked || !personalReady || !accountReady;
@@ -248,6 +265,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     host.dataset.open = host.dataset.managed = 'true'; host.style.display = ''; mini.hidden = true;
     document.getElementById('seatalk-personal-gif-avatar-panel')?.classList.remove('spga-open');
     if (geometryCustom) { const rect = host.getBoundingClientRect(); clampWindow(rect.left, rect.top); }
+    startFavoritesSync(); syncFavorites();
     count(); window.dispatchEvent(new CustomEvent('spga:layout-change'));
   }
   function setWorkspaceLocale(value) {
@@ -261,7 +279,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
       }
     }
     for (const item of imported) item.check.setAttribute('aria-label', tr('添加 ') + item.label);
-    for (const selector of ['#scanStatus', '#shareStatus', '#importStatus', '#deleteSummary', '#deleteProgress', '#message', '#personalEditorStatus', '#personalDetectionStatus', '#personalSettingsStatus', '#sendStatus', '#sendSummary']) {
+    for (const selector of ['#syncStatus', '#scanStatus', '#shareStatus', '#importStatus', '#deleteSummary', '#deleteProgress', '#message', '#personalEditorStatus', '#personalDetectionStatus', '#personalSettingsStatus', '#sendStatus', '#sendSummary']) {
       const node = $(selector); node.textContent = tr(node.textContent);
     }
     for (const node of root.querySelectorAll('.import-card p,.import-card select option,.metadata-import-row select option')) node.textContent = tr(node.textContent);
@@ -282,6 +300,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
   host.__close = hideWorkspace;
   function minimizeWorkspace() {
     if (root.querySelector('dialog[open]')) return;
+    stopFavoritesSync();
     host.dataset.open = 'false'; host.style.display = 'none'; mini.hidden = false; count(); window.dispatchEvent(new CustomEvent('spga:layout-change')); mini.focus();
   }
   mini.onclick = () => { if (!host.isConnected) { mini.remove(); return; } revealWorkspace(); $('#minimize').focus(); };
@@ -291,6 +310,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     }
     scanCancelled = true; activeRequests.forEach(controller => controller.abort());
     for (const dialog of root.querySelectorAll('dialog[open]')) closeDialog(dialog);
+    stopFavoritesSync();
     host.dataset.open = host.dataset.managed = 'false'; host.style.display = 'none'; mini.hidden = true;
     window.dispatchEvent(new CustomEvent('spga:layout-change'));
     if (back) window.dispatchEvent(new CustomEvent('spga:collections-back'));
@@ -316,9 +336,79 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
   /* WORKSPACE_TASKS */
   /* WORKSPACE_GEOMETRY */
   /* SHARE_UI */
+  let favoritesSyncTimer = null, favoritesSyncServices = null;
+  function stopFavoritesSync() {
+    if (favoritesSyncTimer !== null) clearInterval(favoritesSyncTimer);
+    favoritesSyncTimer = null;
+  }
+  function startFavoritesSync() {
+    if (favoritesSyncTimer !== null) return;
+    favoritesSyncTimer = setInterval(() => {
+      if (!host.isConnected) { stopFavoritesSync(); return; }
+      syncFavorites();
+    }, 1500);
+  }
+  function syncFavorites(manual = false) {
+    if (!host.isConnected || host.dataset.open !== 'true' || document.hidden || busy() || scanning || root.querySelector('dialog[open]') || workspaceAccountState !== 'ready') return;
+    try { assertWorkspaceAccount(); }
+    catch (_) {
+      workspaceAccountState = 'failed'; stopFavoritesSync(); count();
+      $('#syncStatus').textContent = ui('账号已变化，自动同步已停止。请刷新网页后重新打开。', 'Account changed. Sync stopped. Reload the page and reopen the helper.');
+      return;
+    }
+    let latest;
+    try {
+      const stored = favoritesSyncServices?.store.getState()?.messages?.customStickers;
+      if (Array.isArray(stored)) {
+        latest = stored.map(entry => {
+          const id = [entry.id, entry.url].find(value => validMetadataId(value));
+          if (!id) throw Error('UNREADABLE_FAVORITE');
+          return { id, name: entry.name, url: validPreviewUrl(favoritesSyncServices.fileUrl, id) };
+        });
+      } else latest = liveSource(false).list;
+    }
+    catch (_) {
+      $('#syncStatus').textContent = ui('暂时无法读取收藏，已保留当前列表。可打开爱心收藏面板后点击同步收藏。', 'Favorites are temporarily unavailable. List kept; open SeaTalk’s Favorites tab and choose Sync favorites.');
+      return;
+    }
+    const current = new Map(items.filter(item => !item.deleted).map(item => [item.gifId, item]));
+    const next = [], ids = new Set();
+    for (const entry of latest) {
+      if (typeof entry.id !== 'string' || !/^[a-zA-Z0-9]{32,}$/.test(entry.id) || ids.has(entry.id)) continue;
+      let url;
+      try { url = new URL(entry.url); } catch (_) { continue; }
+      if (url.protocol !== 'https:' || url.hostname !== 'f.haiserve.com' || !url.pathname.startsWith('/download/' + entry.id + '_')) continue;
+      ids.add(entry.id);
+      const number = next.length + 1, providedName = known.get(entry.id) || entry.name;
+      let item = current.get(entry.id);
+      if (!item) {
+        const generatedName = providedName ? null : ui(`收藏 ${number}`, `Favorite ${number}`);
+        item = { gifId: entry.id, url: url.href, label: String(providedName || generatedName).slice(0,80), originalLabel: String(providedName || generatedName).slice(0,80), number, generatedName, existing: known.has(entry.id), selected: false, animation: 'unknown' };
+      }
+      next.push({ item, url: url.href, number });
+    }
+    // Never replace the workspace with a partially validated native collection.
+    if (ids.size !== new Set(latest.map(entry => entry.id)).size) {
+      $('#syncStatus').textContent = ui('部分收藏数据暂不可读，已保留当前列表。稍后重试同步。', 'Some favorites are unreadable. Current list kept; sync will retry.');
+      return;
+    }
+    const active = activeItems();
+    const changed = active.length !== next.length || next.some((row,index) => active[index] !== row.item || row.item.url !== row.url);
+    if (changed) {
+      const added = next.filter(row => !current.has(row.item.gifId)).length;
+      const removed = active.filter(item => !ids.has(item.gifId)).length;
+      for (const old of items) if (!ids.has(old.gifId)) { old.deleted = true; old.selected = false; }
+      items.splice(0, items.length, ...next.map(({item,url,number}) => { item.url = url; item.number = number; return item; }));
+      refreshPersonalLabels();
+      $('#syncStatus').textContent = ui(`收藏已同步：新增 ${added} 个，移除 ${removed} 个。`, `Favorites synced: ${added} added, ${removed} removed.`);
+    } else if (manual || !$('#syncStatus').textContent.includes(ui('收藏已同步', 'Favorites synced'))) {
+      $('#syncStatus').textContent = ui('收藏已同步；新增收藏后会自动更新。', 'Favorites synced; new favorites update automatically.');
+    }
+  }
+  $('#syncFavorites').onclick = () => syncFavorites(true);
   discoverShareServices().then(async services => {
     workspaceAccountCheck = createWorkspaceAccountGuard(services, source, () => liveSource().list);
-    workspaceAccountState = 'ready'; await loadPersonalSettings(services); count();
+    favoritesSyncServices = services; workspaceAccountState = 'ready'; await loadPersonalSettings(services); count(); startFavoritesSync(); syncFavorites();
   }).catch(() => {
     workspaceAccountState = 'failed';
     $('#scanStatus').textContent = tr('无法核对当前账号，添加和删除已停用。请刷新 SeaTalk 后重新打开。'); count();
