@@ -7,7 +7,8 @@ const A = '77db1154ce5639bf4ef946b0296c75da0b070500000f995617737056080110e5';
 const B = 'b85fdeb54f129ea6ee22258515ed0b820b0705000002a37e1780358408011036';
 const configEvent = 'seatalk-personal-gif-avatar:set-config';
 const statusEvent = 'seatalk-personal-gif-avatar:hook-status';
-const flush = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); };
+const flush = async () => { await new Promise(resolve => setImmediate(resolve)); };
+const registered = id => id.slice(0, 33) + 'b03' + id.slice(36);
 
 function fixture() {
   let now = 1_000, seq = 0;
@@ -36,12 +37,20 @@ function fixture() {
   api.state.pageHookReady = true;
   api.bindHookStatusEvents();
   const backend = {
+    async forceFetchInfo(userId) { return [{ userid: userId, userInfo: { name: 'Original', avatar: 'old-avatar' } }]; },
     updateUserInfo(userId, payload) { return new Promise((resolve, reject) => requests.push({ userId, payload, resolve, reject })); },
   };
   let hook = source.slice(source.indexOf('  function pageHook(events)'), source.indexOf('  function init()'));
+  hook = hook.replace('    async function discoverAvatarResourceServices() {', `    async function discoverAvatarResourceServices() {
+    return { session: { loggedIn: true, userId: 123, fileServerToken: 'fixture' },
+      fileUrl: id => 'https://f.haiserve.com/download/' + id };`);
   hook = hook.replace('    function isValidGifId(value)', '    globalThis.testRuntime = runtime; runtime.esmUpdater = backend; runtime.esmSessionInfo = { userId: 123 };\n    function isValidGifId(value)');
   const page = vm.createContext({
-    backend, Date: Clock, window: win, CustomEvent,
+    backend, Date: Clock, window: win, CustomEvent, URL, URLSearchParams, AbortSignal,
+    crypto: { getRandomValues: a => a.fill(1) },
+    fetch: async (url, options) => url.includes('/refresh/')
+      ? new Response(JSON.stringify({ FileName: registered(options.headers.fid) }))
+      : new Response(new Uint8Array([71, 73, 70, 56, 57, 97])),
     document: { querySelectorAll: () => [] }, XMLHttpRequest: class { open() {} send() {} },
   });
   vm.runInContext(hook + `\npageHook({configEvent:${JSON.stringify(configEvent)},statusEvent:${JSON.stringify(statusEvent)}});`, page);
@@ -64,7 +73,7 @@ function fixture() {
 
 test('slow request stays locked after visual timeout; selected B cannot change submission/result A', async () => {
   const f = fixture(); f.start(A); await flush();
-  assert.equal(f.requests[0].payload.avatar, A);
+  assert.equal(f.requests[0].payload.avatar, registered(A));
   await f.advance(21_000);
   assert.equal(f.api.state.requestPending, true);
   assert.equal(f.api.state.requestSlow, true);
@@ -80,7 +89,7 @@ test('slow request stays locked after visual timeout; selected B cannot change s
   const success = f.events.find(e => e.detail.type === 'direct-submitted');
   assert.equal(success.detail.gifId, A); assert.equal(success.detail.attemptId, 1);
   f.start(B); await flush();
-  assert.equal(f.requests.length, 2); assert.equal(f.requests[1].payload.avatar, B);
+  assert.equal(f.requests.length, 2); assert.equal(f.requests[1].payload.avatar, registered(B));
 });
 
 test('page busy rejection is explicit, cannot mutate A, and does not queue B', async () => {
@@ -112,7 +121,7 @@ for (const oldResult of ['success', 'failure']) {
 
 test('late A failure remains A; retry B succeeds and visual changes cannot prematurely unlock either request', async () => {
   const f = fixture(); f.start(A); await flush();
-  f.avatarUrls.push(`https://fixture.invalid/${A}`);
+  f.avatarUrls.push(`https://fixture.invalid/${registered(A)}`);
   await f.advance(31_000);
   assert.equal(f.api.state.requestPending, true, 'visual match and 30s timer do not unlock request');
   assert.equal(f.successes.length, 0, 'visual-only evidence does not celebrate API success');
@@ -167,6 +176,6 @@ test('a retry triggered synchronously by terminal delivery is accepted', async (
   };
   f.requests[0].resolve(); await flush();
   assert.equal(f.requests.length, 2);
-  assert.equal(f.requests[1].payload.avatar, B);
+  assert.equal(f.requests[1].payload.avatar, registered(B));
   assert.equal(f.page.testRuntime.directOperation.id, 2);
 });

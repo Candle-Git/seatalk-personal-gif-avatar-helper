@@ -2,9 +2,9 @@
 // @name         SeaTalk 个人 GIF 头像助手
 // @name:en      SeaTalk Personal GIF Avatar Helper
 // @namespace    https://seatalkweb.com/
-// @version      4.0.1
-// @description  将聊天中的 GIF 设为个人或群头像，支持群目标确认、成功提示和脱敏诊断。
-// @description:en Use chat GIFs as personal or group avatars, with group confirmation, success feedback and sanitized diagnostics.
+// @version      5.0.0
+// @description  个人与群 GIF 头像、收藏表情批量管理、分享口令与自动分栏。
+// @description:en Personal and group GIF avatars, batch favorites management, sharing codes and automatic split layout.
 // @author       Yixin.Zhong × Codex
 // @match        https://seatalkweb.com/*
 // @match        https://*.seatalkweb.com/*
@@ -44,7 +44,7 @@
   const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
   const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
   // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
-  const SCRIPT_VERSION = "4.0.1";
+  const SCRIPT_VERSION = "5.0.0";
   const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
 
   // 动图验证只读取 SeaTalk 图片域名中的候选文件，不会上传、保存或打印带签名参数的地址。
@@ -145,7 +145,7 @@
 
   const I18N = {
     zh: {
-      title: "SeaTalk GIF 头像助手",
+      title: "SeaTalk GIF 助手",
       subtitle: "两种方式，几秒换上动态头像。",
       quickEyebrow: "快速体验",
       quickTitle: "手头没有 GIF？",
@@ -205,12 +205,12 @@
       successClose: "好耶！",
       updateBadge: "NEW",
       updateVersion: "版本 {version}",
-      updateTitle: "更顺手的 GIF 头像助手",
-      updateSubtitle: "个人与群 GIF 头像，操作与外观进一步优化。",
-      updateHighlightOne: "英文自检日志不再混入中文，保留模块信息",
-      updateHighlightTwo: "标题栏支持拖动，小窗口内容可滚动、底部按钮保持可见",
-      updateHighlightThree: "新增 GitHub 项目入口，支持中英文提示",
-      updateHighlightFour: "日常蓝色界面，弹窗渐变点缀，成功保留绿色对勾",
+      updateTitle: "头像助手 + 我的收藏",
+      updateSubtitle: "适配新版个人 GIF 头像，新增收藏表情批量管理与分享。",
+      updateHighlightOne: "新增「我的收藏」，与个人／群头像助手切换使用",
+      updateHighlightTwo: "动图检测、类型筛选、搜索和页码快速跳转",
+      updateHighlightThree: "选择表情生成分享口令，导入口令预览并批量添加",
+      updateHighlightFour: "修复个人 GIF 头像更新；收藏删除须预览并确认",
       updateClose: "知道了，去试试！",
       toggleLabel: "语言",
       helperToggle: "GIF头像助手",
@@ -226,7 +226,7 @@
       diagnosticVisualPending: "页面没有返回可识别的新头像地址，但不会影响已成功的更新。",
     },
     en: {
-      title: "SeaTalk GIF Avatar",
+      title: "SeaTalk GIF Helper",
       subtitle: "Two simple ways to get an animated avatar in seconds.",
       quickEyebrow: "QUICK TRY",
       quickTitle: "No GIF ready?",
@@ -286,12 +286,12 @@
       successClose: "Love it!",
       updateBadge: "NEW",
       updateVersion: "Version {version}",
-      updateTitle: "A smoother GIF avatar helper",
-      updateSubtitle: "Refinements for personal and group GIF avatars.",
-      updateHighlightOne: "English diagnostics no longer mix in Chinese startup messages",
-      updateHighlightTwo: "Drag the header; scroll content in small windows with actions visible",
-      updateHighlightThree: "Open the GitHub project from the new footer icon",
-      updateHighlightFour: "Blue everyday controls, subtle gradient accents and a green success check",
+      updateTitle: "Avatar helper + My favorites",
+      updateSubtitle: "Updated personal GIF avatars, batch favorites management and sticker sharing.",
+      updateHighlightOne: "Switch between avatar tools and My favorites",
+      updateHighlightTwo: "Detect animation, filter stickers and jump to any page",
+      updateHighlightThree: "Share selected stickers with a code; preview and import shared stickers",
+      updateHighlightFour: "Fix personal GIF avatar updates; preview and confirm favorite removals",
       updateClose: "Got it — let me try!",
       toggleLabel: "Language",
       helperToggle: "GIF Avatar",
@@ -382,6 +382,17 @@
     ACCOUNT_MISSING: ["submit", "无法确认当前账号", "Current account could not be identified"],
     REQUEST_STILL_PENDING: ["submit", "接口仍在等待回报，暂不能重复提交；可复制诊断信息", "Request is still pending; another submission is blocked. You can copy diagnostics"],
     REQUEST_BUSY: ["submit", "上一请求尚未完成，本次提交未发送", "Previous request is still pending; this submission was not sent"],
+    RESOURCE_REGISTER_START: ["submit", "正在将所选 GIF 登记为头像用途", "Registering the selected GIF for avatar use"],
+    RESOURCE_REGISTERED: ["submit", "已取得头像用途资源，正在核对文件内容", "Avatar resource obtained; checking file content"],
+    RESOURCE_CONTENT_VERIFIED: ["submit", "头像资源与原 GIF 内容一致", "Avatar resource content matches the original GIF"],
+    RESOURCE_REGISTER_ERROR: ["submit", "头像资源登记失败，未提交头像更新", "Avatar registration failed; no avatar update submitted"],
+    RESOURCE_INVALID: ["submit", "未取得有效的头像用途资源，未提交更新", "Valid avatar resource unavailable; no update submitted"],
+    RESOURCE_CONTENT_ERROR: ["submit", "资源内容核对失败，未提交头像更新", "Resource content check failed; no avatar update submitted"],
+    RESOURCE_PROFILE_MISSING: ["submit", "无法核对当前个人资料，未提交头像更新", "Current profile unavailable; no avatar update submitted"],
+    RESOURCE_PROFILE_CHANGED: ["submit", "个人资料已变化，已停止本次更新", "Profile changed; this update was stopped"],
+    RESOURCE_ACCOUNT_CHANGED: ["submit", "登录账号已变化，已停止本次更新", "Account changed; this update was stopped"],
+    RESOURCE_OPERATION_CHANGED: ["submit", "操作已失效，已停止本次更新", "Operation is no longer active; update stopped"],
+    RESOURCE_SERVICE_MISSING: ["submit", "未能识别头像资源服务，请刷新后重试", "Avatar resource service unavailable; reload and retry"],
     API_PENDING: ["submit", "正在提交头像更新", "Submitting avatar update"],
     API_SUCCESS: ["submit", "接口已确认更新成功", "API confirmed the update"],
     API_ERROR: ["submit", "接口返回错误，请检查 Console 后重试", "API returned an error; check Console before retrying"],
@@ -1767,6 +1778,15 @@
       }
 
       body:has(#${PANEL_ID}.spga-open) #${TOGGLE_ID} { visibility: hidden; }
+      #${PANEL_ID} .spga-header { background:#edf2f7;gap:6px;padding:12px;cursor:grab; }
+      #${PANEL_ID} .spga-header:active { cursor:grabbing; }
+      #${PANEL_ID} .spga-title { font-size:15px;white-space:nowrap; }
+      #${PANEL_ID} .spga-subtitle { display:none; }
+      #${PANEL_ID} .spga-window-close { background:#c62828;color:#fff;border-color:#c62828; }
+      #${PANEL_ID} .spga-window-close:hover { background:#a91e1e; }
+      #${PANEL_ID} .spga-window-minimize { font-size:18px; }
+      #${PANEL_ID} .spga-target-tabs { margin:12px 14px 0; }
+
       #${PANEL_ID} .spga-target-summary { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: #f2f6fc; color: #42526b; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
       #${PANEL_ID} .spga-picker { padding: 4px 2px; }
       #${PANEL_ID} .spga-picker-actions { display: flex; gap: 8px; margin: 12px 0 8px; }
@@ -3022,8 +3042,15 @@
     bindPanelDrag(header, panel);
     const close = createButton("×", "close-panel");
     close.setAttribute("aria-label", groupText("关闭助手", "Close helper"));
+    close.classList.add("spga-window-close");
+    close.title = groupText("关闭助手，保留当前选择", "Close helper; keep your selection");
     close.addEventListener("click", () => panel.classList.remove("spga-open"));
-    header.append(close);
+    const minimize = createButton("−", "minimize-panel");
+    minimize.classList.add("spga-window-minimize");
+    minimize.setAttribute("aria-label", groupText("收起头像助手", "Minimize avatar helper"));
+    minimize.title = groupText("收起，保留当前选择", "Minimize; keep your selection");
+    minimize.addEventListener("click", () => panel.classList.remove("spga-open"));
+    header.append(minimize, close);
 
     const randomButton = createButton(
       state.activeAction === "random" && state.showDelayedLoading ? t("randomPreparing") : t("randomApply"),
@@ -3146,11 +3173,19 @@
     footer.append(status, applyButton, creditRow);
 
     footer.style.flexShrink = "0";
-    panel.append(header, body, footer);
+    const featureTabs = createElement('nav', { className: 'spga-target-tabs', attributes: { 'aria-label': groupText('助手功能', 'Helper tools') } });
+    const avatarTab = createElement('button', { className: 'spga-button spga-target-tab', textContent: groupText('头像助手', 'Avatar helper'), attributes: { type: 'button', 'aria-current': 'page' } });
+    const favoritesTab = createElement('button', { className: 'spga-button spga-target-tab', textContent: groupText('我的收藏', 'My favorites'), attributes: { type: 'button' } });
+    favoritesTab.addEventListener('click', openCollectionsWorkspace);
+    featureTabs.append(avatarTab, favoritesTab);
+    const collectionsHint = createElement('p', { attributes: { id: 'spga-collections-hint', role: 'status' } });
+    collectionsHint.style.cssText = 'font-size:13px;line-height:1.5;margin:0 14px;color:#526276;';
+    panel.append(header, featureTabs, collectionsHint, body, footer);
     window.requestAnimationFrame(positionPanelNearToggle);
   }
 
   function buildStatusText() {
+    if (!state.requestPending && state.diagnosticEvents[0]?.level === "error") return state.hookStatus || t("statusError");
     if (state.requestPending && state.requestSlow) return t("requestStillPending");
     if (state.enabled) {
       return t("statusApplying");
@@ -3417,14 +3452,14 @@
     renderPanel();
   }
 
-  function startAvatarVerification(operation) {
+  function startAvatarVerification(operation, targetGifId = operation.gifId) {
     clearVerificationTimer();
     const startedAt = Date.now();
     state.verificationTimer = window.setInterval(() => {
       // Even an already-queued timer must not mutate a later attempt.
       if (state.activeOperation !== operation) return;
       const currentUrls = getCurrentPersonalAvatarUrls();
-      const containsGifId = currentUrls.some((url) => url.includes(operation.gifId));
+      const containsGifId = currentUrls.some((url) => url.includes(targetGifId));
       // An arbitrary URL change can belong to an old request or cache refresh.
       // Only the captured target ID counts as visual confirmation.
       if (containsGifId) {
@@ -3972,7 +4007,7 @@
         state.requestPending = false;
         state.requestSlow = false;
         state.apiConfirmedGifId = detail.gifId;
-        startAvatarVerification(state.activeOperation);
+        startAvatarVerification(state.activeOperation, detail.avatarResourceId || detail.gifId);
         clearPendingTimeout();
         clearDelayedLoading();
         state.activeAction = "";
@@ -4075,6 +4110,53 @@
     }
 
     window.__seatalkPersonalGifAvatarHookInstalled = true;
+
+/* Register the selected sticker for avatar use before updating personal info. */
+async function applyRegisteredAvatar(gifId, adapters) {
+  const fail = (code, errorCode = null) => {
+    const error = new Error(code); error.flowCode = code; error.errorCode = errorCode; throw error;
+  };
+  const check = () => {
+    if (!adapters.active()) fail('RESOURCE_OPERATION_CHANGED');
+  };
+  if (!/^[A-Za-z0-9]{64}$/.test(gifId) || !['b0701', 'b0705'].includes(gifId.slice(33, 38))) {
+    fail('RESOURCE_INVALID');
+  }
+  const userId = adapters.accountId();
+  if (!Number.isSafeInteger(userId) || userId <= 0) fail('ACCOUNT_MISSING');
+  const accountCheck = () => { check(); if (adapters.accountId() !== userId) fail('RESOURCE_ACCOUNT_CHANGED'); };
+  accountCheck();
+  const profile = await adapters.profile(userId);
+  accountCheck();
+  if (!profile || typeof profile.name !== 'string' || typeof profile.avatar !== 'string') fail('RESOURCE_PROFILE_MISSING');
+  adapters.report('RESOURCE_REGISTER_START');
+  let registration;
+  try { registration = await adapters.register(gifId); }
+  catch (_) { fail('RESOURCE_REGISTER_ERROR'); }
+  accountCheck();
+  const code = registration?.errorCode;
+  if (!registration || !Number.isInteger(registration.httpStatus) ||
+      registration.httpStatus < 200 || registration.httpStatus >= 300 ||
+      (code !== null && code !== undefined && Number(code) !== 0)) fail('RESOURCE_REGISTER_ERROR', code);
+  const avatarId = registration.fileName;
+  const expectedType = 'b03' + gifId.slice(33, 38).slice(3);
+  if (typeof avatarId !== 'string' || !/^[A-Za-z0-9]{64}$/.test(avatarId) ||
+      avatarId.slice(33, 38) !== expectedType) fail('RESOURCE_INVALID');
+  adapters.report('RESOURCE_REGISTERED');
+  let matches = false;
+  try { matches = await adapters.sameContent(gifId, avatarId); }
+  catch (_) { fail('RESOURCE_CONTENT_ERROR'); }
+  accountCheck();
+  if (!matches) fail('RESOURCE_CONTENT_ERROR');
+  adapters.report('RESOURCE_CONTENT_VERIFIED');
+  const latest = await adapters.profile(userId);
+  accountCheck();
+  if (latest?.name !== profile.name || latest?.avatar !== profile.avatar) fail('RESOURCE_PROFILE_CHANGED');
+  adapters.report('API_PENDING');
+  await adapters.update(userId, { name: profile.name, avatar: avatarId });
+  accountCheck();
+  return { avatarId };
+}
 
     const runtime = {
       enabled: false,
@@ -4370,6 +4452,40 @@
       void applyDirectAvatar(operation);
     }
 
+
+    function resourceUrl(fileUrl, id) {
+      const url = new URL(fileUrl(id));
+      if (url.protocol !== "https:" || url.hostname !== "f.haiserve.com" ||
+          !url.pathname.startsWith("/download/" + id)) throw Error("RESOURCE_SERVICE_MISSING");
+      return url;
+    }
+    async function discoverAvatarResourceServices() {
+      const module = await import(runtime.esmChunkUrl);
+      const values = Object.values(module);
+      const fileUrl = values.find(value => typeof value === "function" &&
+        String(value).includes("maxWidth") && String(value).includes("gfsToken") &&
+        String(value).includes("blob:"));
+      const urls = Array.from(document.querySelectorAll("link[href],script[src]")).map(el => el.href || el.src || "");
+      const expected = new URL(runtime.esmChunkUrl);
+      const candidates = [...new Set(urls)].filter(value => {
+        try {
+          const url = new URL(value, location.href);
+          return url.protocol === "https:" && url.origin === expected.origin &&
+            /\/seatalk\/fe\/static\/js\/chunk-src-[^/]+\.js$/.test(url.pathname);
+        } catch (_) { return false; }
+      });
+      if (!fileUrl || candidates.length !== 1 || typeof runtime.esmUpdater.forceFetchInfo !== "function") {
+        throw Error("RESOURCE_SERVICE_MISSING");
+      }
+      const accountModule = await import(candidates[0]);
+      const sessions = [...new Set(Object.values(accountModule))].filter(value =>
+        value && typeof value === "object" && value.loggedIn === true &&
+        Number.isSafeInteger(value.userId) && value.userId > 0 &&
+        typeof value.fileServerToken === "string" && value.fileServerToken.length > 0);
+      if (sessions.length !== 1) throw Error("ACCOUNT_MISSING");
+      return { session: sessions[0], fileUrl };
+    }
+
     async function applyDirectAvatar(operation) {
       const report = (detail) => {
         if (runtime.directOperation === operation) {
@@ -4385,22 +4501,70 @@
             message: "直接更新失败：没有找到 SeaTalk 用户资料更新服务。请刷新页面或重新检查。" };
           return;
         }
-        const userId = findCurrentUserId();
-        if (!userId) {
-          result = { type: "error", code: "ACCOUNT_MISSING", fallbackAvailable: false,
-            message: "直接更新失败：没有识别到当前账号 ID。请刷新页面后重试。" };
-          return;
-        }
-        report({ type: "stage", code: "API_PENDING",
-          message: "当前账号已识别，正在提交 ContactUpdateUserInfo。" });
-        await Reflect.apply(runtime.esmUpdater.updateUserInfo, runtime.esmUpdater, [
-          userId, { avatar: operation.gifId },
-        ]);
-        result = { type: "direct-submitted", chunkName: runtime.esmChunkUrl.split("/").pop() || runtime.esmChunkUrl };
+        const services = await discoverAvatarResourceServices();
+        const profile = async id => {
+          const info = await runtime.esmUpdater.forceFetchInfo(id);
+          const own = info?.find(item => item.userid === id)?.userInfo;
+          return own ? { name: own.name, avatar: own.avatar } : null;
+        };
+        const registered = await applyRegisteredAvatar(operation.gifId, {
+          active: () => runtime.directOperation === operation,
+          accountId: () => services.session.loggedIn === true ? services.session.userId : 0,
+          profile,
+          report: code => report({ type: "stage", code }),
+          register: async gifId => {
+            const origin = resourceUrl(services.fileUrl, gifId).origin;
+            const url = new URL("/refresh/", origin);
+            url.searchParams.set("trace_id", Array.from(crypto.getRandomValues(new Uint32Array(2)),
+              value => value.toString(16).padStart(8, "0")).join(""));
+            const response = await fetch(url.href, {
+              method: "POST", mode: "cors", cache: "no-cache", credentials: "omit",
+              headers: { "Content-Type": "application/x-www-form-urlencoded", fid: gifId },
+              body: new URLSearchParams({ userid: String(services.session.userId),
+                token: services.session.fileServerToken, app: "11", from: "3" }).toString(),
+              signal: AbortSignal.timeout(12000),
+            });
+            const data = await response.json();
+            return { httpStatus: response.status, errorCode: data.ErrorCode ?? null, fileName: data.FileName };
+          },
+          sameContent: async (originalId, avatarId) => {
+            const read = async id => {
+              const response = await fetch(resourceUrl(services.fileUrl, id).href, { signal: AbortSignal.timeout(8000) });
+              if (!response.ok) throw Error("RESOURCE_CONTENT_ERROR");
+              const declared = Number(response.headers.get("Content-Length"));
+              if (declared > 20 * 1024 * 1024) throw Error("RESOURCE_CONTENT_ERROR");
+              const reader = response.body.getReader();
+              const chunks = []; let size = 0;
+              try {
+                for (;;) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  size += value.byteLength;
+                  if (size > 20 * 1024 * 1024) throw Error("RESOURCE_CONTENT_ERROR");
+                  chunks.push(value);
+                }
+              } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+              if (!size) throw Error("RESOURCE_CONTENT_ERROR");
+              const bytes = new Uint8Array(size); let offset = 0;
+              for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+              return bytes;
+            };
+            const a = await read(originalId), b = await read(avatarId);
+            return a.length === b.length && a.every((value, index) => value === b[index]);
+          },
+          update: (id, payload) => Reflect.apply(runtime.esmUpdater.updateUserInfo, runtime.esmUpdater, [id, payload]),
+        });
+        result = { type: "direct-submitted", avatarResourceId: registered.avatarId,
+          chunkName: runtime.esmChunkUrl.split("/").pop() || "" };
       } catch (error) {
-        result = { type: "error", fallbackAvailable: false, code: "API_ERROR",
+        const codes = new Set(["ACCOUNT_MISSING", "RESOURCE_REGISTER_ERROR", "RESOURCE_INVALID",
+          "RESOURCE_CONTENT_ERROR", "RESOURCE_PROFILE_MISSING", "RESOURCE_PROFILE_CHANGED",
+          "RESOURCE_ACCOUNT_CHANGED", "RESOURCE_OPERATION_CHANGED", "RESOURCE_SERVICE_MISSING"]);
+        const code = codes.has(error?.flowCode || error?.message) ? (error.flowCode || error.message) : "API_ERROR";
+        result = { type: "error", fallbackAvailable: false, code,
           errorCode: /^-?\d{1,6}$/.test(String(error?.errorCode ?? "")) ? String(error.errorCode) : null,
-          message: `SeaTalk 直接更新失败：${String(error?.message || error || "未知错误").slice(0, 240)}` };
+          message: code === "API_ERROR" ? "SeaTalk 头像更新失败；请检查脱敏错误码，未自动重试。"
+            : "头像资源准备未完成，未提交个人头像更新；请检查诊断流程码。" };
       } finally {
         if (runtime.directOperation === operation) {
           // Release BEFORE terminal delivery so an immediate retry is accepted.
@@ -5306,9 +5470,867 @@
     emit({ type: "hook-started" });
   }
 
+
+  // Collections are run in the page realm, where SeaTalk owns its React state.
+  function openCollectionsWorkspace() {
+    const hint = document.getElementById('spga-collections-hint');
+    try {
+      if (typeof unsafeWindow === "undefined" || typeof unsafeWindow.Function !== "function") throw new Error('page-context');
+      unsafeWindow.Function(`return (${launchFavoritesGallery.toString()})(${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))});`)();
+      document.getElementById(PANEL_ID)?.classList.remove('spga-open');
+      if (hint) hint.textContent = '';
+    } catch (_) {
+      if (hint) hint.textContent = groupText(
+        '请先打开聊天输入框旁的表情按钮，切换到爱心收藏页签，再点击「我的收藏」。若仍无法打开，请刷新后重试。',
+        'Open the sticker picker beside the message composer, select Favorites (heart), then click My favorites. Reload if it still cannot open.'
+      );
+    }
+  }
+
+/* Integrated favorites window. Signed URLs and all workspace state stay in page memory. */
+function launchFavoritesGallery(presets = []) {
+/* Versioned, self-contained share codes. No URLs, credentials or account fields. */
+function normalizeSharedStickers(value) {
+  if (!Array.isArray(value) || !value.length || value.length > 100) throw Error('请选择 1–100 个表情');
+  const seen = new Set();
+  const stickers = [];
+  for (const item of value) {
+    if (!item || typeof item !== 'object' || Array.isArray(item) ||
+        Object.keys(item).some(key => !['gifId', 'label'].includes(key)) ||
+        typeof item.gifId !== 'string' || !/^[a-zA-Z0-9]{64}$/.test(item.gifId) ||
+        !['b0701', 'b0705'].includes(item.gifId.slice(33, 38)) ||
+        typeof item.label !== 'string' || !item.label.trim() || item.label.length > 80 ||
+        /[\u0000-\u001f\u007f]/.test(item.label)) throw Error('口令包含无效的表情或名称');
+    if (!seen.has(item.gifId)) { stickers.push({ gifId: item.gifId, label: item.label.trim() }); seen.add(item.gifId); }
+  }
+  return stickers;
+}
+function encodeStickerShare(stickers) {
+  const data = { v: 1, stickers: normalizeSharedStickers(stickers) };
+  const bytes = new TextEncoder().encode(JSON.stringify(data));
+  return 'STGIF1.' + btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function decodeStickerShare(text) {
+  if (typeof text !== 'string' || text.length > 65536) throw Error('口令过长或无效，最多支持 100 个表情');
+  const code = text.trim();
+  if (!/^STGIF1\.[A-Za-z0-9_-]+$/.test(code)) throw Error('请粘贴完整的 STGIF1 分享口令');
+  try {
+    const raw = code.slice(7).replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0));
+    const data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    if (!data || data.v !== 1 || Object.keys(data).some(key => !['v', 'stickers'].includes(key))) throw Error();
+    return normalizeSharedStickers(data.stickers);
+  } catch (_) { throw Error('分享口令损坏或内容无效，请重新复制'); }
+}
+
+/* Injectable mutation workflow: freeze selection and account, skip duplicates, stop on uncertainty. */
+async function addSharedStickers(selected, adapters) {
+  const pending = selected.map(item => ({ ...item }));
+  if (!pending.length || pending.length > 100 || pending.some(item =>
+      !Number.isInteger(item.width) || item.width < 1 || item.width > 20000 ||
+      !Number.isInteger(item.height) || item.height < 1 || item.height > 20000)) throw Error('请先预览并选择可添加的表情');
+  normalizeSharedStickers(pending.map(({ gifId, label }) => ({ gifId, label })));
+  const account = adapters.accountId();
+  if (!Number.isSafeInteger(account) || account <= 0) throw Error('请先登录 SeaTalk');
+  const check = () => {
+    if (!adapters.active() || adapters.accountId() !== account) throw Error('账号或窗口状态已变化，已停止添加');
+  };
+  let added = 0, skipped = 0, stopped = false;
+  for (const item of pending) {
+    check();
+    if (adapters.stopped()) { stopped = true; break; }
+    if (adapters.has(item.gifId)) { skipped++; continue; }
+    adapters.report(`正在添加 ${added + skipped + 1} / ${pending.length}…`);
+    try { await adapters.add(item); } // Native favorite action only; never constructs a chat-send request.
+    catch (_) { throw Error('添加请求未确认，已停止后续操作'); }
+    check();
+    let observed = false;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      await adapters.pause(500); check();
+      if (adapters.has(item.gifId)) { observed = true; break; }
+    }
+    if (!observed) throw Error('添加结果尚未确认，已停止。请刷新收藏核对，勿立即重复添加');
+    added++;
+    await adapters.pause(500);
+  }
+  check();
+  return { added, skipped, stopped };
+}
+
+/* Bind a collection snapshot once; evaluate the live native account before every mutation. */
+function nativeWorkspaceAccountId(services) {
+  try {
+    const id = typeof services?.accountId === 'function' ? services.accountId()
+      : services?.session?.loggedIn === true ? services.session.userId : 0;
+    return Number.isSafeInteger(id) && id > 0 ? id : 0;
+  } catch (_) { return 0; }
+}
+function createWorkspaceAccountGuard(services, originalSource, currentSource) {
+  const id = nativeWorkspaceAccountId(services);
+  if (!id || currentSource() !== originalSource) throw Error('无法核对窗口所属账号，请刷新 SeaTalk 后重新打开。');
+  return () => {
+    if (nativeWorkspaceAccountId(services) !== id) throw Error('登录账号已变化，已停止操作。请刷新 SeaTalk 后重新打开。');
+    return id;
+  };
+}
+
+  const existing = document.getElementById('st-favorites-curator');
+  if (existing) { existing.__open?.(); return { reopened: true }; }
+  const pickerSelector = '.sealabs-stickers-panel .sealabs-sticker, .sealabs-stickers-panel .sticker-wrapper';
+  const seed = document.querySelector(pickerSelector);
+  if (!seed) throw Error('请先打开 SeaTalk 表情面板，切换到爱心「收藏」，再打开「我的收藏」。');
+  function readSource(element, requireActions = true) {
+    let fiber = element?.[Object.keys(element).find(key => key.startsWith('__reactFiber$') || key.startsWith('__reactInternalInstance$'))];
+    let list, actions;
+    for (let count = 0; fiber && count < 24; count++, fiber = fiber.return) {
+      const props = fiber.memoizedProps;
+      if (props?.isCustomTab === true && Array.isArray(props.stickers)) list = props.stickers;
+      if (props?.actions?.actionRemoveCustomStickers) actions = props.actions;
+    }
+    if (!list || requireActions && !actions) throw Error('请先打开 SeaTalk 爱心收藏面板，再重新操作。');
+    return { list, actions };
+  }
+  const source = readSource(seed, false).list;
+  const liveSource = () => readSource(document.querySelector(pickerSelector));
+  const known = new Map(presets.map(item => [item.gifId, item.label]));
+  const items = [], seen = new Set();
+  for (const item of source) {
+    if (typeof item.id !== 'string' || !/^[a-zA-Z0-9]{32,}$/.test(item.id) || seen.has(item.id)) continue;
+    let url;
+    try { url = new URL(item.url); } catch (_) { continue; }
+    if (url.protocol !== 'https:' || url.hostname !== 'f.haiserve.com' || !url.pathname.startsWith('/download/' + item.id + '_')) continue;
+    seen.add(item.id);
+    items.push({ gifId: item.id, url: url.href, label: String(known.get(item.id) || item.name || `收藏 ${items.length + 1}`).slice(0, 80),
+      existing: known.has(item.id), selected: false, animation: 'unknown' });
+  }
+  let scanning = false, scanCancelled = false, deleting = false, stop = false, deleteNeedsReview = false;
+  let workspaceAccountCheck = null, workspaceAccountState = 'pending';
+  const assertWorkspaceAccount = () => { if (!workspaceAccountCheck) throw Error('当前账号尚未核对，请稍后重新打开。'); return workspaceAccountCheck(); };
+  let page = 0, pending = [], selectedView = null, geometryCustom = false;
+  const size = 48, activeRequests = new Set();
+  const host = document.createElement('section'); host.id = 'st-favorites-curator';
+  host.dataset.open = host.dataset.managed = 'true';
+  host.setAttribute('aria-label', 'SeaTalk GIF 助手 · 我的收藏');
+  const miniId = 'st-favorites-minimized';
+  document.getElementById(miniId)?.remove();
+  const mini = document.createElement('button'); mini.id = miniId; mini.hidden = true;
+  mini.style.cssText = 'position:fixed;right:24px;bottom:24px;z-index:2147483647;border:0;border-radius:22px;background:#0866c6;color:#fff;padding:12px 18px;box-shadow:0 6px 24px #17203330;font:600 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer';
+  const visibilityId = 'spga-workspace-visibility';
+  let visibilityStyle = document.getElementById(visibilityId);
+  if (!visibilityStyle) { visibilityStyle = document.createElement('style'); visibilityStyle.id = visibilityId; document.head.append(visibilityStyle); }
+  visibilityStyle.textContent = `body:has(#st-favorites-curator[data-managed="true"]) #seatalk-personal-gif-avatar-panel {display:none!important}
+    body:has(#st-favorites-curator[data-managed="true"]) #seatalk-personal-gif-avatar-toggle {visibility:hidden!important}
+    body:has(#st-favorites-curator[data-open="true"]) .sealabs-stickers-panel {visibility:hidden!important;pointer-events:none!important}`;
+  document.getElementById('seatalk-personal-gif-avatar-panel')?.classList.remove('spga-open');
+  document.body.append(host, mini);
+  const root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>
+    :host{position:fixed;right:24px;top:50%;transform:translateY(-50%);width:820px;max-width:calc(100vw - 32px);height:min(800px,80dvh);max-height:calc(100dvh - 32px);z-index:2147483647;border-radius:14px;background:#fff;box-shadow:0 16px 70px #17203340;font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;isolation:isolate;container-type:inline-size}
+    *{box-sizing:border-box}[hidden]{display:none!important}button,input,select,textarea{font:inherit}button{min-height:34px;padding:7px 12px;border:1px solid #d0d5dd;border-radius:8px;color:#344054;background:#fff;cursor:pointer;white-space:nowrap}button:hover{border-color:#0866c6;background:#f8fbff}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #b9d8f4;outline-offset:1px}button:disabled{opacity:.45;cursor:default}button.primary{background:#0866c6;border-color:#0866c6;color:white}button.danger{color:#b42318;border-color:#f2b8b1}button.danger-fill{background:#c62828;border-color:#c62828;color:white}button.danger-fill:hover{background:#a91e1e}input,select,textarea{border:1px solid #d0d5dd;border-radius:8px;background:#fff;color:#344054;padding:8px 10px}input[type=checkbox]{accent-color:#0866c6;width:16px;height:16px;margin:0}p{color:#667085;line-height:1.6;margin:8px 0}.spacer{flex:1}.app{position:relative;height:100%;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;background:#f8fafc}
+    #dragHandle{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 16px;background:#edf2f7;cursor:grab;touch-action:none;user-select:none;flex-shrink:0}#dragHandle:active{cursor:grabbing}#dragHandle h1{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:16px;margin:0;white-space:nowrap;flex:1}.grip{font-size:18px;color:#667085;letter-spacing:-3px}.window-controls{display:flex;align-items:center;gap:6px}.window-controls button{min-height:32px;padding:6px 10px}.window-controls .icon-button{padding:5px 9px;font-size:18px;line-height:18px}.workspace-tabs{display:flex;gap:4px;margin:12px 16px 0;padding:4px;background:#edf2f7;border-radius:12px;flex-shrink:0}.workspace-tabs button{flex:1;background:transparent;border:0;color:#59677b}.workspace-tabs [aria-selected=true]{background:#fff;color:#0866c6;box-shadow:0 1px 4px #152b4620;font-weight:600}
+    header{flex-shrink:0;background:#fff;padding:10px 16px 12px;border-bottom:1px solid #e4e7ec}#summary{margin:0 0 10px;font-size:12px}.toolbar{display:flex;align-items:center;gap:8px}.toolbar input[type=search]{min-width:100px;flex:1}.toolbar select{max-width:155px}.toolbar button{padding:7px 10px}.status-row{display:flex;align-items:center;gap:8px;min-height:20px;margin-top:8px;font-size:12px;color:#667085;line-height:1.6;overflow-wrap:anywhere}.status-row p{margin:0}#scanStatus{flex:1}.empty{padding:36px 16px;text-align:center;color:#667085;line-height:1.8}.empty h2{font-size:17px;color:#344054}.empty button{margin-top:8px}
+    main{flex:1;min-height:0;overflow:auto;padding:16px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:12px}.card{min-width:0;background:white;border:1px solid #e4e7ec;border-radius:12px;padding:10px}.card.chosen{border-color:#0866c6;box-shadow:0 0 0 1px #0866c6}.preview{width:100%;height:128px;padding:0;border:0;display:block;background:repeating-conic-gradient(#f2f4f7 0% 25%,white 0% 50%) 50%/16px 16px;overflow:hidden}.preview img{height:100%;width:100%;object-fit:contain}.card-title{display:flex;gap:5px;align-items:center;margin-top:9px}.card-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:13px}.edit-name{padding:0 4px;min-height:25px;border-color:transparent;font-size:12px;color:#667085}.name{min-width:0;width:100%;padding:5px 7px;font-size:13px}.card-bottom{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:8px}.badge{font-size:11px;color:#667085;background:#f2f4f7;padding:3px 6px;border-radius:5px}.badge[data-kind=animated]{color:#0866c6;background:#edf7ff}.badge[data-kind=failed]{color:#b54708;background:#fffaeb}.card-bottom label{display:flex;align-items:center;gap:5px;font-size:12px;color:#344054;cursor:pointer}
+    footer{flex-shrink:0;background:#fff;border-top:1px solid #e4e7ec}.pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-bottom:1px solid #f2f4f7;font-size:12px}.pagination button{font-size:12px;padding:5px 9px;min-height:30px}.pagination label{display:flex;gap:5px;align-items:center;white-space:nowrap}.pagination input{width:54px;padding:5px;min-height:30px}.selection-bar{display:flex;align-items:center;gap:8px;padding:10px 16px 16px}.selection-bar button{font-size:12px;padding:6px 10px}#count{font-size:13px;font-weight:600;white-space:nowrap}.selection-message{flex:1;min-width:0}#selectionHint{font-size:11px;color:#667085;line-height:1.5}#resizeHandle{position:absolute;right:1px;bottom:1px;min-height:15px;width:15px;height:15px;border:0;padding:0;background:linear-gradient(135deg,transparent 52%,#98a2b3 52%,#98a2b3 60%,transparent 60%,transparent 72%,#98a2b3 72%,#98a2b3 80%,transparent 80%);cursor:nwse-resize;touch-action:none;border-radius:0 0 10px 0}
+    dialog{width:min(680px,calc(100vw - 32px));max-height:calc(100dvh - 40px);padding:0;border:1px solid #e4e7ec;border-radius:14px;box-shadow:0 16px 70px #17203340;color:#172033;overflow:auto}dialog::backdrop{background:#17203366}.dialog-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #e4e7ec;background:#fff}.dialog-header h2{font-size:18px;flex:1;margin:0}.dialog-header button{font-size:18px;padding:3px 9px;min-height:30px}.dialog-body{padding:16px 18px}.dialog-actions{position:sticky;bottom:0;display:flex;justify-content:space-between;gap:8px;padding:12px 18px;border-top:1px solid #e4e7ec;background:white}.dialog-actions .right-actions{display:flex;gap:8px}dialog textarea{width:100%;height:150px;resize:vertical;min-height:90px;font:12px/1.5 monospace;overflow-wrap:anywhere}.guide section{padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid #f2f4f7}.guide h3{font-size:15px;margin:0 0 7px}.guide p{font-size:13px;margin:5px 0}.guide ol{font-size:13px;color:#667085;padding-left:20px;line-height:1.8}.guide section:last-child{border:0;margin-bottom:0;padding:0}.thumb-list{display:flex;flex-wrap:wrap;gap:8px;max-height:36dvh;overflow:auto}.thumb-list img{width:72px;height:72px;object-fit:contain}.zoom-image{display:block;max-width:100%;max-height:55dvh;margin:auto;object-fit:contain}.import-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-height:35dvh;overflow:auto;margin:12px 0}.import-card{border:1px solid #e4e7ec;border-radius:10px;padding:10px;min-width:0}.import-card img{display:block;width:90px;height:90px;object-fit:contain;margin:0 auto 8px}.import-card label{display:flex;align-items:center;gap:6px;font-size:12px;overflow-wrap:anywhere}.import-card p{font-size:12px}.inline-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.notice{padding:10px 12px;border-radius:8px;background:#f2f6fc;color:#42526b;font-size:12px;line-height:1.7}#hiddenTools{font-size:12px;margin-top:8px}.error{color:#b42318!important}
+    #dockDivider{position:absolute;left:-8px;top:0;bottom:0;width:12px;border:0;background:transparent;border-radius:0;padding:0;cursor:col-resize;touch-action:none;z-index:3}#dockDivider:hover,#dockDivider:focus-visible{background:#0866c633}:host([data-docked=true]) #resizeHandle{display:none}:host([data-docked=true]) #dragHandle{cursor:default}:host([data-docked=true]) .grip{display:none}
+    @container(max-width:650px){#dragHandle{padding:8px 10px;gap:6px}#dragHandle h1{font-size:14px}.grip{display:none}.window-controls{gap:3px}.window-controls button{font-size:12px;padding:5px 6px}#resetPosition{display:none}.toolbar{flex-wrap:wrap}.toolbar input[type=search]{flex-basis:100%}.toolbar select{flex:1;max-width:none}.toolbar button{font-size:12px}.grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}.preview{height:105px}.pagination{flex-wrap:wrap;gap:4px;padding:7px}.pagination button{padding:5px 6px}.selection-bar{flex-wrap:wrap;padding:8px 10px 16px}.selection-message{min-width:100%;display:flex;align-items:center;gap:8px}.selection-bar>.spacer{display:none}}
+    @media(max-width:1000px){:host{left:50%;right:auto;transform:translate(-50%,-50%)}}@media(max-width:650px){:host{width:calc(100vw - 24px);max-width:calc(100vw - 24px);height:calc(100dvh - 40px)}#dragHandle{padding:8px 10px;gap:8px}#dragHandle h1{font-size:14px}.grip{display:none}.window-controls{gap:4px}.window-controls button{font-size:12px;padding:5px 6px}#resetPosition{display:none}.workspace-tabs{margin:8px 10px 0}header{padding:10px}.toolbar{flex-wrap:wrap}.toolbar input[type=search]{flex-basis:100%;}.toolbar select{flex:1;max-width:none}.toolbar button{font-size:12px}.grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}main{padding:10px}.preview{height:105px}.pagination{flex-wrap:wrap;gap:4px;padding:7px}.pagination button{padding:5px 6px}.selection-bar{flex-wrap:wrap;padding:8px 10px 16px}.selection-message{min-width:100%;display:flex;align-items:center;gap:8px}.selection-bar>.spacer{display:none}dialog .dialog-body{padding:12px}.card-title{gap:2px}}@media(max-height:560px){:host{height:calc(100dvh - 24px);max-height:calc(100dvh - 24px)}#summary{margin-bottom:6px}.workspace-tabs{margin-top:6px}.status-row{margin-top:4px}#dragHandle{min-height:44px;padding-top:6px;padding-bottom:6px}.selection-bar{padding-top:6px;padding-bottom:10px}.pagination{padding-top:5px;padding-bottom:5px}}
+  </style>
+  <button id="dockDivider" role="separator" aria-orientation="vertical" aria-label="调整侧栏宽度" hidden></button><section class="app">
+    <div id="dragHandle" title="拖动此栏移动窗口"><span class="grip" aria-hidden="true">⠿</span><h1>SeaTalk GIF 助手</h1><div class="window-controls"><button id="guideOpen">使用指南</button><button id="dockToggle" aria-label="切换分栏与浮窗" disabled>分栏</button><button id="resetPosition" class="icon-button" aria-label="恢复默认位置和大小" title="恢复默认位置和大小">↺</button><button id="minimize" class="icon-button" aria-label="收起我的收藏" title="收起，保留当前选择">−</button><button id="close" class="danger-fill" aria-label="关闭批量管理">✕ 关闭</button></div></div>
+    <nav class="workspace-tabs" aria-label="助手功能" role="tablist"><button id="backAvatar" role="tab" aria-selected="false">头像助手</button><button role="tab" aria-selected="true" aria-current="page">我的收藏</button></nav>
+    <header><p id="summary"></p><div class="toolbar"><input id="search" type="search" placeholder="搜索表情名称" aria-label="搜索收藏"><select id="filter" aria-label="显示范围"><option value="all">全部收藏</option><option value="selected">已选择</option></select><select id="animation" aria-label="图片类型"><option value="all">全部类型</option><option value="animated">动图</option><option value="static">静态图</option><option value="unknown">未检测</option><option value="failed">未能识别</option></select><button id="scan">识别动图</button><button id="importOpen">导入口令</button></div><div class="status-row"><span id="scanStatus" role="status">浏览和分享无需先识别动图。</span><button id="scanStop" hidden>停止识别</button></div><details id="hiddenTools" hidden><summary>开发工具</summary><button id="export">导出已选 JSON</button></details></header>
+    <main><div class="grid"></div><div id="emptyState" class="empty" hidden><h2 id="emptyTitle"></h2><p id="emptyMessage"></p><button id="emptyScan" hidden>识别动图</button><button id="emptyReset">查看全部收藏</button></div></main>
+    <footer><div class="pagination"><button id="first">首页</button><button id="prev">上一页</button><span id="page"></span><button id="next">下一页</button><button id="last">末页</button><label>跳至 <input id="jump" type="number" min="1" step="1" value="1" aria-label="跳转页码"> 页</label><button id="jumpGo">跳转</button></div><div class="selection-bar"><div class="selection-message"><span id="count">已选择 0 个</span><div id="selectionHint">先选择要分享或删除的表情。</div></div><button id="selectPage">全选本页</button><button id="viewSelected">查看已选</button><button id="clear">清空选择</button><span class="spacer"></span><button id="shareOpen" class="primary">生成分享口令</button><button id="remove" class="danger">删除所选表情</button></div></footer><button id="resizeHandle" aria-label="调整窗口大小" title="拖动调整大小，也可用方向键调整"></button>
+  </section>
+  <dialog id="guideDialog" aria-labelledby="guideTitle"><div class="dialog-header"><h2 id="guideTitle">我的收藏使用指南</h2><button data-close="guideDialog" aria-label="关闭使用指南">×</button></div><div class="dialog-body guide">
+    <section><h3>开始前</h3><p>在 SeaTalk 打开表情面板，切换到爱心「收藏」页签，再打开助手的「我的收藏」。</p></section>
+    <section><h3>选择和查看表情</h3><p>点击图片可放大，勾选复选框可选择。「全选本页」只选择当前页；翻页或切换筛选后，之前的选择仍会保留。点击「查看已选」可统一核对。</p><p>如需只看动图，先点击「识别动图」，再筛选「动图」。浏览和分享无需先识别。识别失败的图片会显示「未能识别」，不会当成静态图。</p></section>
+    <section><h3>分享给朋友</h3><p>选择表情 → 点击「生成分享口令」→ 复制完整口令发给朋友。</p><p>每次最多分享 100 个。表情越多，口令越长。点击名称旁的编辑按钮可修改分享名称，不会修改 SeaTalk 原收藏。</p></section>
+    <section><h3>添加朋友分享的表情</h3><p>点击「导入口令」→ 粘贴完整口令 → 点击「解析并预览」→ 选择表情 → 确认添加。</p><p>已收藏的表情会自动跳过；预览失败的表情暂时不能添加。</p></section>
+    <section><h3>删除不需要的收藏</h3><p>选择表情 → 点击「删除所选表情」→ 核对图片和数量 → 确认删除。</p><p>删除只影响你的收藏，不会删除聊天消息。本助手无法撤销删除，分享口令也不保证能恢复。筛选之外的已选表情也会包括在确认清单中。</p></section>
+    <section><h3>收起、关闭和结果核对</h3><p>点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。点击「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。</p><p>操作结果不确定时，先刷新 SeaTalk 核对收藏，再决定是否重试。刷新会清空本次勾选。添加或删除进行中时，停止会等待当前表情的结果，再停止后续操作。</p></section>
+  </div><div class="dialog-actions"><span></span><button id="guideClose" class="primary">知道了，返回管理</button></div></dialog>
+  <dialog id="zoom" aria-labelledby="zoomTitle"><div class="dialog-header"><h2 id="zoomTitle">表情预览</h2><button data-close="zoom" aria-label="关闭预览">×</button></div><div class="dialog-body"><img class="zoom-image" alt="放大预览"><p></p></div><div class="dialog-actions"><span></span><button id="zoomClose">返回管理</button></div></dialog>
+  <dialog id="sharing" aria-labelledby="shareTitle"><div class="dialog-header"><h2 id="shareTitle">分享所选表情</h2><button data-close="sharing" aria-label="关闭分享">×</button></div><div class="dialog-body"><p>复制完整口令发给朋友，对方可在「导入口令」中预览并添加。</p><textarea id="shareCode" readonly aria-label="分享口令"></textarea><p id="shareStatus" role="status"></p></div><div class="dialog-actions"><button id="shareClose">返回管理</button><button id="shareCopy" class="primary">复制分享口令</button></div></dialog>
+  <dialog id="importing" aria-labelledby="importTitle"><div class="dialog-header"><h2 id="importTitle">导入口令</h2><button data-close="importing" aria-label="关闭导入">×</button></div><div class="dialog-body"><p>粘贴好友的完整口令，先预览并选择，再确认添加。</p><textarea id="importCode" aria-label="粘贴分享口令" maxlength="65536" placeholder="STGIF1.…"></textarea><div class="inline-actions"><button id="importParse">解析并预览</button><button id="importSelect">全选可添加</button></div><div id="importPreview" class="import-grid"></div><p id="importStatus" role="status"></p></div><div class="dialog-actions"><button id="importCancel">取消</button><div class="right-actions"><button id="importStop" hidden>停止后续添加</button><button id="importConfirm" class="primary" disabled>确认添加所选表情</button></div></div></dialog>
+  <dialog id="deletion" aria-labelledby="deleteTitle"><div class="dialog-header"><h2 id="deleteTitle">从我的收藏中移除</h2><button data-close="deletion" aria-label="关闭删除确认">×</button></div><div class="dialog-body"><p id="deleteSummary"></p><p>删除后无法在本助手撤销。口令不保证能恢复，请核对以下表情。</p><div id="deletePreview" class="thumb-list"></div><p id="deleteProgress" role="status"></p></div><div class="dialog-actions"><button id="deleteCancel">取消</button><div class="right-actions"><button id="deleteStop" hidden>停止后续删除</button><button id="deleteConfirm" class="danger-fill">确认删除</button></div></div></dialog>
+  <dialog id="output" aria-labelledby="exportTitle"><div class="dialog-header"><h2 id="exportTitle">开发者导出</h2><button data-close="output" aria-label="关闭导出">×</button></div><div class="dialog-body"><textarea readonly aria-label="导出 JSON"></textarea><p id="message"></p></div><div class="dialog-actions"><button id="outputClose">返回管理</button><div class="right-actions"><button id="download">下载 JSON</button><button id="copy" class="primary">复制 JSON</button></div></div></dialog>`;
+  const $ = selector => root.querySelector(selector);
+  const activeItems = () => items.filter(item => !item.deleted);
+  const selection = () => items.filter(item => item.selected && !item.deleted);
+  const matches = item => {
+    if (item.deleted) return false;
+    const query = $('#search').value.trim().toLowerCase();
+    return (!query || item.label.toLowerCase().includes(query)) &&
+      ($('#filter').value !== 'selected' || item.selected) &&
+      ($('#animation').value === 'all' || item.animation === $('#animation').value);
+  };
+  const filtered = () => items.filter(matches);
+  const badgeText = item => ({ animated: '动图', static: '静态图', unknown: '未检测', failed: '未能识别' })[item.animation];
+  const busy = () => deleting || importingBusy;
+  const selectionOutside = () => selection().filter(item => !matches(item)).length;
+  function updateSummary() {
+    const list = activeItems(), classified = list.filter(item => ['animated', 'static'].includes(item.animation)).length;
+    $('#summary').textContent = `我的收藏 ${list.length.toLocaleString()} 个` + (classified || list.some(item => item.animation === 'failed')
+      ? ` · 动图 ${list.filter(item => item.animation === 'animated').length.toLocaleString()} · 静态 ${list.filter(item => item.animation === 'static').length.toLocaleString()}` +
+        (list.some(item => item.animation === 'unknown') ? ` · 未检测 ${list.filter(item => item.animation === 'unknown').length}` : '') +
+        (list.some(item => item.animation === 'failed') ? ` · 未能识别 ${list.filter(item => item.animation === 'failed').length}` : '') : '');
+  }
+  function count() {
+    const selected = selection(), outside = selectionOutside(), locked = busy();
+    $('#count').textContent = `已选择 ${selected.length} 个`;
+    $('#selectionHint').textContent = outside ? `其中 ${outside} 个不在当前筛选中` : selected.length > 100 ? '每次最多分享 100 个，请分批选择。' : selected.length ? '翻页和筛选会保留选择。' : '先选择要分享或删除的表情。';
+    $('#shareOpen').disabled = locked || !selected.length || selected.length > 100 || selected.some(item => !item.label.trim());
+    $('#shareOpen').title = selected.length > 100 ? '每次最多分享 100 个' : !selected.length ? '先选择表情' : '生成分享口令';
+    let accountReady = workspaceAccountState === 'ready';
+    if (accountReady) { try { assertWorkspaceAccount(); } catch (_) { accountReady = false; } }
+    $('#remove').disabled = locked || scanning || deleteNeedsReview || !selected.length || !accountReady;
+    $('#remove').title = deleteNeedsReview ? '请先刷新核对上次删除结果' : !selected.length ? '先选择表情' : '删除所有已选表情，下一步核对清单';
+    $('#clear').disabled = locked || !selected.length;
+    $('#viewSelected').disabled = locked || (!selected.length && !selectedView && $('#filter').value !== 'selected');
+    $('#viewSelected').textContent = selectedView ? '返回筛选' : '查看已选';
+    $('#selectPage').disabled = locked || !filtered().length;
+    $('#scan').disabled = locked || scanning;
+    $('#importOpen').disabled = locked || scanning || !accountReady;
+    for (const selector of ['#search', '#filter', '#animation']) $(selector).disabled = locked;
+    const task = scanning ? ' · 正在识别' : importingBusy ? ' · 正在添加' : deleting ? ' · 正在删除' : '';
+    mini.textContent = `我的收藏 · 已选 ${selected.length} 个${task}`;
+    mini.setAttribute('aria-label', '恢复我的收藏，已选择 ' + selected.length + ' 个' + task);
+  }
+  function renderEmpty() {
+    const empty = !filtered().length;
+    $('#emptyState').hidden = !empty;
+    if (!empty) return;
+    const unknown = activeItems().some(item => item.animation === 'unknown');
+    const typeRequiresScan = ['animated', 'static'].includes($('#animation').value) && unknown;
+    $('#emptyTitle').textContent = scanning ? '正在识别图片类型' : typeRequiresScan ? '先识别图片类型，再筛选' : $('#filter').value === 'selected' ? '当前没有符合条件的已选表情' : '没有找到符合条件的表情';
+    $('#emptyMessage').textContent = scanning ? '识别完成后，这里会显示符合筛选条件的表情。' : typeRequiresScan ? '未检测的表情还没有分类。识别只用于区分动图和静态图，浏览和分享不受影响。' : '可以调整搜索或筛选条件。之前在其他页选择的表情仍会保留。';
+    $('#emptyScan').hidden = scanning || !typeRequiresScan;
+  }
+  const focusReturn = new WeakMap();
+  function openDialog(dialog) {
+    if (root.querySelector('dialog[open]')) return false;
+    focusReturn.set(dialog, root.activeElement);
+    dialog.showModal(); return true;
+  }
+  for (const dialog of root.querySelectorAll('dialog')) dialog.addEventListener('close', () => {
+    focusReturn.get(dialog)?.focus?.();
+    if (dialog.id === 'zoom') $('#zoom img').removeAttribute('src');
+  });
+  function closeDialog(dialog) { dialog.close(); }
+  root.querySelectorAll('[data-close]').forEach(button => button.onclick = () => {
+    const id = button.dataset.close;
+    if (id === 'importing') return cancelImport();
+    if (id === 'deletion' && deleting) { stop = true; $('#deleteProgress').textContent = '正在等待当前结果，随后停止。'; return; }
+    closeDialog($('#' + id));
+  });
+  function render() {
+    const list = filtered(); page = Math.max(0, Math.min(page, Math.ceil(list.length / size) - 1));
+    $('.grid').replaceChildren();
+    for (const item of list.slice(page * size, (page + 1) * size)) {
+      const card = document.createElement('article'); card.className = 'card' + (item.selected ? ' chosen' : '');
+      const preview = document.createElement('button'); preview.className = 'preview'; preview.title = '放大预览 ' + item.label;
+      const image = document.createElement('img'); image.src = item.url; image.alt = item.label; image.loading = 'lazy'; image.referrerPolicy = 'no-referrer';
+      image.onerror = () => { image.alt = '预览加载失败'; };
+      preview.append(image); preview.onclick = () => {
+        $('#zoom img').src = item.url; $('#zoom p').textContent = item.label; openDialog($('#zoom'));
+      };
+      const title = document.createElement('div'); title.className = 'card-title';
+      const nameText = document.createElement('span'); nameText.className = 'card-name'; nameText.textContent = item.label; nameText.title = item.label;
+      const name = document.createElement('input'); name.className = 'name'; name.value = item.label; name.maxLength = 80; name.hidden = true; name.setAttribute('aria-label', '分享名称 ' + item.label);
+      const edit = document.createElement('button'); edit.className = 'edit-name'; edit.textContent = '✎'; edit.setAttribute('aria-label', '编辑分享名称 ' + item.label); edit.title = '只修改分享名称';
+      let originalName = item.label;
+      function finishName(cancel = false) {
+        if (cancel) item.label = originalName;
+        else item.label = name.value.trim() || originalName;
+        name.value = item.label; nameText.textContent = item.label; nameText.title = item.label;
+        name.hidden = true; nameText.hidden = false; edit.textContent = '✎'; count();
+      }
+      edit.onclick = () => {
+        if (busy()) return;
+        if (!name.hidden) { finishName(); return; }
+        originalName = item.label; name.hidden = false; nameText.hidden = true; edit.textContent = '保存'; name.focus(); name.select();
+      };
+      name.oninput = () => { item.label = name.value; count(); };
+      name.onkeydown = event => { if (event.key === 'Enter' || event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); finishName(event.key === 'Escape'); edit.focus(); } };
+      title.append(nameText, name, edit);
+      const bottom = document.createElement('div'); bottom.className = 'card-bottom';
+      const badge = document.createElement('span'); badge.className = 'badge'; badge.dataset.id = item.gifId; badge.dataset.kind = item.animation; badge.textContent = badgeText(item);
+      const label = document.createElement('label'), check = document.createElement('input'); check.type = 'checkbox'; check.checked = item.selected; check.disabled = busy(); check.setAttribute('aria-label', '选择此表情');
+      check.onchange = () => {
+        item.selected = check.checked;
+        if ($('#filter').value === 'selected') {
+          const scroll = $('main').scrollTop; render(); $('main').scrollTop = scroll;
+        } else { card.classList.toggle('chosen', item.selected); count(); }
+      };
+      label.append(check, '选择'); bottom.append(badge, label); card.append(preview, title, bottom); $('.grid').append(card);
+    }
+    $('#page').textContent = `${page + 1} / ${Math.max(1, Math.ceil(list.length / size))} 页 · ${list.length} 个`;
+    $('#jump').max = Math.max(1, Math.ceil(list.length / size)); $('#jump').value = page + 1;
+    $('#first').disabled = $('#prev').disabled = page === 0;
+    $('#last').disabled = $('#next').disabled = (page + 1) * size >= list.length;
+    $('main').scrollTop = 0; updateSummary(); count(); renderEmpty();
+  }
+  $('#search').oninput = $('#filter').onchange = $('#animation').onchange = () => { page = 0; render(); };
+  $('#first').onclick = () => { page = 0; render(); };
+  $('#last').onclick = () => { page = Math.max(0, Math.ceil(filtered().length / size) - 1); render(); };
+  $('#prev').onclick = () => { page--; render(); }; $('#next').onclick = () => { page++; render(); };
+  function jumpToPage() {
+    const value = Number($('#jump').value), max = Math.max(1, Math.ceil(filtered().length / size));
+    if (!Number.isInteger(value) || value < 1 || value > max) { $('#scanStatus').textContent = `请输入 1–${max} 的整数页码。`; return; }
+    page = value - 1; render();
+  }
+  $('#jumpGo').onclick = jumpToPage;
+  $('#jump').onkeydown = event => { if (event.key === 'Enter') jumpToPage(); };
+  $('#selectPage').onclick = () => { if (busy()) return; filtered().slice(page * size, (page + 1) * size).forEach(item => item.selected = true); render(); };
+  $('#clear').onclick = () => { if (busy()) return; items.forEach(item => item.selected = false); render(); };
+  $('#viewSelected').onclick = () => {
+    if (busy()) return;
+    if (selectedView) {
+      $('#search').value = selectedView.search; $('#animation').value = selectedView.animation; $('#filter').value = selectedView.filter; page = selectedView.page; selectedView = null;
+    } else {
+      selectedView = { search: $('#search').value, animation: $('#animation').value, filter: $('#filter').value, page };
+      $('#search').value = ''; $('#animation').value = 'all'; $('#filter').value = 'selected'; page = 0;
+    }
+    render();
+  };
+  $('#emptyReset').onclick = () => { $('#search').value = ''; $('#animation').value = $('#filter').value = 'all'; selectedView = null; page = 0; render(); };
+  $('#emptyScan').onclick = () => $('#scan').click();
+  function revealWorkspace() {
+    host.dataset.open = host.dataset.managed = 'true'; host.style.display = ''; mini.hidden = true;
+    document.getElementById('seatalk-personal-gif-avatar-panel')?.classList.remove('spga-open');
+    if (geometryCustom) { const rect = host.getBoundingClientRect(); clampWindow(rect.left, rect.top); }
+    count(); window.dispatchEvent(new CustomEvent('spga:layout-change'));
+  }
+  host.__open = revealWorkspace;
+  host.__close = hideWorkspace;
+  function minimizeWorkspace() {
+    if (root.querySelector('dialog[open]')) return;
+    host.dataset.open = 'false'; host.style.display = 'none'; mini.hidden = false; count(); window.dispatchEvent(new CustomEvent('spga:layout-change')); mini.focus();
+  }
+  mini.onclick = () => { if (!host.isConnected) { mini.remove(); return; } revealWorkspace(); $('#minimize').focus(); };
+  function hideWorkspace(back = false) {
+    if (busy()) {
+      stop = importStopped = true; $('#scanStatus').textContent = '正在停止后续操作，请等待当前结果后关闭。'; return false;
+    }
+    scanCancelled = true; activeRequests.forEach(controller => controller.abort());
+    for (const dialog of root.querySelectorAll('dialog[open]')) closeDialog(dialog);
+    host.dataset.open = host.dataset.managed = 'false'; host.style.display = 'none'; mini.hidden = true;
+    window.dispatchEvent(new CustomEvent('spga:layout-change'));
+    if (back) window.dispatchEvent(new CustomEvent('spga:collections-back'));
+    return true;
+  }
+  $('#minimize').onclick = minimizeWorkspace;
+  $('#close').onclick = () => hideWorkspace();
+  $('#backAvatar').onclick = () => hideWorkspace(true);
+  $('#zoomClose').onclick = () => closeDialog($('#zoom'));
+  $('#guideOpen').onclick = () => { if (openDialog($('#guideDialog'))) $('#guideClose').focus(); };
+  $('#guideClose').onclick = () => closeDialog($('#guideDialog'));
+  $('#outputClose').onclick = () => closeDialog($('#output'));
+  $('#export').onclick = () => {
+    const selected = selection();
+    if (selected.some(item => !item.label.trim())) { $('#scanStatus').textContent = '请先填写已选表情的分享名称。'; return; }
+    $('#output textarea').value = JSON.stringify(selected.map(item => ({ label: item.label.trim(), gifId: item.gifId })), null, 2);
+    $('#message').textContent = `共 ${selected.length} 个，仅含名称与表情标识。`; openDialog($('#output'));
+  };
+  $('#copy').onclick = async () => { try { await navigator.clipboard.writeText($('#output textarea').value); $('#message').textContent = '已复制'; } catch (_) { $('#output textarea').select(); $('#message').textContent = '请按 ⌘C / Ctrl+C 复制'; } };
+  $('#download').onclick = () => { const url = URL.createObjectURL(new Blob([$('#output textarea').value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = 'seatalk-selected-stickers.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+  async function detect(item) {
+    const controller = new AbortController(); activeRequests.add(controller);
+    const timer = setTimeout(() => controller.abort(), 10000);
+    let decoder, reader;
+    try {
+      const response = await fetch(item.url, { credentials: 'include', signal: controller.signal });
+      if (!response.ok || Number(response.headers.get('content-length')) > 20 * 1024 * 1024) throw Error('unavailable');
+      reader = response.body.getReader(); const chunks = []; let length = 0;
+      for (;;) {
+        const { done, value } = await reader.read(); if (done) break;
+        length += value.byteLength; if (length > 20 * 1024 * 1024) throw Error('too large');
+        chunks.push(value);
+      }
+      const bytes = new Uint8Array(length); let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+      const ascii = (start, end) => String.fromCharCode(...bytes.slice(start, end));
+      const type = ascii(0, 3) === 'GIF' ? 'image/gif' : ascii(1, 4) === 'PNG' ? 'image/png' : ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP' ? 'image/webp' : bytes[0] === 255 && bytes[1] === 216 ? 'image/jpeg' : '';
+      if (!type || !('ImageDecoder' in window)) throw Error('unsupported');
+      decoder = new ImageDecoder({ data: bytes, type }); await decoder.tracks.ready;
+      const frames = decoder.tracks.selectedTrack?.frameCount;
+      if (!Number.isInteger(frames) || frames < 1) throw Error('unknown');
+      if (!scanCancelled && !controller.signal.aborted) item.animation = frames > 1 ? 'animated' : 'static';
+    } catch (_) {
+      if (!scanCancelled) item.animation = controller.signal.aborted ? 'unknown' : 'failed';
+    } finally {
+      clearTimeout(timer); decoder?.close(); activeRequests.delete(controller);
+      if (reader) { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+    }
+  }
+  $('#scanStop').onclick = () => { scanCancelled = true; activeRequests.forEach(controller => controller.abort()); };
+  $('#scan').onclick = async () => {
+    if (scanning || busy()) return;
+    scanning = true; scanCancelled = false; $('#scanStop').hidden = false; count();
+    const queue = activeItems().filter(item => ['unknown', 'failed'].includes(item.animation));
+    let next = 0, done = 0;
+    const status = () => {
+      $('#scanStatus').textContent = queue.length ? `正在识别 ${done} / ${queue.length}，筛选条件和选择都会保留。` : '已经完成分类，无需重复检测。';
+      updateSummary();
+    };
+    status(); renderEmpty();
+    const worker = async () => {
+      while (!scanCancelled && next < queue.length && host.isConnected) {
+        const item = queue[next++]; await detect(item); done++; status();
+        const badge = [...root.querySelectorAll('.badge')].find(element => element.dataset.id === item.gifId);
+        if (badge) { badge.textContent = badgeText(item); badge.dataset.kind = item.animation; }
+      }
+    };
+    try { await Promise.all([worker(), worker(), worker()]); }
+    finally {
+      scanning = false; $('#scanStop').hidden = true;
+      const failures = activeItems().filter(item => item.animation === 'failed').length;
+      $('#scanStatus').textContent = scanCancelled ? '已停止识别，已完成的分类仍然保留。' : queue.length
+        ? `识别完成${failures ? `，${failures} 个未能识别，可再次点击重试` : ''}。` : '已经完成分类，无需重复检测。';
+      updateSummary();
+      if ($('#animation').value !== 'all') { const scroll = $('main').scrollTop; render(); $('main').scrollTop = scroll; }
+      else { count(); renderEmpty(); }
+    }
+  };
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+  $('#remove').onclick = () => {
+    if (busy() || scanning || deleteNeedsReview) return;
+    try { assertWorkspaceAccount(); } catch (error) { $('#scanStatus').textContent = error.message; count(); return; }
+    pending = selection().map(item => Object.freeze({ gifId: item.gifId, url: item.url, label: item.label }));
+    if (!pending.length) return;
+    const outside = selectionOutside();
+    $('#deleteSummary').textContent = `即将移除 ${pending.length} 个收藏${outside ? `，其中 ${outside} 个不在当前筛选中` : ''}。不会删除聊天消息。`;
+    $('#deletePreview').replaceChildren();
+    for (const item of pending) {
+      const image = document.createElement('img'); image.src = item.url; image.alt = item.label; image.loading = 'lazy'; image.referrerPolicy = 'no-referrer';
+      $('#deletePreview').append(image);
+    }
+    $('#deleteProgress').textContent = ''; $('#deleteConfirm').disabled = false; $('#deleteCancel').disabled = false; $('#deleteCancel').textContent = '取消';
+    if (openDialog($('#deletion'))) $('#deleteCancel').focus();
+  };
+  $('#deleteCancel').onclick = () => { if (!deleting) closeDialog($('#deletion')); };
+  $('#deletion').addEventListener('cancel', event => { if (deleting) { event.preventDefault(); stop = true; $('#deleteProgress').textContent = '正在等待当前结果，随后停止。'; } });
+  $('#deleteStop').onclick = () => { stop = true; $('#deleteProgress').textContent = '正在等待当前结果，随后停止。'; };
+  $('#deleteConfirm').onclick = async () => {
+    if (deleting || importingBusy || !pending.length || deleteNeedsReview) return;
+    try { assertWorkspaceAccount(); } catch (error) { deleteNeedsReview = true; $('#deleteProgress').textContent = error.message; count(); return; }
+    deleting = true; stop = false; $('#deleteConfirm').disabled = $('#deleteCancel').disabled = true; $('#deleteStop').hidden = false; count();
+    let done = 0, error = '';
+    try {
+      for (const item of pending) {
+        if (stop) break;
+        assertWorkspaceAccount();
+        const current = liveSource();
+        if (!current.list.some(sticker => sticker.id === item.gifId)) { error = '收藏列表已变化，已停止。'; break; }
+        $('#deleteProgress').textContent = `正在移除 ${done + 1} / ${pending.length}…`;
+        assertWorkspaceAccount();
+        await current.actions.actionRemoveCustomStickers([item.gifId]);
+        assertWorkspaceAccount();
+        let absent = false;
+        for (let attempt = 0; attempt < 24; attempt++) {
+          await pause(500); assertWorkspaceAccount();
+          if (!liveSource().list.some(sticker => sticker.id === item.gifId)) { absent = true; break; }
+        }
+        if (!absent) { error = '本次结果未确认，已停止。'; break; }
+        const original = items.find(value => value.gifId === item.gifId);
+        original.deleted = true; original.selected = false; done++; count();
+        await pause(800);
+      }
+    } catch (_) { error = '删除请求未确认，已停止后续操作。'; }
+    finally {
+      deleting = false; deleteNeedsReview = Boolean(error); $('#deleteStop').hidden = true; $('#deleteCancel').disabled = false;
+      $('#deleteCancel').textContent = '返回管理';
+      $('#deleteProgress').textContent = `页面收藏已观察到移除 ${done} / ${pending.length} 个。${error || (stop ? '已停止后续删除。' : '')}请刷新 SeaTalk 核对保存结果。`;
+      render();
+    }
+  };
+
+  let dragging = null, resizing = null;
+  const dragHandle = $('#dragHandle'), resizeHandle = $('#resizeHandle');
+  function clampWindow(left, top) {
+    const rect = host.getBoundingClientRect(), margin = 12;
+    host.style.transform = 'none'; host.style.right = 'auto';
+    host.style.left = Math.max(margin, Math.min(left, innerWidth - rect.width - margin)) + 'px';
+    host.style.top = Math.max(margin, Math.min(top, innerHeight - rect.height - margin)) + 'px';
+  }
+  function resizeWindow(left, top, width, height) {
+    const availableWidth = Math.max(1, innerWidth - left - 12), availableHeight = Math.max(1, innerHeight - top - 12);
+    host.style.width = Math.min(availableWidth, Math.max(Math.min(360, availableWidth), width)) + 'px';
+    host.style.height = Math.min(availableHeight, Math.max(Math.min(400, availableHeight), height)) + 'px';
+    geometryCustom = true; clampWindow(left, top);
+  }
+  dragHandle.addEventListener('pointerdown', event => {
+    if (host.dataset.docked === 'true' || event.button !== 0 || event.target.closest('button,input,select,a')) return;
+    const rect = host.getBoundingClientRect();
+    dragging = { id: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
+    dragHandle.setPointerCapture?.(event.pointerId); event.preventDefault();
+  });
+  dragHandle.addEventListener('pointermove', event => {
+    if (!dragging || dragging.id !== event.pointerId) return;
+    geometryCustom = true; clampWindow(dragging.left + event.clientX - dragging.x, dragging.top + event.clientY - dragging.y);
+  });
+  const finishDrag = event => {
+    if (!dragging || dragging.id !== event.pointerId) return;
+    dragging = null;
+    if (dragHandle.hasPointerCapture?.(event.pointerId)) dragHandle.releasePointerCapture(event.pointerId);
+  };
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) dragHandle.addEventListener(type, finishDrag);
+  resizeHandle.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    const rect = host.getBoundingClientRect();
+    resizing = { id: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    resizeHandle.setPointerCapture?.(event.pointerId); event.preventDefault();
+  });
+  resizeHandle.addEventListener('pointermove', event => {
+    if (!resizing || resizing.id !== event.pointerId) return;
+    resizeWindow(resizing.left, resizing.top, resizing.width + event.clientX - resizing.x, resizing.height + event.clientY - resizing.y);
+  });
+  const finishResize = event => {
+    if (!resizing || resizing.id !== event.pointerId) return;
+    resizing = null;
+    if (resizeHandle.hasPointerCapture?.(event.pointerId)) resizeHandle.releasePointerCapture(event.pointerId);
+  };
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) resizeHandle.addEventListener(type, finishResize);
+  resizeHandle.onkeydown = event => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    const rect = host.getBoundingClientRect();
+    resizeWindow(rect.left, rect.top, rect.width + (event.key === 'ArrowLeft' ? -16 : event.key === 'ArrowRight' ? 16 : 0), rect.height + (event.key === 'ArrowUp' ? -16 : event.key === 'ArrowDown' ? 16 : 0));
+  };
+  $('#resetPosition').onclick = () => {
+    for (const property of ['left', 'right', 'top', 'width', 'height', 'transform']) host.style.removeProperty(property);
+    geometryCustom = false; delete host.dataset.dockWidth; host.dataset.layout = 'auto';
+    window.dispatchEvent(new CustomEvent('spga:layout-change'));
+  };
+  window.addEventListener('resize', () => {
+    if (!host.isConnected || host.dataset.open !== 'true' || !geometryCustom) return;
+    const rect = host.getBoundingClientRect(); clampWindow(rect.left, rect.top);
+  });
+  host.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || root.querySelector('dialog[open]')) return;
+    hideWorkspace();
+  });
+
+  const divider = $('#dockDivider'); let dockDrag = null;
+  $('#dockToggle').onclick = () => {
+    if ($('#dockToggle').disabled) return;
+    host.dataset.layout = host.dataset.docked === 'true' ? 'floating' : 'auto';
+    window.dispatchEvent(new CustomEvent('spga:layout-change'));
+    if (host.dataset.docked !== 'true' && geometryCustom) { const rect = host.getBoundingClientRect(); clampWindow(rect.left, rect.top); }
+  };
+  divider.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || host.dataset.docked !== 'true') return;
+    dockDrag = { id: event.pointerId, x: event.clientX, width: host.getBoundingClientRect().width };
+    divider.setPointerCapture?.(event.pointerId); event.preventDefault();
+  });
+  divider.addEventListener('pointermove', event => {
+    if (!dockDrag || dockDrag.id !== event.pointerId) return;
+    host.dataset.dockWidth = String(dockDrag.width + dockDrag.x - event.clientX);
+    window.dispatchEvent(new CustomEvent('spga:layout-change'));
+  });
+  const endDockDrag = event => {
+    if (!dockDrag || dockDrag.id !== event.pointerId) return;
+    dockDrag = null;
+    if (divider.hasPointerCapture?.(event.pointerId)) divider.releasePointerCapture(event.pointerId);
+  };
+  for (const type of ['pointerup','pointercancel','lostpointercapture']) divider.addEventListener(type, endDockDrag);
+  divider.onkeydown = event => {
+    if (!['ArrowLeft','ArrowRight'].includes(event.key) || host.dataset.docked !== 'true') return;
+    event.preventDefault(); host.dataset.dockWidth = String(host.getBoundingClientRect().width + (event.key === 'ArrowLeft' ? 20 : -20));
+    window.dispatchEvent(new CustomEvent('spga:layout-change'));
+  };
+
+  let importingBusy = false, importStopped = false, importGeneration = 0, importNeedsReview = false;
+  let imported = [], importServices = null, importAccountId = 0;
+  const pauseImport = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const ownList = () => {
+    const list = importServices?.store.getState()?.messages?.customStickers;
+    if (!Array.isArray(list)) throw Error('请先打开 SeaTalk 爱心收藏面板');
+    return list;
+  };
+  const alreadySaved = id => ownList().some(item => item.id === id || item.url === id);
+  function validPreviewUrl(fileUrl, id) {
+    const url = new URL(fileUrl(id));
+    if (url.protocol !== 'https:' || url.hostname !== 'f.haiserve.com' ||
+        !url.pathname.startsWith('/download/' + id)) throw Error('无法生成安全的表情预览');
+    return url.href;
+  }
+  async function discoverShareServices() {
+    if (globalThis.__SPGA_TEST_MODE__ === true && globalThis.__SPGA_SHARE_FIXTURE_SERVICES__) {
+      return globalThis.__SPGA_SHARE_FIXTURE_SERVICES__;
+    }
+    const links = [...new Set(Array.from(document.querySelectorAll('link[href],script[src]'), e => e.href || e.src || ''))];
+    const locate = name => {
+      const matches = links.filter(value => {
+        try { const url = new URL(value); return url.protocol === 'https:' &&
+          url.hostname === 'static.cdn.haiserve.com' &&
+          new RegExp('/seatalk/fe/static/js/chunk-' + name + '-[^/]+\\.js$').test(url.pathname); }
+        catch (_) { return false; }
+      });
+      if (matches.length !== 1) throw Error('未识别当前收藏服务，请登录 SeaTalk 后刷新');
+      return matches[0];
+    };
+    const [module, constants, accountModule] = await Promise.all([
+      import(locate('styles')), import(locate('db-pure')), import(locate('src')),
+    ]);
+    const one = (values, predicate) => {
+      const found = [...new Set(values)].filter(predicate);
+      if (found.length !== 1) throw Error('SeaTalk 收藏服务结构已变化，请停止操作并反馈');
+      return found[0];
+    };
+    const values = Object.values(module);
+    const actions = one(values, value => value && typeof value.actionAddCustomStickerFromMessage === 'function');
+    const store = one(values, value => value && typeof value.getState === 'function' && typeof value.dispatch === 'function');
+    const fileUrl = one(values, value => typeof value === 'function' && ['blob:', 'maxWidth', 'gfsToken'].every(word => String(value).includes(word)));
+    const tags = one(Object.values(constants), value => value && typeof value === 'object' && typeof value.MESSAGE_CUSTOM_STICKER === 'string');
+    const session = one(Object.values(accountModule), value => value && typeof value === 'object' &&
+      value.loggedIn === true && Number.isSafeInteger(value.userId) && value.userId > 0);
+    return { actions, store, fileUrl, session, tag: tags.MESSAGE_CUSTOM_STICKER,
+      accountId: () => {
+        const current = [...new Set(Object.values(accountModule))].filter(value => value && typeof value === 'object' && value.loggedIn === true && Number.isSafeInteger(value.userId) && value.userId > 0);
+        return current.length === 1 ? current[0].userId : 0;
+      } };
+  }
+  $('#shareOpen').onclick = () => {
+    if (busy() || !selection().length || selection().length > 100) return;
+    const selected = items.filter(item => item.selected && !item.deleted);
+    try {
+      $('#shareCode').value = encodeStickerShare(selected.map(({ gifId, label }) => ({ gifId, label })));
+      $('#shareStatus').textContent = `共 ${selected.length} 个表情${selectionOutside() ? `，其中 ${selectionOutside()} 个不在当前筛选中` : ''}。请复制完整口令；表情越多，口令越长。`;
+      if (openDialog($('#sharing'))) $('#shareCopy').focus();
+    } catch (error) { $('#scanStatus').textContent = error.message; }
+  };
+  $('#shareCopy').onclick = async () => {
+    try { await navigator.clipboard.writeText($('#shareCode').value); $('#shareStatus').textContent = '分享口令已复制，发给朋友即可。'; }
+    catch (_) { $('#shareCode').focus(); $('#shareCode').select(); $('#shareStatus').textContent = '请按 ⌘C / Ctrl+C 复制完整口令。'; }
+  };
+  $('#shareClose').onclick = () => closeDialog($('#sharing'));
+  const updateImportButton = () => {
+    $('#importConfirm').disabled = importingBusy || importNeedsReview || !imported.some(item => item.selected && item.ready && !item.saved);
+  };
+  $('#importOpen').onclick = () => {
+    if (deleting || importingBusy || scanning) return;
+    try { assertWorkspaceAccount(); } catch (error) { $('#scanStatus').textContent = error.message; count(); return; }
+    if (openDialog($('#importing'))) $('#importCode').focus();
+  };
+  function cancelImport() {
+    if (importingBusy) { importStopped = true; $('#importStatus').textContent = '正在停止后续添加，等待当前表情结果…'; return; }
+    importGeneration++; closeDialog($('#importing'));
+  }
+  $('#importCancel').onclick = cancelImport;
+  $('#importing').addEventListener('cancel', event => { event.preventDefault(); cancelImport(); });
+  $('#importStop').onclick = () => { importStopped = true; $('#importStatus').textContent = '正在停止后续添加，等待当前表情结果…'; };
+  $('#importCode').oninput = () => {
+    if (importingBusy) return;
+    importGeneration++; imported = []; $('#importPreview').replaceChildren();
+    $('#importStatus').textContent = '口令已变化，请重新解析预览。'; updateImportButton();
+  };
+  $('#importSelect').onclick = () => {
+    if (importingBusy) return;
+    imported.forEach(item => { if (item.ready && !item.saved) { item.selected = true; item.check.checked = true; } });
+    updateImportButton();
+  };
+  $('#importParse').onclick = async () => {
+    if (importingBusy) return;
+    const generation = ++importGeneration;
+    importNeedsReview = false;
+    imported = []; $('#importPreview').replaceChildren(); updateImportButton();
+    try {
+      const stickers = decodeStickerShare($('#importCode').value);
+      $('#importStatus').textContent = '正在准备预览…';
+      const found = await discoverShareServices();
+      if (generation !== importGeneration || !$('#importing').open) return;
+      importServices = found;
+      const account = importServices.session;
+      if (account.loggedIn !== true || !Number.isSafeInteger(account.userId) || account.userId <= 0) throw Error('请先登录 SeaTalk');
+      assertWorkspaceAccount(); importAccountId = nativeWorkspaceAccountId(importServices);
+      ownList();
+      imported = stickers.map(item => ({ ...item, ready: false, selected: false, saved: alreadySaved(item.gifId),
+        url: validPreviewUrl(importServices.fileUrl, item.gifId) }));
+      for (const item of imported) {
+        const card = document.createElement('div'); card.className = 'import-card';
+        const image = document.createElement('img'); image.alt = item.label; image.referrerPolicy = 'no-referrer';
+        const label = document.createElement('label');
+        const check = document.createElement('input'); check.type = 'checkbox'; check.disabled = true;
+        check.setAttribute('aria-label', '添加 ' + item.label); item.check = check;
+        const status = document.createElement('p'); status.style.fontSize = '12px';
+        status.textContent = item.saved ? '已收藏 · 自动跳过' : '等待预览'; item.status = status;
+        check.onchange = () => { item.selected = check.checked; updateImportButton(); };
+        image.onload = () => {
+          if (generation !== importGeneration) return;
+          item.width = image.naturalWidth; item.height = image.naturalHeight;
+          item.ready = item.width > 0 && item.height > 0 && item.width <= 20000 && item.height <= 20000;
+          check.disabled = !item.ready || item.saved || importingBusy;
+          status.textContent = item.saved ? '已收藏 · 自动跳过' : item.ready ? '预览就绪 · 可添加' : '图片尺寸无效';
+          updateImportButton();
+        };
+        image.onerror = () => {
+          if (generation !== importGeneration) return;
+          item.ready = false; item.selected = false; check.checked = false; check.disabled = true;
+          status.textContent = '预览不可用 · 不可添加'; updateImportButton();
+        };
+        label.append(check, item.label); card.append(image, label, status); $('#importPreview').append(card);
+        image.src = item.url;
+      }
+      $('#importStatus').textContent = `共 ${imported.length} 个表情，已收藏 ${imported.filter(item => item.saved).length} 个。请勾选预览成功的表情，确认后添加。`;
+    } catch (error) {
+      if (generation !== importGeneration) return;
+      imported = []; $('#importPreview').replaceChildren();
+      $('#importStatus').textContent = error.message; updateImportButton();
+    }
+  };
+  $('#importConfirm').onclick = async () => {
+    if (importingBusy || deleting || scanning || importNeedsReview) return;
+    try { assertWorkspaceAccount(); } catch (error) { $('#importStatus').textContent = error.message; return; }
+    const selected = imported.filter(item => item.selected && item.ready && !item.saved);
+    if (!selected.length) return;
+    const generation = importGeneration;
+    importingBusy = true; importStopped = false;
+    for (const id of ['importCode', 'importParse', 'importSelect', 'importConfirm', 'remove', 'scan']) $('#' + id).disabled = true;
+    imported.forEach(item => item.check.disabled = true);
+    $('#importStop').hidden = false; count();
+    try {
+      const result = await addSharedStickers(selected, {
+        accountId: () => nativeWorkspaceAccountId(importServices),
+        active: () => host.isConnected && importGeneration === generation && nativeWorkspaceAccountId(importServices) === importAccountId,
+        stopped: () => importStopped,
+        has: alreadySaved, pause: pauseImport,
+        report: text => $('#importStatus').textContent = text,
+        add: item => importServices.actions.actionAddCustomStickerFromMessage({ tag: importServices.tag,
+          content: { fileId: item.gifId, width: item.width, height: item.height } }),
+      });
+      $('#importStatus').textContent = `页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`;
+    } catch (error) { importNeedsReview = true; $('#importStatus').textContent = error.message + '；请刷新收藏核对后再操作。'; }
+    finally {
+      importingBusy = false; $('#importStop').hidden = true;
+      for (const id of ['importCode', 'importParse', 'importSelect', 'remove', 'scan']) $('#' + id).disabled = false;
+      for (const item of imported) {
+        try { item.saved = alreadySaved(item.gifId); } catch (_) { /* Keep uncertain results unconfirmed. */ }
+        if (item.saved) {
+          item.selected = false; item.check.checked = false; item.status.textContent = '已收藏';
+          const existing = items.find(old => old.gifId === item.gifId);
+          if (existing) existing.deleted = false;
+          else items.push({ gifId: item.gifId, label: item.label, url: item.url, existing: known.has(item.gifId), selected: false, animation: 'unknown' });
+        }
+        item.check.disabled = item.saved || !item.ready;
+      }
+      updateImportButton(); render();
+    }
+  };
+  host.addEventListener('keydown', event => {
+    if (event.altKey && event.shiftKey && event.code === 'KeyJ') {
+      event.preventDefault(); $('#hiddenTools').hidden = !$('#hiddenTools').hidden;
+    }
+  });
+
+  discoverShareServices().then(services => {
+    workspaceAccountCheck = createWorkspaceAccountGuard(services, source, () => liveSource().list);
+    workspaceAccountState = 'ready'; count();
+  }).catch(() => {
+    workspaceAccountState = 'failed';
+    $('#scanStatus').textContent = '无法核对当前账号，添加和删除已停用。请刷新 SeaTalk 后重新打开。'; count();
+  });
+  render();
+  window.dispatchEvent(new CustomEvent('spga:layout-change'));
+  return { sourceCount: source.length, uniqueCount: items.length, existingCount: items.filter(item => item.existing).length };
+}
+
+function installHelperLayout() {
+/* CSS-only side-by-side layout; native React nodes, zoom and chat content are untouched. */
+function planHelperSplit(viewportWidth, kind, preferredWidth, nativeAvailable = true) {
+  if (!nativeAvailable || !['favorites', 'avatar'].includes(kind) || !Number.isFinite(viewportWidth)) return null;
+  const nativeMin = 900, gap = 36, min = kind === 'favorites' ? 460 : 340;
+  const max = Math.min(kind === 'favorites' ? 800 : 460, viewportWidth - nativeMin - gap);
+  if (max < min) return null;
+  const fallback = kind === 'favorites' ? Math.min(760, viewportWidth * 0.38) : 390;
+  const width = Math.round(Math.max(min, Math.min(max, Number.isFinite(preferredWidth) ? preferredWidth : fallback)));
+  return { width, nativeWidth: viewportWidth - width - gap, min, max };
+}
+
+  if (window.__spgaHelperLayout) { window.__spgaHelperLayout.refresh(); return window.__spgaHelperLayout; }
+  const root = document.documentElement, style = document.createElement('style');
+  style.id = 'spga-helper-split-layout';
+  style.textContent = `html[data-spga-dock-kind] #root .home-main-window {
+    position:fixed!important;left:12px!important;top:12px!important;right:auto!important;bottom:auto!important;
+    width:calc(100vw - var(--spga-dock-width) - 36px)!important;height:calc(100dvh - 24px)!important;
+    min-width:0!important;max-width:none!important;max-height:none!important;margin:0!important;transform:none!important;border-radius:7px!important;}
+    html[data-spga-dock-kind] #root .misc-info {visibility:hidden!important}
+    html[data-spga-dock-kind="favorites"] #st-favorites-curator,
+    html[data-spga-dock-kind="avatar"] #seatalk-personal-gif-avatar-panel {
+      position:fixed!important;left:auto!important;right:12px!important;top:12px!important;bottom:auto!important;
+      width:var(--spga-dock-width)!important;height:calc(100dvh - 24px)!important;max-height:calc(100dvh - 24px)!important;
+      max-width:calc(100vw - 24px)!important;transform:none!important;margin:0!important;}`;
+  document.head.append(style);
+  let frame = 0, last = '';
+  const nativeAvailable = () => {
+    const nodes = document.querySelectorAll('#root .home-main-window');
+    if (nodes.length !== 1) return false;
+    const rect = nodes[0].getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && getComputedStyle(nodes[0]).display !== 'none';
+  };
+  function refresh() {
+    const favorites = document.getElementById('st-favorites-curator'), avatar = document.getElementById('seatalk-personal-gif-avatar-panel');
+    const kind = favorites?.dataset.open === 'true' ? 'favorites' : favorites?.dataset.managed !== 'true' && avatar?.classList.contains('spga-open') ? 'avatar' : null;
+    const host = kind === 'favorites' ? favorites : avatar;
+    const available = nativeAvailable();
+    const preferred = host?.dataset.dockWidth ? Number(host.dataset.dockWidth) : undefined;
+    const plan = planHelperSplit(innerWidth, kind, preferred, available);
+    const docked = Boolean(plan && host?.dataset.layout !== 'floating');
+    const stateKey = `${kind}|${innerWidth}|${innerHeight}|${plan?.width}|${docked}`;
+    if (stateKey !== last) {
+      last = stateKey;
+      if (docked) { root.dataset.spgaDockKind = kind; root.style.setProperty('--spga-dock-width', plan.width + 'px'); }
+      else { delete root.dataset.spgaDockKind; root.style.removeProperty('--spga-dock-width'); }
+    }
+    for (const node of [favorites, avatar].filter(Boolean)) {
+      const next = String(docked && node === host);
+      if (node.dataset.docked !== next) node.dataset.docked = next;
+    }
+    if (favorites) {
+      const button = favorites.shadowRoot?.getElementById('dockToggle'), divider = favorites.shadowRoot?.getElementById('dockDivider');
+      if (button) {
+        button.disabled = !planHelperSplit(innerWidth, 'favorites', preferred, available);
+        button.textContent = docked && kind === 'favorites' ? '浮窗' : '分栏';
+        button.title = button.disabled ? '当前页面或窗口宽度不适合分栏，将使用浮窗' : docked && kind === 'favorites' ? '切换为可拖动浮窗' : '在右侧分栏，SeaTalk 使用左侧空间';
+      }
+      if (divider) {
+        divider.hidden = !(docked && kind === 'favorites');
+        if (plan) { divider.setAttribute('aria-valuemin', String(plan.min)); divider.setAttribute('aria-valuemax', String(Math.floor(plan.max))); divider.setAttribute('aria-valuenow', String(plan.width)); }
+      }
+    }
+    return { kind, docked, plan };
+  }
+  const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; refresh(); }); };
+  const observer = new MutationObserver(schedule);
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'data-open', 'data-managed', 'data-layout', 'data-dock-width'] });
+  window.addEventListener('resize', schedule);
+  window.addEventListener('spga:layout-change', refresh);
+  const api = { refresh, dispose() {
+    observer.disconnect(); if (frame) cancelAnimationFrame(frame);
+    window.removeEventListener('resize', schedule); window.removeEventListener('spga:layout-change', refresh);
+    delete root.dataset.spgaDockKind; root.style.removeProperty('--spga-dock-width'); style.remove(); delete window.__spgaHelperLayout;
+  } };
+  window.__spgaHelperLayout = api; refresh(); return api;
+}
+
+  function startHelperLayout() {
+    try {
+      if (typeof unsafeWindow !== "undefined" && typeof unsafeWindow.Function === "function") {
+        unsafeWindow.Function(`return (${installHelperLayout.toString()})();`)();
+      }
+    } catch (_) { /* Keep the ordinary floating helper if layout setup is unavailable. */ }
+  }
   function init() {
+    startHelperLayout();
     window.visualViewport?.addEventListener("resize", positionPanelNearToggle);
     window.visualViewport?.addEventListener("scroll", positionPanelNearToggle);
+    window.addEventListener('spga:collections-back', () => {
+      document.getElementById(PANEL_ID)?.classList.add('spga-open');
+      positionPanelNearToggle();
+    });
     readSavedState();
     injectStyles();
     createPanel();
@@ -5323,7 +6345,7 @@
   // 仅供本地自动测试读取纯解析函数。正常安装时没有这个标记，不会暴露任何接口。
   if (globalThis.__SPGA_TEST_MODE__ === true) {
     globalThis.__SPGA_TEST_API__ = {
-      groupUI, bindGroupStatus, confirmGroupAvatar, bindPanelEvents, injectStyles,
+      installHelperLayout, launchFavoritesGallery, openCollectionsWorkspace, groupUI, bindGroupStatus, confirmGroupAvatar, bindPanelEvents, injectStyles,
       localizeDiagnosticMessage, panelViewport, bindPanelDrag, positionPanelNearToggle,
       sanitizeDiagnosticText,
       getDiagnosticEnvironment,

@@ -1,177 +1,101 @@
 <p align="center">
-  <img src="docs/images/seatalk-gif-avatar-helper-banner.dark.en.png" alt="SeaTalk Personal GIF Avatar Helper" width="100%">
+  <img src="docs/images/seatalk-gif-avatar-helper-banner.dark.en.png" alt="SeaTalk GIF Avatar Helper" width="100%">
 </p>
 
 <p align="center">
-  <strong>Turn a GIF sticker from your SeaTalk chat into an animated personal or group avatar. No bundle search or DevTools breakpoint required.</strong>
+  <strong>Use chat GIF stickers as personal or group avatars, and organize and share your favorite stickers in batches.</strong>
 </p>
 
 <p align="center">
   <a href="https://greasyfork.org/en/scripts/588931">Install userscript</a>
-  ·
-  <a href="https://seatalkweb.com/">Open SeaTalk Web</a>
-  ·
-  <a href="https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues">Report an issue</a>
-  ·
-  <a href="README.md">中文</a>
+  · <a href="https://seatalkweb.com/">Open SeaTalk Web</a>
+  · <a href="https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues">Report an issue</a>
+  · <a href="README.md">中文</a>
 </p>
 
+## 5.0.0: Avatar compatibility and batch favorites
 
-> **Upgrading from 3.0.3 to 3.0.5:** The page hook now requires `unsafeWindow`. Accept any Tampermonkey permission prompt and reload SeaTalk. If `PAGE_CONTEXT_UNAVAILABLE`, `PAGE_CONTEXT_EXECUTION_BLOCKED`, or `HOOK_NO_ACK` appears, retain the code and Console error. Do not disable browser security policies.
+- **Personal GIF avatar fix:** Register the sticker resource for avatar use, verify identical file contents, then update your avatar while preserving your name and animation.
+- **My favorites:** Search, preview, identify animation, select across pages, review selections, and remove favorites after confirmation.
+- **Share codes:** Share 1–100 stickers per code. Recipients paste, preview, select and confirm; existing favorites are skipped.
+- **Automatic split view:** On wide screens, SeaTalk stays on the left and the helper opens on the right. Minimize or close to restore the original layout. Smaller screens use a floating window.
+- **Consistent windows:** A clear title bar, red close button, minimized entry and always-available guide. Floating windows support dragging and resizing.
 
+This release excludes the sticker market. The avatar helper supports Chinese and English; the new favorites workspace currently uses Chinese labels, translated below.
 
-### 4.0.1: Interaction and visual refinements
+> **Upgrading from an older or preview version:** The existing installation and update identity is preserved. Disable other beta/preview copies, keep only one helper enabled, then update and reload SeaTalk. Review any Tampermonkey permission prompt; image inspection uses SeaTalk's `f.haiserve.com` image service.
 
-- Fix mixed-language English startup diagnostics while retaining module information.
-- Drag the header; scroll content in small or zoomed windows while keeping primary actions visible.
-- Open the GitHub project in a new tab from the footer icon, with bilingual labels.
-- Blue everyday controls, subtle gradient accents in update/success dialogs, and a green success check.
-- Display branding is **SeaTalk GIF Avatar Helper**, for personal and group avatars. Repository URL and userscript installation identity remain compatible.
+You can also [install the 5.0.0 userscript from GitHub Releases](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/download/v5.0.0/SeaTalk-Personal-GIF-Avatar-Helper.user.js). Greasy Fork and GitHub publish independently; check that the installer shows **5.0.0**.
 
-## 4.0.0: Group GIF avatars are here!
-
-- Switch between **My avatar / Group avatar** to use GIFs for yourself or a group.
-- Open the target group's settings, check its name, select a GIF, and confirm the group and preview before each update.
-- The helper checks the target avatar, shows a success popup and unlocks the next update without a refresh.
-- Compact UI with shared GIF selection, a styled target label and no floating button covering the open panel.
-- Random selection now **previews first** in both modes; apply with the main button.
-
-Keep editable group settings open. Unconfirmed updates remain protected against duplicate submissions while checking continues. Group success means the target resource was observed on the page, not an independent API receipt. Disable beta scripts before enabling the stable release and refresh SeaTalk.
-
-## 3.0.5 diagnostics
-
-Expand runtime diagnostics for environment versions, attempt numbers, stage codes and elapsed time. Use **Copy sanitized diagnostics** for a JSON report, or copy from the independent report dialog if clipboard access is denied; background updates preserve its content and selection. Only allowlisted environment fields, stage codes and available numeric API error codes are exported; accounts, chats, GIF IDs, image URLs and raw exceptions are excluded. Up to 60 events are held in memory until reload; nothing is sent automatically.
-
-`API_SUCCESS` confirms submission. `VISUAL_PENDING` means submission succeeded but the display has not been confirmed. A SeaTalk version change is a diagnostic clue and does not block the helper.
-
-
-While an API request remains pending, another submission is blocked. The 20-second visual timeout does not mean the request failed or was cancelled. See the [3.0.5 acceptance record](docs/RELEASE_3.0.5.md) for tested environments and limits.
-
-## First-time setup: only 3 steps
-
-> The extension, permission, and userscript only need to be set up once. After that, open the helper whenever you want to change your GIF avatar.
+## First-time setup: 3 steps
 
 ![Install in three steps](docs/images/install-in-3-steps.dark.en.png)
 
-1. **Install Tampermonkey**: Open the [official Tampermonkey website](https://www.tampermonkey.net/) in Chrome or Edge, then install and enable the extension.
+1. Install and enable the extension from the [Tampermonkey website](https://www.tampermonkey.net/) in Chrome or Edge.
+2. **Right-click** the Tampermonkey icon, choose **Manage extension**, and enable **Allow User Scripts**. If unavailable, enable **Developer mode** at `chrome://extensions` or `edge://extensions`.
+3. Open the [Greasy Fork script page](https://greasyfork.org/en/scripts/588931), click **Install this script**, and reload [SeaTalk Web](https://seatalkweb.com/).
 
-2. **First-time permission: enable “Allow User Scripts”**: Right-click the Tampermonkey icon in the browser toolbar, select **Manage extension**, then enable **Allow User Scripts**.
-
-3. **Install GIF Avatar Helper**: Open the [Greasy Fork script page](https://greasyfork.org/en/scripts/588931), click **Install this script**, then refresh [SeaTalk Web](https://seatalkweb.com/).
-
-> [!IMPORTANT]
-> Setup is complete only when the **GIF Avatar** button appears on the right side of SeaTalk.
-
-### First-time permission details (once only)
-
-> [!WARNING]
-> Use the **right mouse button** on the Tampermonkey toolbar icon. If this permission is not enabled, the userscript may appear installed but will not run on SeaTalk.
+Open the helper using the **GIF Avatar** button. See the first-time permission guide:
 
 ![Allow User Scripts permission guide](docs/images/allow-user-scripts.dark.en.png)
 
-<details>
-<summary><strong>“Allow User Scripts” is missing</strong></summary>
+## Change a GIF avatar
 
-1. Right-click the Tampermonkey icon in the browser toolbar.
-2. Select **Manage extension**.
-3. Enable **Allow User Scripts** on the extension details page.
-4. If the option is missing, open `chrome://extensions` or `edge://extensions` and enable **Developer mode** in the top-right corner.
-5. Return to SeaTalk and refresh the page.
+1. Open the helper and **Pick a GIF** to preview. Or send a GIF using SeaTalk's **sticker** button, then **Capture GIFs from this chat**. Regular image-file uploads are not supported by this capture entry.
+2. Select a GIF under **My avatar** and apply it with the main button.
+3. For a group, keep the editable target group's settings open. Under **Group avatar**, check the group name, choose a GIF, then confirm the group and image before applying.
 
-</details>
+Personal updates use the API result for confirmation; group updates use the avatar observed on the page. Pending requests block repeat submission. Check the result before retrying if the display is still unconfirmed.
 
-## Start using it
+## Manage favorites in batches
 
-### Quick try without your own GIF
+### Before opening
 
-1. Sign in to [SeaTalk Web](https://seatalkweb.com/).
-2. Click **GIF Avatar** on the right.
-3. Click **Pick a GIF** to preview, then apply with the main button.
+Open SeaTalk's sticker panel, select the heart **Favorites** tab, then open **我的收藏 (My favorites)** in the helper. Keep the native panel mounted: the helper temporarily hides it while expanded. Do not switch chats or close that native panel during operations; it becomes visible again when the helper is minimized or closed.
 
-### Use your own GIF
+### Select and filter
 
-1. Send the GIF through SeaTalk's **sticker** button in the current chat. Do not upload it as a regular image file.
-2. Open **GIF Avatar** and click **Capture GIFs from this chat**.
-3. Select a sticker and click **Use this GIF as my avatar**.
+- Click an image to enlarge it. **全选本页 (Select this page)** selects only the current page; selections survive paging and filtering.
+- The bottom bar counts all selections. **查看已选 (Review selected)** includes items outside the current filter; sharing and deletion include them too.
+- Browsing and sharing need no scan. To filter animations, first choose **识别动图 (Identify animation)**, then **动图 (Animated)**. Failed inspection appears separately as **未能识别 (Could not identify)**.
+- The edit button beside a name changes only the name used for this share, not the original SeaTalk favorite.
 
-The helper shows a confirmation as soon as the SeaTalk API accepts the update. If the visible avatar is briefly cached, refresh the page once.
+### Share and add
 
-## Features
+**Share:** Select 1–100 stickers → **生成分享口令 (Generate share code)** → copy the complete code and send it yourself. More stickers produce longer codes.
 
-- Preview a random built-in GIF, then apply it to your selected target.
-- Capture the 3 most recent SeaTalk GIF stickers from private chats, groups, and chat branches.
-- Read the real frame count of each candidate, recognize two-frame GIFs, and reject still images automatically.
-- Keep results in chat order so an older large image cannot displace a newer GIF.
-- Keep normal messages eligible even when they contain Reaction, emoji, or emoticon structures.
-- Discover the current `chunk-styles-*.js` and avatar update entry point.
-- Wait automatically when SeaTalk is still loading.
-- Drag the helper button and restore its saved position.
-- Chinese and English interface.
-- Stage-by-stage diagnostics and API success confirmation.
-- Show the script version at the bottom of the helper for easier bug reports, with a one-time update notice for each new version.
+**Add:** **导入口令 (Import code)** → paste the complete `STGIF1.` code → **解析并预览 (Parse and preview)** → select available stickers → **确认添加所选表情 (Confirm adding selected stickers)**.
 
-## Privacy and safety
+Import rechecks current favorites and skips existing entries. Failed previews cannot be added. Codes contain resource identifiers and the names you entered, without accounts, session credentials or signed image URLs. They are not encrypted; review the names before sharing. The helper sends no messages, and a code cannot guarantee permanent availability or access from every account.
 
-- Its interface runs only on `seatalkweb.com`.
-- Only when the user starts a capture, it reads candidate image bytes from `f.haiserve.com` to confirm that an image really contains at least two frames.
-- Does not collect or upload account details, chat content, passwords, cookies, or other personal information.
-- Includes no separate analytics or tracking service.
-- Uses the personal or group avatar update capabilities already available in the current SeaTalk page.
-- Modifies your own avatar or an editable target group's avatar after confirmation.
-- Preferences such as language and button position stay in Tampermonkey local storage.
-- Does not save signed candidate image URLs in local preferences, diagnostics, or public documentation.
+### Remove and verify
 
-## FAQ
+Select → **删除所选表情 (Remove selected stickers)** → review images and count → **确认删除 (Confirm removal)**. Only your favorites are removed; chat messages remain. The helper cannot undo removal, and a share code does not guarantee recovery.
 
-<details>
-<summary><strong>The GIF Avatar button does not appear</strong></summary>
+If an add or removal result is uncertain, later operations stop. Reload SeaTalk to verify saved favorites before retrying. Stopping waits for the current sticker result before skipping later items. Reloading clears the current selection.
 
-Make sure Tampermonkey and this userscript are both enabled. Confirm that **Allow User Scripts** is enabled, then refresh SeaTalk.
+### Split view and floating mode
 
-</details>
+On wide screens, drag the divider to resize the favorites sidebar. Choose **浮窗 (Floating window)** to drag the entire title bar or resize from the lower-right corner. **−** minimizes while retaining page, filters and selections; click the small entry to restore it. Closing or minimizing restores SeaTalk's original layout without changing browser zoom.
 
-<details>
-<summary><strong>The update succeeded, but the old avatar is still visible</strong></summary>
+## Status and troubleshooting
 
-This is usually a SeaTalk page cache. Refresh the page and check again.
+Expand **Status and diagnostics** for environment information, stage codes, attempt numbers and elapsed time. **Copy sanitized diagnostics** exports only allowlisted environment fields and flow codes; it excludes accounts, chats, resource IDs, image URLs and raw exceptions. Up to 60 events stay in page memory until reload. Nothing is sent automatically.
 
-</details>
+`API_SUCCESS` confirms API acceptance. `VISUAL_PENDING` means submission succeeded but the display is unconfirmed. Waiting for visual confirmation does not mean the API failed; do not repeat a pending submission.
 
-<details>
-<summary><strong>The avatar update entry point cannot be found</strong></summary>
+- **No button:** Check the extension, script and **Allow User Scripts**, then reload.
+- **Avatar or favorites service missing:** Wait for loading, then reload and reopen the appropriate native panel. Include the version, steps and sanitized diagnostics in [GitHub Issues](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues).
+- **Unconfirmed favorites result:** Reload and check before adding or removing again.
 
-Allow the automatic check to run for 5 seconds. If it still fails, click **Check again and apply** or refresh SeaTalk. If the problem continues, expand **Status and diagnostics**, keep a screenshot, and report it through [GitHub Issues](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues).
+## Privacy and compatibility
 
-</details>
+- The interface runs only on `seatalkweb.com` and its subdomains, using services already available in the current page. Session credentials remain in the page for native service calls.
+- Capture, inspection, preview, avatar registration and adding favorites contact SeaTalk's image/business services. There is no separate analytics or tracking service and no upload of chats, passwords or cookies to other services.
+- Avatar and favorites changes require user action. Group-avatar and favorites changes include confirmation steps.
+- Language and floating-button position use Tampermonkey local storage. Favorite selections, share names and temporary image URLs stay in the page session.
+- One personal GIF registration and avatar update was verified in a real SeaTalk 3.71.1 browser session: it survived reload and preserved the name. See the [5.0.0 validation record](docs/RELEASE_5.0.0.md) for separate automated and simulated UI checks. The packaged account workflow, cross-account imports and other SeaTalk versions still need further validation.
 
-<details>
-<summary><strong>The GIF I just sent was not captured</strong></summary>
-
-Make sure you sent it through SeaTalk's **sticker** button instead of uploading it as a regular image. The helper checks only chat content that is currently open and visible. It reads candidate images to verify their real frame count, so capture may take a few seconds.
-
-If it still fails, expand **Status and diagnostics**. Keep the version number at the bottom of the helper visible in your screenshot, but redact chat content, names, and URL parameters.
-
-</details>
-
-<details>
-<summary><strong>The helper button covers a SeaTalk control</strong></summary>
-
-Drag the **GIF Avatar** button somewhere else. The script saves the new position.
-
-</details>
-
-## Updates and feedback
-
-- Tampermonkey checks Greasy Fork for script updates. You can also check manually in its dashboard.
-- See [CHANGELOG.md](CHANGELOG.md) for the full version history.
-- Include reproduction steps, the version shown at the bottom of the helper, and anonymized diagnostics when reporting a problem.
-- Never post passwords, cookies, work chat content, or other sensitive information in a public issue.
-
-## Notes
-
-- Current version: `4.0.1`
-- Supported page: SeaTalk Web
-- This is an unofficial helper and is not affiliated with, endorsed by, or maintained by SeaTalk.
-- A future SeaTalk frontend update may temporarily affect compatibility. Check the diagnostics panel for details.
+Current version: **5.0.0**. This is an unofficial helper, unaffiliated with and not endorsed by SeaTalk. Frontend changes may affect compatibility. See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 <p align="center">Made by Yixin.Zhong × Codex</p>
