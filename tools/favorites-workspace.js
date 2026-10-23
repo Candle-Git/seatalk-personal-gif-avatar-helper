@@ -116,6 +116,29 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
   applyStaticLocale();
   root.querySelector('.app').lang = language.locale;
   const $ = selector => root.querySelector(selector);
+  let actionNotice = null, noticeTimer = null;
+  function dismissActionNotice() {
+    clearTimeout(noticeTimer);
+    if (actionNotice?.matches(':popover-open')) actionNotice.hidePopover();
+    actionNotice?.remove(); actionNotice = null;
+  }
+  function notifyAction(message, tone = 'success') {
+    dismissActionNotice();
+    const notice = document.createElement('div');
+    notice.setAttribute('popover', 'manual');
+    notice.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+    notice.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');
+    notice.style.cssText = 'position:fixed;inset:20px 20px auto auto;margin:0;max-width:min(460px,calc(100vw - 40px));padding:14px 16px;border-radius:10px;border:1px solid;box-shadow:0 8px 30px #17203330;z-index:2147483647;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;gap:12px;align-items:flex-start;overflow-wrap:anywhere';
+    const colors = tone === 'error' ? ['#fff2f0','#b42318','#f2b8b1'] : tone === 'info' ? ['#eff6ff','#175398','#b9d8f4'] : ['#edf9f1','#21633c','#b7dfc5'];
+    [notice.style.background,notice.style.color,notice.style.borderColor] = colors;
+    const text = document.createElement('span'); text.textContent = message;
+    const close = document.createElement('button'); close.textContent = '×'; close.setAttribute('aria-label', ui('关闭提示','Dismiss notification'));
+    close.style.cssText = 'min-height:24px;padding:0 5px;border:0;background:transparent;color:inherit;font-size:20px'; close.onclick = dismissActionNotice;
+    notice.append(text,close);
+    (root.querySelector('dialog[open]') || $('.app')).append(notice); actionNotice = notice;
+    try { notice.showPopover(); } catch (_) { /* Keep the visible inline fallback. */ }
+    noticeTimer = setTimeout(dismissActionNotice, tone === 'success' ? 5000 : 9000);
+  }
   const activeItems = () => items.filter(item => !item.deleted);
   const selection = () => items.filter(item => item.selected && !item.deleted);
   const matches = item => {
@@ -300,7 +323,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
   host.__close = hideWorkspace;
   function minimizeWorkspace() {
     if (root.querySelector('dialog[open]')) return;
-    stopFavoritesSync();
+    dismissActionNotice(); stopFavoritesSync();
     host.dataset.open = 'false'; host.style.display = 'none'; mini.hidden = false; count(); window.dispatchEvent(new CustomEvent('spga:layout-change')); mini.focus();
   }
   mini.onclick = () => { if (!host.isConnected) { mini.remove(); return; } revealWorkspace(); $('#minimize').focus(); };
@@ -310,7 +333,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     }
     scanCancelled = true; activeRequests.forEach(controller => controller.abort());
     for (const dialog of root.querySelectorAll('dialog[open]')) closeDialog(dialog);
-    stopFavoritesSync();
+    dismissActionNotice(); stopFavoritesSync();
     host.dataset.open = host.dataset.managed = 'false'; host.style.display = 'none'; mini.hidden = true;
     window.dispatchEvent(new CustomEvent('spga:layout-change'));
     if (back) window.dispatchEvent(new CustomEvent('spga:collections-back'));
@@ -329,8 +352,15 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     $('#output textarea').value = JSON.stringify(selected.map(item => ({ label: item.label.trim(), gifId: item.gifId })), null, 2);
     $('#message').textContent = ui(`共 ${selected.length} 个，仅含名称与表情标识。`, `${selected.length} stickers; names and resource IDs only.`); openDialog($('#output'));
   };
-  $('#copy').onclick = async () => { try { await navigator.clipboard.writeText($('#output textarea').value); $('#message').textContent = tr('已复制'); } catch (_) { $('#output textarea').select(); $('#message').textContent = tr('请按 ⌘C / Ctrl+C 复制'); } };
-  $('#download').onclick = () => { const url = URL.createObjectURL(new Blob([$('#output textarea').value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = 'seatalk-selected-stickers.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+  $('#copy').onclick = async () => { try { await navigator.clipboard.writeText($('#output textarea').value); $('#message').textContent = tr('已复制'); notifyAction($('#message').textContent); } catch (_) { $('#output textarea').select(); $('#message').textContent = tr('请按 ⌘C / Ctrl+C 复制'); notifyAction($('#message').textContent, 'info'); } };
+  $('#download').onclick = () => {
+    try {
+      const text = $('#output textarea').value, total = JSON.parse(text).length;
+      downloadMetadata(text, 'seatalk-selected-stickers.json');
+      $('#message').textContent = ui(`已发起导出 ${total} 个表情：seatalk-selected-stickers.json。请查看浏览器下载。`, `Download requested for ${total} stickers: seatalk-selected-stickers.json. Check browser downloads.`);
+      notifyAction($('#message').textContent);
+    } catch (_) { $('#message').textContent = ui('导出失败，请重试。','Export failed. Try again.'); notifyAction($('#message').textContent, 'error'); }
+  };
   /* PERSONAL_UI */
   /* SEND_UI */
   /* WORKSPACE_TASKS */
@@ -344,16 +374,21 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
   function startFavoritesSync() {
     if (favoritesSyncTimer !== null) return;
     favoritesSyncTimer = setInterval(() => {
-      if (!host.isConnected) { stopFavoritesSync(); return; }
+      if (!host.isConnected) { dismissActionNotice(); stopFavoritesSync(); return; }
       syncFavorites();
     }, 1500);
   }
   function syncFavorites(manual = false) {
-    if (!host.isConnected || host.dataset.open !== 'true' || document.hidden || busy() || scanning || root.querySelector('dialog[open]') || workspaceAccountState !== 'ready') return;
+    if (!host.isConnected || host.dataset.open !== 'true' || document.hidden) return;
+    if (busy() || scanning || root.querySelector('dialog[open]') || workspaceAccountState !== 'ready') {
+      if (manual) notifyAction(ui('暂不能同步：请等待当前操作完成、关闭弹窗，并确认账号已就绪。','Sync unavailable. Wait for the current operation, close dialogs and check account readiness.'), 'info');
+      return;
+    }
     try { assertWorkspaceAccount(); }
     catch (_) {
       workspaceAccountState = 'failed'; stopFavoritesSync(); count();
       $('#syncStatus').textContent = ui('账号已变化，自动同步已停止。请刷新网页后重新打开。', 'Account changed. Sync stopped. Reload the page and reopen the helper.');
+      if (manual) notifyAction($('#syncStatus').textContent, 'error');
       return;
     }
     let latest;
@@ -369,6 +404,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     }
     catch (_) {
       $('#syncStatus').textContent = ui('暂时无法读取收藏，已保留当前列表。可打开爱心收藏面板后点击同步收藏。', 'Favorites are temporarily unavailable. List kept; open SeaTalk’s Favorites tab and choose Sync favorites.');
+      if (manual) notifyAction($('#syncStatus').textContent, 'error');
       return;
     }
     const current = new Map(items.filter(item => !item.deleted).map(item => [item.gifId, item]));
@@ -390,6 +426,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
     // Never replace the workspace with a partially validated native collection.
     if (ids.size !== new Set(latest.map(entry => entry.id)).size) {
       $('#syncStatus').textContent = ui('部分收藏数据暂不可读，已保留当前列表。稍后重试同步。', 'Some favorites are unreadable. Current list kept; sync will retry.');
+      if (manual) notifyAction($('#syncStatus').textContent, 'error');
       return;
     }
     const active = activeItems();
@@ -402,8 +439,9 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
       refreshPersonalLabels();
       $('#syncStatus').textContent = ui(`收藏已同步：新增 ${added} 个，移除 ${removed} 个。`, `Favorites synced: ${added} added, ${removed} removed.`);
     } else if (manual || !$('#syncStatus').textContent.includes(ui('收藏已同步', 'Favorites synced'))) {
-      $('#syncStatus').textContent = ui('收藏已同步；新增收藏后会自动更新。', 'Favorites synced; new favorites update automatically.');
+      $('#syncStatus').textContent = ui('收藏已同步，无新增或移除。', 'Favorites synced. No additions or removals.');
     }
+    if (manual) notifyAction($('#syncStatus').textContent);
   }
   $('#syncFavorites').onclick = () => syncFavorites(true);
   discoverShareServices().then(async services => {

@@ -80,7 +80,7 @@
   };
   function downloadMetadata(text,filename) {
     const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));
-    const link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const link=document.createElement('a');link.href=url;link.download=filename;try { document.body.append(link); link.click(); } finally { link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
   }
   $('#settingsOpen').onclick=()=>{
     if(busy() || !personalReady)return;
@@ -88,8 +88,13 @@
     openDialog($('#personalSettings'));
   };
   $('#personalExport').onclick=()=>{
-    try{assertWorkspaceAccount();downloadMetadata(exportPersonalSettings(personalSnapshot.items),'seatalk-personal-settings-'+new Date().toISOString().slice(0,10)+'.json');}
-    catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);}
+    try{assertWorkspaceAccount();
+      const filename='seatalk-personal-settings-'+new Date().toISOString().slice(0,10)+'.json';
+      downloadMetadata(exportPersonalSettings(personalSnapshot.items),filename);
+      $('#personalSettingsStatus').textContent=ui(`已发起导出 ${personalSnapshot.items.length} 条备注及图片形式设置：${filename}。请查看浏览器下载。`,`Download requested for ${personalSnapshot.items.length} notes and image-format settings: ${filename}. Check browser downloads.`);
+      notifyAction($('#personalSettingsStatus').textContent);
+    }
+    catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);notifyAction($('#personalSettingsStatus').textContent,'error');}
   };
   const importedFormatText = value => ({animated:ui('动图（手动）','Animated (manual)'),static:ui('静态图（手动）','Still image (manual)'),unknown:ui('未知（手动）','Unknown (manual)')})[value];
   function updatePersonalImportCount() {
@@ -128,7 +133,7 @@
       const rows=personalRecords();let count=0;
       for(const entry of personalDraft.rows){if(!entry.check.checked)continue;rows.set(entry.row.gifId,mergePersonalRecord(rows.get(entry.row.gifId),entry.row,entry.mode.value==='replace',$('#personalMergeKeywords').checked));count++;}
       $('#personalImportConfirm').disabled=true;await savePersonalRows([...rows.values()]);personalDraft=null;$('#personalImportPanel').hidden=true;$('#personalImportRows').replaceChildren();
-      $('#personalSettingsStatus').textContent=ui(`已保存 ${count} 条备注；没有更改 SeaTalk 收藏。`,`Saved ${count} notes. SeaTalk favorites were not changed.`);
-    }catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);}
+      $('#personalSettingsStatus').textContent=ui(`已保存 ${count} 条备注；没有更改 SeaTalk 收藏。`,`Saved ${count} notes. SeaTalk favorites were not changed.`);notifyAction($('#personalSettingsStatus').textContent);
+    }catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);notifyAction($('#personalSettingsStatus').textContent,'error');}
     finally{updatePersonalImportCount();}
   };
