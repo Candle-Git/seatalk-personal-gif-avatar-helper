@@ -1,4 +1,4 @@
-![SeaTalk Sticker Helper](docs/images/seatalk-sticker-helper-banner.zh.svg)
+![SeaTalk Sticker Helper](docs/images/seatalk-sticker-helper-banner.zh.png)
 
 # SeaTalk 表情助手 · 5.2.0
 
