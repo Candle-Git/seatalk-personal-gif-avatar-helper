@@ -19,5 +19,4 @@
 
 ## English summary
 
-
 All 23 local tests and 12 isolated Chrome DOM assertions passed. Slow-request/failure cases use controlled promises and clocks; clipboard-denial/background-render cases use a local browser fixture with synthetic events. These are not live SeaTalk failure tests. Unresolved API calls remain locked against duplicate submissions because the internal service exposes no cancellation mechanism. Compatibility is limited to the tested environment.

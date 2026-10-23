@@ -27,9 +27,9 @@
 | 响应式交互 / Responsive interaction | 通过已记录的操作 / Recorded interactions passed | 1440px 分栏保留聊天 900px，侧栏缩至 460px；1280px 回退浮窗；浮窗缩至 360px，收起恢复与选择保留。 / At 1440px, chat retained 900px and the sidebar resized to 460px. At 1280px, floating fallback worked; a 360px floating window, minimize/restore and retained selections were checked. |
 | 公开原生 CSS / Public native CSS | 已检查 / Inspected | SeaTalk 3.71.1 的主窗口容器与尺寸规则；未在登录页执行账号数据操作。 / SeaTalk 3.71.1 main-window selectors and sizing rules; no account mutation from the login page. |
 
-正式构建的 84 项 Node 检查与 99 项模拟浏览器断言已通过；响应式操作记录基于 `5.0.0-preview.4`。这些结果不表示正式安装包已完成真实账号验收。
+正式构建的 84 项 Node 检查与 99 项模拟浏览器断言已通过；响应式检查基于 `5.0.0-preview.4`。自动化检查不保证所有账号及 SeaTalk 版本均兼容。
 
-The release build passed 84 Node checks and 99 simulated browser assertions. Responsive interaction evidence comes from `5.0.0-preview.4`. These results do not establish full installed real-account acceptance.
+The release build passed 84 Node checks and 99 simulated browser assertions. Responsive checks used `5.0.0-preview.4`. Automated checks do not guarantee compatibility with every account or SeaTalk version.
 
 可重复构建核对通过：重新构建正式脚本后 SHA-256 保持一致；`git diff --check` 通过。独立复核确认收藏账号绑定问题已修复。
 

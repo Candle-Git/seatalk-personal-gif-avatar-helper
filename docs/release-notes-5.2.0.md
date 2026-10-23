@@ -18,7 +18,7 @@
 
 Update the existing Greasy Fork script **588931** or use the attached userscript. Disable other previews and reload SeaTalk. Installation identity and local notes are preserved; the manager may retain the legacy installation name.
 
-分享口令不含私人说明；个人备份含私人说明，请自行保管。
+本次分享口令不含私人说明；个人备份含私人说明，请自行保管。
 
 Sharing excludes private notes; backups include them and should be kept safe.
 
