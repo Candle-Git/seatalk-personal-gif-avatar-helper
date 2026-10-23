@@ -160,7 +160,7 @@ release_copy.update({
     'updateHighlightOne': ['自动同步当前账号收藏，也可主动同步；保留备注、筛选和选择', 'Sync favorites automatically or on demand, keeping notes, filters and selections'],
     'updateHighlightTwo': ['修复原生表情面板黑色空白，导出及批量操作增加结果提示', 'Keep the native picker visible and show export and batch-operation results'],
     'updateHighlightThree': ['我的表情：语言、窗口布局及个人备份集中到设置', 'My stickers: language, window layout and personal backups are grouped in Settings'],
-    'updateHighlightFour': ['两模块统一作者、版本与 GitHub 入口，保留署名点击彩蛋', 'Consistent module credits, version badges, GitHub links and credit interaction'],
+    'updateHighlightFour': ['两模块统一作者、版本与 GitHub 入口', 'Consistent module credits, version badges and GitHub links'],
 })
 for key, values in release_copy.items():
     pattern = re.compile(r'(^      ' + key + r': )"[^\n]*",', re.M)

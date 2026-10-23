@@ -10,8 +10,8 @@ This file records public releases of SeaTalk Sticker Helper (formerly SeaTalk Pe
 - 我的表情每 1.5 秒同步当前账号的 SeaTalk 收藏状态；支持主动同步，保留备注、筛选和仍在收藏中的勾选。同步只读取页面状态，不主动请求服务器，操作或弹窗期间暂停。
 - 导出、复制、同步、识别、添加、删除、发送及备注导入增加结果提示；导出提示包含条数和文件名，无变化的主动同步也有反馈。
 - 我的表情顶栏精简为使用指南、设置、收起与关闭；设置按语言、窗口布局、个人数据分组。
-- 布局恢复入口明确命名为重置布局；两模块底栏统一作者、构建版本和 GitHub 入口，并保留署名点击彩蛋。
-- Fixed the hidden native sticker panel, added local favorites synchronization and explicit action feedback, grouped settings, and aligned footer details and the credit interaction across modules.
+- 布局恢复入口明确命名为重置布局；两模块底栏统一作者、构建版本和 GitHub 入口。
+- Fixed the hidden native sticker panel, added local favorites synchronization and explicit action feedback, grouped settings, and aligned footer details across modules.
 
 ## 5.2.0 - 2026-10-23
 
