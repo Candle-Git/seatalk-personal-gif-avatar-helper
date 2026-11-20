@@ -28,7 +28,13 @@ replace('    API_PENDING: [', '''    RESOURCE_REGISTER_START: ["submit", "正在
     RESOURCE_PROFILE_CHANGED: ["submit", "个人资料已变化，已停止本次更新", "Profile changed; this update was stopped"],
     RESOURCE_ACCOUNT_CHANGED: ["submit", "登录账号已变化，已停止本次更新", "Account changed; this update was stopped"],
     RESOURCE_OPERATION_CHANGED: ["submit", "操作已失效，已停止本次更新", "Operation is no longer active; update stopped"],
-    RESOURCE_SERVICE_MISSING: ["submit", "未能识别头像资源服务，请刷新后重试", "Avatar resource service unavailable; reload and retry"],
+    RESOURCE_SERVICE_MISSING: ["submit", "头像资源服务不兼容，未提交头像更新", "Avatar resource service incompatible; no update submitted"],
+    RESOURCE_FILE_URL_MISSING: ["discovery", "未找到图片地址服务", "Image URL service not found"],
+    RESOURCE_FILE_URL_AMBIGUOUS: ["discovery", "图片地址服务匹配不唯一", "Multiple image URL services matched"],
+    RESOURCE_PROFILE_SERVICE_MISSING: ["discovery", "未找到个人资料读取服务", "Profile read service not found"],
+    RESOURCE_ACCOUNT_MODULE_MISSING: ["discovery", "已加载资源中未找到兼容的账号模块", "No compatible account module found in loaded resources"],
+    RESOURCE_ACCOUNT_MODULE_IMPORT_FAILED: ["discovery", "账号模块加载失败", "Account module import failed"],
+    ACCOUNT_AMBIGUOUS: ["discovery", "登录账号匹配不唯一，已停止更新", "Multiple signed-in accounts matched; update stopped"],
     API_PENDING: [''')
 replace('  function buildStatusText() {', '''  function buildStatusText() {
     if (!state.requestPending && state.diagnosticEvents[0]?.level === "error") return state.hookStatus || t("statusError");''')
@@ -39,6 +45,22 @@ replace('      const containsGifId = currentUrls.some((url) => url.includes(oper
 replace('        startAvatarVerification(state.activeOperation);',
         '        startAvatarVerification(state.activeOperation, detail.avatarResourceId || detail.gifId);')
 replace('    const runtime = {', (root / 'tools/avatar-resource-updater.js').read_text() + '\n    const runtime = {')
+replace('    const runtime = {', (root / 'tools/avatar-resource-discovery.js').read_text() + '\n    const runtime = {')
+
+# Ready means both the updater and the resource/account services were checked.
+# Discovery performs no registration or profile update during startup.
+replace('          runtime.esmUpdater = updater;', '''          try {
+            await resolveAvatarResourceServices({ chunkUrl, updater, module: moduleNamespace,
+              urls: getLoadedAvatarModuleUrls(), loadModule: url => import(url) });
+          } catch (error) {
+            runtime.esmDiscoveryFailedFor = chunkUrl;
+            const code = AVATAR_RESOURCE_DISCOVERY_CODES.includes(error?.message)
+              ? error.message : "RESOURCE_SERVICE_MISSING";
+            emit({ type: "compatibility-error", code, chunkName: chunkUrl.split("/").pop() || "",
+              message: "启动自检失败：头像资源服务未就绪（" + code + "），未提交头像更新。" });
+            return false;
+          }
+          runtime.esmUpdater = updater;''')
 
 start = source.index('        const userId = findCurrentUserId();', source.index('    async function applyDirectAvatar(operation)'))
 end = source.index('      } finally {', start)
@@ -98,7 +120,7 @@ source = source[:start] + r'''        const services = await discoverAvatarResou
         result = { type: "direct-submitted", avatarResourceId: registered.avatarId,
           chunkName: runtime.esmChunkUrl.split("/").pop() || "" };
       } catch (error) {
-        const codes = new Set(["ACCOUNT_MISSING", "RESOURCE_REGISTER_ERROR", "RESOURCE_INVALID",
+        const codes = new Set([...AVATAR_RESOURCE_DISCOVERY_CODES, "RESOURCE_REGISTER_ERROR", "RESOURCE_INVALID",
           "RESOURCE_CONTENT_ERROR", "RESOURCE_PROFILE_MISSING", "RESOURCE_PROFILE_CHANGED",
           "RESOURCE_ACCOUNT_CHANGED", "RESOURCE_OPERATION_CHANGED", "RESOURCE_SERVICE_MISSING"]);
         const code = codes.has(error?.flowCode || error?.message) ? (error.flowCode || error.message) : "API_ERROR";
@@ -117,29 +139,11 @@ adapter = r'''
     }
     async function discoverAvatarResourceServices() {
       const module = await import(runtime.esmChunkUrl);
-      const values = Object.values(module);
-      const fileUrl = values.find(value => typeof value === "function" &&
-        String(value).includes("maxWidth") && String(value).includes("gfsToken") &&
-        String(value).includes("blob:"));
-      const urls = Array.from(document.querySelectorAll("link[href],script[src]")).map(el => el.href || el.src || "");
-      const expected = new URL(runtime.esmChunkUrl);
-      const candidates = [...new Set(urls)].filter(value => {
-        try {
-          const url = new URL(value, location.href);
-          return url.protocol === "https:" && url.origin === expected.origin &&
-            /\/seatalk\/fe\/static\/js\/chunk-src-[^/]+\.js$/.test(url.pathname);
-        } catch (_) { return false; }
+      return resolveAvatarResourceServices({
+        chunkUrl: runtime.esmChunkUrl, updater: runtime.esmUpdater, module,
+        urls: getLoadedAvatarModuleUrls(),
+        loadModule: url => import(url),
       });
-      if (!fileUrl || candidates.length !== 1 || typeof runtime.esmUpdater.forceFetchInfo !== "function") {
-        throw Error("RESOURCE_SERVICE_MISSING");
-      }
-      const accountModule = await import(candidates[0]);
-      const sessions = [...new Set(Object.values(accountModule))].filter(value =>
-        value && typeof value === "object" && value.loggedIn === true &&
-        Number.isSafeInteger(value.userId) && value.userId > 0 &&
-        typeof value.fileServerToken === "string" && value.fileServerToken.length > 0);
-      if (sessions.length !== 1) throw Error("ACCOUNT_MISSING");
-      return { session: sessions[0], fileUrl };
     }
 
 '''
