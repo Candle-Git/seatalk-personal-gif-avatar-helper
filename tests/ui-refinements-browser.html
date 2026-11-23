@@ -4,6 +4,7 @@
 <pre id="result"></pre><script>
 const a=__SPGA_TEST_API__,checks=[];function check(x,n){if(!x)throw Error(n);checks.push(n)}
 try {
+a.state.avatarUnlocked=true;
 a.state.locale='zh';a.injectStyles();a.createPanel();a.bindGroupStatus();a.bindPanelEvents();
 a.groupUI.mode='group';a.state.selected={gifId:'baa2f40fca89613a479ddc196efaaad40b0705000003f1891780358408011068'};
 const event=context=>window.dispatchEvent(new CustomEvent('seatalk-personal-gif-avatar:hook-status',{detail:{type:'group-context',context}}));
@@ -34,9 +35,52 @@ check(link.getBoundingClientRect().width>=32,'GitHub click target');
 a.state.locale='zh';a.renderPanel();check(document.querySelector('.spga-github-link').title==='查看 GitHub 项目','Chinese GitHub label');
 a.state.locale='en';a.renderPanel();
 a.state.locale='zh';a.state.diagnosticsOpen=false;a.state.directUpdaterReady=true;a.groupUI.message='';a.renderPanel();
-const previewButton=document.createElement('button');previewButton.textContent='预览成功弹窗';previewButton.id='preview-success';previewButton.onclick=()=>{a.state.successModalShownForGifId='';a.showSuccessCelebration(a.state.selected.gifId,'示例群');};document.body.append(previewButton);
+const previewButton=document.createElement('button');previewButton.textContent='预览成功弹窗';previewButton.id='preview-success';previewButton.onclick=()=>{a.state.successModalShownForGifId='';a.showSuccessCelebration(a.state.selected.gifId);};document.body.append(previewButton);
 const updateButton=document.createElement('button');updateButton.textContent='预览更新弹窗';updateButton.id='preview-update';updateButton.onclick=()=>{a.state.lastSeenUpdateNoticeVersion='';a.showUpdateNotice();};document.body.append(updateButton);
 check(getComputedStyle(document.querySelector('[data-action="enable"]')).backgroundImage==='none','primary button uses solid blue');
+const root = document.createElement('div'); root.id = 'root';
+const native = document.createElement('div'); native.className = 'home-main-window';
+const composer = document.createElement('input'); composer.value = 'Draft';
+native.append(composer); root.append(native); document.body.append(root);
+composer.focus();
+a.bindHookStatusEvents();
+const personalGif = '0'.repeat(64);
+const operation = { id: 42, gifId: personalGif, nativeViewWasVisible: true };
+Object.assign(a.state, { activeOperation: operation, requestPending: true, successModalShownForGifId: '' });
+let verify;
+const realSetInterval = window.setInterval;
+try {
+  window.setInterval = fn => { verify = fn; return 30000; };
+  window.dispatchEvent(new CustomEvent('seatalk-personal-gif-avatar:hook-status', {
+    detail: { type: 'direct-submitted', attemptId: operation.id, gifId: personalGif },
+  }));
+} finally { window.setInterval = realSetInterval; }
+const notice = document.querySelector('#seatalk-personal-gif-avatar-success-modal[role="dialog"][aria-modal="true"]');
+const recovery = notice.querySelector('.spga-success-recovery');
+const overlayRect = notice.getBoundingClientRect();
+check(Math.abs(overlayRect.width - innerWidth) < 2 && Math.abs(overlayRect.height - innerHeight) < 2 && getComputedStyle(notice).placeItems === 'center', 'personal success uses the original centered modal');
+check(notice.querySelector('.spga-success-badge').textContent === '✓' && notice.querySelectorAll('.spga-success-spark').length === 4, 'badge and celebration sparks appear');
+check(notice.querySelector('.spga-success-message').textContent === '快去给你的同事炫耀吧' && notice.querySelector('.spga-success-close').textContent === '好耶！', 'original personal celebration copy');
+check(document.activeElement === notice.querySelector('.spga-success-close') && composer.value === 'Draft', 'modal focuses the close button and preserves the draft');
+check(recovery.hidden, 'recovery is hidden while main view is present');
+native.style.display = 'none'; verify();
+check(recovery.hidden, 'brief native transition does not show recovery');
+verify();
+check(!recovery.hidden && a.state.diagnosticEvents[0].code === 'NATIVE_VIEW_UNAVAILABLE', 'missing native view records recovery without reloading');
+native.style.display = '';
+document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+check(!notice.isConnected && document.activeElement === composer && composer.value === 'Draft', 'Escape dismisses and restores focus to the preserved draft');
+a.state.locale = 'en';
+a.showSuccessCelebration('first-preview');
+const english = document.querySelector('#seatalk-personal-gif-avatar-success-modal');
+check(english.querySelector('.spga-success-subtitle').textContent === 'Your animated avatar is now live.', 'English personal celebration copy');
+english.querySelector('.spga-success-close').click();
+check(!english.isConnected, 'confirmation button dismisses personal dialog');
+a.showSuccessCelebration('second-preview');
+const backdrop = document.querySelector('#seatalk-personal-gif-avatar-success-modal');
+backdrop.click();
+check(!backdrop.isConnected && native.isConnected && native.getClientRects().length, 'background click closes the dialog and leaves native view mounted');
+a.state.locale = 'zh';
 document.querySelector('#result').textContent='PASS '+checks.length+'\n'+checks.join('\n');
 } catch(e){document.querySelector('#result').textContent='FAIL '+e.stack}
 </script>

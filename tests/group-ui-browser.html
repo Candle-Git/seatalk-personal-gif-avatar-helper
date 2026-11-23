@@ -4,6 +4,7 @@
 <pre id="result"></pre><script>
 const a=__SPGA_TEST_API__,checks=[];function check(x,n){if(!x)throw Error(n);checks.push(n)}
 try {
+a.state.avatarUnlocked=true;
 a.state.locale='zh';a.injectStyles();a.createPanel();a.bindGroupStatus();a.bindPanelEvents();
 a.groupUI.mode='group';a.state.selected={gifId:'baa2f40fca89613a479ddc196efaaad40b0705000003f1891780358408011068'};
 const event=context=>window.dispatchEvent(new CustomEvent('seatalk-personal-gif-avatar:hook-status',{detail:{type:'group-context',context}}));

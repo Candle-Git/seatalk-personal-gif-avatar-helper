@@ -6,8 +6,8 @@ import argparse
 import tempfile
 
 root = Path(__file__).resolve().parent.parent
-parser = argparse.ArgumentParser(description='Build the formal SeaTalk GIF helper from reviewed local sources.')
-parser.add_argument('--version', default='5.2.1')
+parser = argparse.ArgumentParser(description='Build the SeaTalk Sticker Helper release from reviewed local sources.')
+parser.add_argument('--version', default='5.2.2')
 parser.add_argument('--output', default='SeaTalk-Personal-GIF-Avatar-Helper.user.js')
 args = parser.parse_args()
 version = args.version
@@ -18,10 +18,6 @@ subprocess.run([sys.executable, str(root / 'tools/build-resource-avatar-beta.py'
     '--version', version, '--output', str(output)], check=True)
 source = output.read_text()
 replacements = {
-    'SeaTalk GIF 助手（收藏整合测试版）': 'SeaTalk GIF 助手（5.0 预览版）',
-    'SeaTalk GIF Helper (Collections Beta)': 'SeaTalk GIF Helper (5.0 Preview)',
-    '个人与群 GIF 头像、收藏预览筛选、批量管理和候选导出，本地测试版。': '个人与群 GIF 头像、收藏预览筛选和批量管理。5.0 预览版。',
-    'Personal and group GIF avatars, favorites curation and batch management. Local beta.': 'Personal and group GIF avatars, favorites previews, filtering and batch management. 5.0 preview.',
     '收藏整合测试版：在 SeaTalk Web 内筛选表情，准备你的市场候选清单。': '5.0 预览版：适配新版个人 GIF 头像，新增收藏表情批量管理。',
     'Collections beta: curate stickers in SeaTalk Web for the next market experiment.': '5.0 preview: updated personal GIF avatars and batch management for favorite stickers.',
     '收藏删除有预览和二次确认；表情市场将后续验证': '修复个人 GIF 头像更新；收藏删除须预览并确认',
@@ -49,6 +45,8 @@ workspace = workspace.replace('  /* PERSONAL_UI */', (root / 'tools/personal-set
 workspace = workspace.replace('  /* SEND_UI */', (root / 'tools/sticker-send-ui.js').read_text())
 workspace = workspace.replace('  /* WORKSPACE_ACCOUNT */', (root / 'tools/workspace-account.js').read_text())
 workspace = workspace.replace('  /* SHARE_HELPERS */', (root / 'tools/sticker-share.js').read_text())
+account_module = (root / 'tools/favorites-account-module.js').read_text()
+workspace = workspace.replace('  /* FAVORITES_ACCOUNT_MODULE */', account_module)
 workspace = workspace.replace('  /* WORKSPACE_TASKS */', (root / 'tools/favorites-tasks.js').read_text())
 workspace = workspace.replace('  /* WORKSPACE_GEOMETRY */', (root / 'tools/favorites-geometry.js').read_text())
 workspace = workspace.replace('  /* SHARE_UI */', (root / 'tools/sticker-share-ui.js').read_text())
@@ -56,8 +54,8 @@ split_source = (root / 'tools/helper-split-layout.js').read_text()
 plan = split_source[:split_source.index('function installHelperLayout()')]
 installer = split_source[split_source.index('function installHelperLayout()'):].replace('  /* SPLIT_PLAN */', plan)
 source = source[:start] + workspace + '\n' + installer + source[end:]
-source = source.replace('  function init() {', (root / 'tools/personal-settings-core.js').read_text() + '\n' + (root / 'tools/personal-settings-bridge.js').read_text() + '\n  function init() {', 1)
-source = source.replace('  function init() {', '  function init() {\n    installPersonalSettingsBridge();', 1)
+source = source.replace('  function init() {', (root / 'tools/personal-settings-core.js').read_text() + '\n' + (root / 'tools/personal-settings-bridge.js').read_text().replace('  /* FAVORITES_ACCOUNT_MODULE */', account_module) + '\n  function init() {', 1)
+source = source.replace('  function activateHelperPanel(panel) {', '  function activateHelperPanel(panel) {\n    installPersonalSettingsBridge();\n    startHelperLayout();', 1)
 source = source.replace(
     '${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))});',
     '${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))}, ${JSON.stringify(state.locale)});')
@@ -68,15 +66,10 @@ locale_bridge = '''  function setHelperLocale(locale) {
     if (locale !== "zh" && locale !== "en") return;
     state.locale = locale;
     saveState();
-    renderPanel();
+    if (document.getElementById(PANEL_ID)?.classList.contains("spga-open") || !state.avatarUnlocked) renderPanel();
     window.dispatchEvent(new CustomEvent("spga:locale-change", {detail:locale}));
   }
   if (typeof window !== "undefined") window.addEventListener("spga:locale-request", event => setHelperLocale(event.detail));
-  if (typeof window !== "undefined") window.addEventListener("spga:credit-celebrate", () => {
-    const host = document.getElementById("st-favorites-curator");
-    const trigger = host?.shadowRoot?.getElementById("helperCredit");
-    if (host?.dataset.open === "true" && trigger) showCreditEasterEgg(trigger);
-  });
 '''
 source = source.replace('  function init() {', locale_bridge + '  function init() {', 1)
 
@@ -88,7 +81,7 @@ bridge = '''  function startHelperLayout() {
     } catch (_) { /* Keep the ordinary floating helper if layout setup is unavailable. */ }
   }
 '''
-source = source.replace('  function init() {', bridge + '  function init() {\n    startHelperLayout();')
+source = source.replace('  function init() {', bridge + '  function init() {')
 source = source.replace('      launchFavoritesGallery, openCollectionsWorkspace,', '      installHelperLayout, launchFavoritesGallery, openCollectionsWorkspace,')
 
 source = source.replace('勾选、填写导出名称并导出 JSON，切换功能保留当前选择', '选择表情生成分享口令，导入口令预览并批量添加')
@@ -104,7 +97,7 @@ new = '''    close.classList.add("spga-window-close");
     close.addEventListener("click", () => panel.classList.remove("spga-open"));
     const minimize = createButton("−", "minimize-panel");
     minimize.classList.add("spga-window-minimize");
-    minimize.setAttribute("aria-label", groupText("收起头像助手", "Minimize avatar helper"));
+    minimize.setAttribute("aria-label", groupText("收起助手", "Minimize helper"));
     minimize.title = groupText("收起，保留当前选择", "Minimize; keep your selection");
     minimize.addEventListener("click", () => panel.classList.remove("spga-open"));
     header.append(minimize, close);'''
@@ -124,16 +117,11 @@ style = '''
 assert source.count(styleAnchor) == 1
 source = source.replace(styleAnchor, styleAnchor + style)
 assert all(word not in source for word in ['launchStickerMarket', 'MARKET_CATALOG', 'openMarketWorkspace', '市场', 'market'])
-# Keep the original userscript install/update identity for existing users.
-source = source.replace('SeaTalk GIF 助手（5.0 预览版）', 'SeaTalk 个人 GIF 头像助手')
-source = source.replace('SeaTalk GIF Helper (5.0 Preview)', 'SeaTalk Personal GIF Avatar Helper')
-source = source.replace('个人与群 GIF 头像、收藏预览筛选和批量管理。5.0 预览版。', '个人与群 GIF 头像、收藏表情批量管理、分享口令与自动分栏。')
-source = source.replace('Personal and group GIF avatars, favorites previews, filtering and batch management. 5.0 preview.', 'Personal and group GIF avatars, batch favorites management, sharing codes and automatic split layout.')
 source = source.replace('5.0 预览版：适配新版个人 GIF 头像，新增收藏表情批量管理。', '适配新版个人 GIF 头像，新增收藏表情批量管理与分享。')
 source = source.replace('5.0 preview: updated personal GIF avatars and batch management for favorite stickers.', 'Updated personal GIF avatars, batch favorites management and sticker sharing.')
 assert '5.0 预览版' not in source and '5.0 preview' not in source
 assert '@version      ' + version in source
-# Keep install/update metadata and stored identifiers compatible while renaming the product UI.
+# Keep the display names in the interface consistent.
 product_names = [
     ('SeaTalk GIF Avatar Helper', 'SeaTalk Sticker Helper'),
     ('SeaTalk GIF Helper', 'SeaTalk Sticker Helper'),
@@ -153,24 +141,20 @@ for line in source.splitlines(keepends=True):
 source = ''.join(product_lines)
 # Show the product upgrade once for this release using the existing versioned notice.
 import re
-release_copy = {'updateTitle': ['升级为 SeaTalk 表情助手', 'Meet SeaTalk Sticker Helper'], 'updateSubtitle': ['整理、搜索、分享你的收藏表情，也能设置 GIF 头像。', 'Organize, search and share your favorite stickers, and set GIF avatars.'], 'updateHighlightOne': ['我的表情：备注、关键词搜索与独立筛选，快速找到想发的表情', 'My stickers: notes, keyword search and separate filters to find the right sticker'], 'updateHighlightTwo': ['预览单张或勾选多张，核对当前会话后确认发送', 'Preview one or select several, check the destination and confirm sending'], 'updateHighlightThree': ['分享口令携带名称和关键词；个人备份支持换电脑恢复', 'Share names and keywords with a code; back up personal settings for another computer'], 'updateHighlightFour': ['手动标注动图／静态图，中英文同步；个人与群 GIF 头像继续保留', 'Manual image-format labels and shared language settings; personal and group GIF avatars remain available']}
-release_copy.update({
-    'updateTitle': ['收藏同步与交互优化', 'Favorites sync and UI improvements'],
-    'updateSubtitle': ['SeaTalk 表情助手 5.2.1：同步更及时，操作反馈更明确。', 'SeaTalk Sticker Helper 5.2.1: timely favorites sync and clear action feedback.'],
-    'updateHighlightOne': ['自动同步当前账号收藏，也可主动同步；保留备注、筛选和选择', 'Sync favorites automatically or on demand, keeping notes, filters and selections'],
-    'updateHighlightTwo': ['修复原生表情面板黑色空白，导出及批量操作增加结果提示', 'Keep the native picker visible and show export and batch-operation results'],
-    'updateHighlightThree': ['我的表情：语言、窗口布局及个人备份集中到设置', 'My stickers: language, window layout and personal backups are grouped in Settings'],
-    'updateHighlightFour': ['两模块统一作者、版本与 GitHub 入口', 'Consistent module credits, version badges and GitHub links'],
-})
+release_copy = {
+    'updateTitle': ['打开助手，直达「我的表情」', 'Open the helper to My stickers'],
+    'updateSubtitle': ['在当前聊天中整理、搜索和分享收藏。', 'Find, organize and share your favorites from the current chat.'],
+    'updateHighlightOne': ['首次使用时，在聊天输入框旁打开表情面板，选择爱心收藏页', 'To get started, open the sticker picker beside the chat box and select the Favorites heart'],
+    'updateHighlightTwo': ['用名称、关键词或表情文字搜索收藏', 'Find a sticker by its name, keywords or text'],
+    'updateHighlightThree': ['发送前可以核对目标会话和所选图片', 'Review the chat and selected stickers before sending'],
+    'updateHighlightFour': ['修复 SeaTalk Web 3.72 中偶发的页面空白', 'Fixed a blank-page issue in SeaTalk Web 3.72'],
+}
 for key, values in release_copy.items():
     pattern = re.compile(r'(^      ' + key + r': )"[^\n]*",', re.M)
     matches = list(pattern.finditer(source))
     assert len(matches) == 2, key
     for match, value in reversed(list(zip(matches, values))):
         source = source[:match.start()] + match.group(1) + __import__('json').dumps(value, ensure_ascii=False) + ',' + source[match.end():]
-source = source.replace('个人与群 GIF 头像、收藏表情批量管理、分享口令与自动分栏。', 'SeaTalk 表情助手：备注搜索、分享口令、备份恢复、确认后发送与 GIF 头像。')
-source = source.replace('Personal and group GIF avatars, batch favorites management, sharing codes and automatic split layout.', 'SeaTalk Sticker Helper: searchable notes, sharing codes, backups, confirmed sending and GIF avatars.')
-
 output.write_text(source)
 print(output)
 

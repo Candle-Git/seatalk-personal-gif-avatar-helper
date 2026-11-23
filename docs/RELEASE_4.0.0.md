@@ -1,7 +1,7 @@
-# 4.0.0 发布记录
+# 4.0.0 发布记录 / Release notes
 
-本版支持更新群 GIF 头像。
+- 缩小了助手窗口，合并素材选择入口，展开时隐藏悬浮按钮。
+- The compact panel combines the selection controls and hides the floating button while open.
 
-正式版保留原脚本名称、命名空间和权限，避免更换更新身份。升级弹窗新增中英文群头像说明。个人与群随机选择均先预览；群修改每次二次确认。
-
-群结果依据目标群头像资源观察；20 秒未确认后继续检查，不直接宣布失败或解锁。测试覆盖缩略图后缀、目标变化、延迟成功、重复提交保护和成功弹窗。
+- 结果返回前会阻止重复提交。
+- The helper prevents duplicate submissions while a result is pending.

@@ -62,7 +62,7 @@
     if (globalThis.__SPGA_TEST_MODE__ === true && globalThis.__SPGA_SHARE_FIXTURE_SERVICES__) {
       return globalThis.__SPGA_SHARE_FIXTURE_SERVICES__;
     }
-    const links = [...new Set(Array.from(document.querySelectorAll('link[href],script[src]'), e => e.href || e.src || ''))];
+    const links = [...new Set(Array.from(document.head.querySelectorAll('link[rel~="modulepreload"][href],script[type="module"][src]'), e => e.href || e.src || ''))];
     const locate = name => {
       const matches = links.filter(value => {
         try { const url = new URL(value); return url.protocol === 'https:' &&
@@ -73,8 +73,9 @@
       if (matches.length !== 1) throw Error(tr('未识别当前收藏服务，请登录 SeaTalk 后刷新'));
       return matches[0];
     };
+    const accountUrl = getFavoritesAccountModuleUrl();
     const [module, constants, accountModule] = await Promise.all([
-      import(locate('styles')), import(locate('db-pure')), import(locate('src')),
+      import(locate('styles')), import(locate('db-pure')), import(accountUrl),
     ]);
     const one = (values, predicate) => {
       const found = [...new Set(values)].filter(predicate);

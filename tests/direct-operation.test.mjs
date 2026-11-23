@@ -10,14 +10,21 @@ const statusEvent = 'seatalk-personal-gif-avatar:hook-status';
 const flush = async () => { await new Promise(resolve => setImmediate(resolve)); };
 const registered = id => id.slice(0, 33) + 'b03' + id.slice(36);
 
-function fixture() {
+function fixture({ probeView = false, readProfile } = {}) {
   let now = 1_000, seq = 0;
   const timers = new Map(), listeners = new Map(), events = [], requests = [];
-  const successes = [], avatarUrls = [];
+  const successes = [], avatarUrls = [], checkpoints = [], fileRequests = [];
+  let visible = probeView, profileReads = 0;
+  const nativeView = {
+    getClientRects: () => visible ? [{ width: 800, height: 600 }] : [],
+    getBoundingClientRect: () => ({ width: 800, height: 600 }),
+    checkVisibility: () => visible,
+  };
   class Clock extends Date { constructor(...args) { super(...(args.length ? args : [now])); } static now() { return now; } }
   class CustomEvent { constructor(type, { detail }) { Object.assign(this, { type, detail }); } }
   const win = {
     addEventListener(name, fn) { if (!listeners.has(name)) listeners.set(name, []); listeners.get(name).push(fn); },
+    removeEventListener(name, fn) { listeners.set(name, (listeners.get(name) || []).filter(x => x !== fn)); },
     dispatchEvent(event) { events.push(event); for (const fn of listeners.get(event.type) || []) fn(event); },
     setInterval(fn, ms) { timers.set(++seq, { fn, at: now + ms, ms }); return seq; },
     setTimeout(fn, ms) { timers.set(++seq, { fn, at: now + ms }); return seq; },
@@ -29,15 +36,21 @@ function fixture() {
     .replace('function showSuccessCelebration(gifId, groupName = "") {', 'function showSuccessCelebration(gifId, groupName = "") { __successes.push(gifId); return;');
   const ui = vm.createContext({
     __SPGA_TEST_MODE__: true, __avatarUrls: avatarUrls, __successes: successes,
+    document: { querySelector: () => probeView ? nativeView : null },
+    sessionStorage: { setItem(_key, value) { checkpoints.push(value); } },
     navigator: { language: 'en' }, location: { href: 'https://seatalkweb.com/' }, URL,
     Date: Clock, window: win, CustomEvent, GM_setValue() {},
   });
   vm.runInContext(uiSource, ui);
   const api = ui.__SPGA_TEST_API__;
+  api.state.avatarUnlocked = true;
   api.state.pageHookReady = true;
   api.bindHookStatusEvents();
   const backend = {
-    async forceFetchInfo(userId) { return [{ userid: userId, userInfo: { name: 'Original', avatar: 'old-avatar' } }]; },
+    async forceFetchInfo(userId) {
+      profileReads++;
+      if (readProfile) return readProfile(userId);
+      return [{ userid: userId, userInfo: { name: 'Original', avatar: 'old-avatar' } }]; },
     updateUserInfo(userId, payload) { return new Promise((resolve, reject) => requests.push({ userId, payload, resolve, reject })); },
   };
   let hook = source.slice(source.indexOf('  function pageHook(events)'), source.indexOf('  function init()'));
@@ -48,10 +61,13 @@ function fixture() {
   const page = vm.createContext({
     backend, Date: Clock, window: win, CustomEvent, URL, URLSearchParams, AbortSignal,
     crypto: { getRandomValues: a => a.fill(1) },
-    fetch: async (url, options) => url.includes('/refresh/')
+    fetch: async (url, options) => {
+      fileRequests.push(url);
+      return url.includes('/refresh/')
       ? new Response(JSON.stringify({ FileName: registered(options.headers.fid) }))
-      : new Response(new Uint8Array([71, 73, 70, 56, 57, 97])),
-    document: { querySelectorAll: () => [] }, XMLHttpRequest: class { open() {} send() {} },
+      : new Response(new Uint8Array([71, 73, 70, 56, 57, 97]));
+    },
+    document: { querySelector: () => probeView ? nativeView : null, querySelectorAll: () => [] }, XMLHttpRequest: class { open() {} send() {} },
   });
   vm.runInContext(hook + `\npageHook({configEvent:${JSON.stringify(configEvent)},statusEvent:${JSON.stringify(statusEvent)}});`, page);
   function status(detail) { win.dispatchEvent(new CustomEvent(statusEvent, { detail })); }
@@ -68,7 +84,8 @@ function fixture() {
     }
     now = end; await flush();
   }
-  return { api, page, requests, events, successes, avatarUrls, status, command, start, advance };
+  return { api, page, requests, events, successes, avatarUrls, status, command, start, advance,
+    fileRequests, checkpoints, profileReads: () => profileReads, hideView() { visible = false; } };
 }
 
 test('slow request stays locked after visual timeout; selected B cannot change submission/result A', async () => {
@@ -178,4 +195,51 @@ test('a retry triggered synchronously by terminal delivery is accepted', async (
   assert.equal(f.requests.length, 2);
   assert.equal(f.requests[1].payload.avatar, registered(B));
   assert.equal(f.page.testRuntime.directOperation.id, 2);
+});
+
+test('personal check needs no selected sticker, blocks concurrent apply and makes no avatar or file request', async () => {
+  const f = fixture({ probeView: true });
+  f.api.startAvatarCheck();
+  f.api.startAvatarCheck();
+  f.start(A);
+  await flush();
+  assert.deepEqual(f.checkpoints, ['CHECK_MODULES']);
+  assert.equal(f.profileReads(), 0);
+  await f.advance(6000);
+  assert.equal(f.profileReads(), 1);
+  assert.deepEqual(f.checkpoints, ['CHECK_MODULES', 'CHECK_PROFILE']);
+  await f.advance(6000);
+  assert.equal(f.checkpoints.at(-1), 'CHECK_OK');
+  assert.deepEqual(f.requests, []);
+  assert.deepEqual(f.fileRequests, []);
+  const checks = f.events.filter(event => event.detail.command === 'check-avatar');
+  assert.equal(checks.length, 1);
+  assert.deepEqual(Object.keys(checks[0].detail).sort(), ['checkId', 'command']);
+});
+
+for (const phase of ['MODULES', 'PROFILE']) {
+  test('losing the main view during ' + phase + ' leaves a stage-specific checkpoint with zero writes', async () => {
+    const f = fixture({ probeView: true });
+    f.api.startAvatarCheck();
+    await flush();
+    if (phase === 'PROFILE') await f.advance(6000);
+    f.hideView();
+    await f.advance(750);
+    assert.equal(f.checkpoints.at(-1), 'CHECK_' + phase + '_VIEW_LOST');
+    assert.equal(f.profileReads(), phase === 'PROFILE' ? 1 : 0);
+    assert.equal(f.requests.length + f.fileRequests.length, 0);
+  });
+}
+
+test('profile timeout stays final when a late read settles', async () => {
+  let finish;
+  const f = fixture({ probeView: true, readProfile: () => new Promise(resolve => { finish = resolve; }) });
+  f.api.startAvatarCheck();
+  await flush();
+  await f.advance(19000);
+  assert.equal(f.checkpoints.at(-1), 'CHECK_PROFILE_TIMEOUT');
+  finish([]);
+  await f.advance(7000);
+  assert.equal(f.checkpoints.at(-1), 'CHECK_PROFILE_TIMEOUT');
+  assert.equal(f.requests.length + f.fileRequests.length, 0);
 });
