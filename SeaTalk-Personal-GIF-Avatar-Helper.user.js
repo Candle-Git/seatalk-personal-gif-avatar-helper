@@ -392,7 +392,13 @@
     RESOURCE_PROFILE_CHANGED: ["submit", "个人资料已变化，已停止本次更新", "Profile changed; this update was stopped"],
     RESOURCE_ACCOUNT_CHANGED: ["submit", "登录账号已变化，已停止本次更新", "Account changed; this update was stopped"],
     RESOURCE_OPERATION_CHANGED: ["submit", "操作已失效，已停止本次更新", "Operation is no longer active; update stopped"],
-    RESOURCE_SERVICE_MISSING: ["submit", "未能识别头像资源服务，请刷新后重试", "Avatar resource service unavailable; reload and retry"],
+    RESOURCE_SERVICE_MISSING: ["submit", "头像资源服务不兼容，未提交头像更新", "Avatar resource service incompatible; no update submitted"],
+    RESOURCE_FILE_URL_MISSING: ["discovery", "未找到图片地址服务", "Image URL service not found"],
+    RESOURCE_FILE_URL_AMBIGUOUS: ["discovery", "图片地址服务匹配不唯一", "Multiple image URL services matched"],
+    RESOURCE_PROFILE_SERVICE_MISSING: ["discovery", "未找到个人资料读取服务", "Profile read service not found"],
+    RESOURCE_ACCOUNT_MODULE_MISSING: ["discovery", "已加载资源中未找到兼容的账号模块", "No compatible account module found in loaded resources"],
+    RESOURCE_ACCOUNT_MODULE_IMPORT_FAILED: ["discovery", "账号模块加载失败", "Account module import failed"],
+    ACCOUNT_AMBIGUOUS: ["discovery", "登录账号匹配不唯一，已停止更新", "Multiple signed-in accounts matched; update stopped"],
     API_PENDING: ["submit", "正在提交头像更新", "Submitting avatar update"],
     API_SUCCESS: ["submit", "接口已确认更新成功", "API confirmed the update"],
     API_ERROR: ["submit", "接口返回错误，请检查 Console 后重试", "API returned an error; check Console before retrying"],
@@ -4156,6 +4162,62 @@ async function applyRegisteredAvatar(gifId, adapters) {
   return { avatarId };
 }
 
+/* Discover only observed SeaTalk modules; never guess a build hash or an account. */
+const AVATAR_RESOURCE_DISCOVERY_CODES = [
+  'RESOURCE_FILE_URL_MISSING', 'RESOURCE_FILE_URL_AMBIGUOUS',
+  'RESOURCE_PROFILE_SERVICE_MISSING', 'RESOURCE_ACCOUNT_MODULE_MISSING',
+  'RESOURCE_ACCOUNT_MODULE_IMPORT_FAILED', 'ACCOUNT_MISSING', 'ACCOUNT_AMBIGUOUS',
+];
+
+function getLoadedAvatarModuleUrls() {
+  const urls = Array.from(document.querySelectorAll('link[href],script[src]'))
+    .map(el => el.href || el.src || '');
+  // Imported dependencies need not have a link/script element (SeaTalk 3.72).
+  if (typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function') {
+    for (const entry of performance.getEntriesByType('resource')) urls.push(entry.name);
+  }
+  return urls;
+}
+
+async function resolveAvatarResourceServices({ chunkUrl, updater, module, urls, loadModule }) {
+  const fileUrls = [...new Set(Object.values(module))].filter(value => typeof value === 'function' &&
+    String(value).includes('maxWidth') && String(value).includes('gfsToken') &&
+    String(value).includes('blob:'));
+  if (!fileUrls.length) throw Error('RESOURCE_FILE_URL_MISSING');
+  if (fileUrls.length !== 1) throw Error('RESOURCE_FILE_URL_AMBIGUOUS');
+  if (typeof updater?.forceFetchInfo !== 'function') throw Error('RESOURCE_PROFILE_SERVICE_MISSING');
+
+  const expected = new URL(chunkUrl);
+  const candidates = new Set();
+  for (const value of urls) {
+    let url;
+    try { url = new URL(value, expected); } catch (_) { continue; }
+    if (url.protocol === 'https:' && url.origin === expected.origin &&
+        !url.username && !url.password && !url.search && !url.hash &&
+        /^\/seatalk\/fe\/static\/js\/chunk-(?:src|db-pure)-[^/]+\.js$/.test(url.pathname)) {
+      candidates.add(url.href);
+    }
+  }
+  if (!candidates.size) throw Error('RESOURCE_ACCOUNT_MODULE_MISSING');
+
+  const sessions = new Set();
+  for (const url of candidates) {
+    let accountModule;
+    try { accountModule = await loadModule(url); }
+    catch (_) { throw Error('RESOURCE_ACCOUNT_MODULE_IMPORT_FAILED'); }
+    for (const value of Object.values(accountModule)) {
+      if (value && typeof value === 'object' && value.loggedIn === true &&
+          Number.isSafeInteger(value.userId) && value.userId > 0 &&
+          typeof value.fileServerToken === 'string' && value.fileServerToken.length > 0) {
+        sessions.add(value);
+      }
+    }
+  }
+  if (!sessions.size) throw Error('ACCOUNT_MISSING');
+  if (sessions.size !== 1) throw Error('ACCOUNT_AMBIGUOUS');
+  return { session: [...sessions][0], fileUrl: fileUrls[0] };
+}
+
     const runtime = {
       enabled: false,
       gifId: "",
@@ -4309,6 +4371,17 @@ async function applyRegisteredAvatar(gifId, adapters) {
             continue;
           }
 
+          try {
+            await resolveAvatarResourceServices({ chunkUrl, updater, module: moduleNamespace,
+              urls: getLoadedAvatarModuleUrls(), loadModule: url => import(url) });
+          } catch (error) {
+            runtime.esmDiscoveryFailedFor = chunkUrl;
+            const code = AVATAR_RESOURCE_DISCOVERY_CODES.includes(error?.message)
+              ? error.message : "RESOURCE_SERVICE_MISSING";
+            emit({ type: "compatibility-error", code, chunkName: chunkUrl.split("/").pop() || "",
+              message: "启动自检失败：头像资源服务未就绪（" + code + "），未提交头像更新。" });
+            return false;
+          }
           runtime.esmUpdater = updater;
           runtime.esmSessionInfo = sessionInfo;
           runtime.esmChunkUrl = chunkUrl;
@@ -4459,29 +4532,11 @@ async function applyRegisteredAvatar(gifId, adapters) {
     }
     async function discoverAvatarResourceServices() {
       const module = await import(runtime.esmChunkUrl);
-      const values = Object.values(module);
-      const fileUrl = values.find(value => typeof value === "function" &&
-        String(value).includes("maxWidth") && String(value).includes("gfsToken") &&
-        String(value).includes("blob:"));
-      const urls = Array.from(document.querySelectorAll("link[href],script[src]")).map(el => el.href || el.src || "");
-      const expected = new URL(runtime.esmChunkUrl);
-      const candidates = [...new Set(urls)].filter(value => {
-        try {
-          const url = new URL(value, location.href);
-          return url.protocol === "https:" && url.origin === expected.origin &&
-            /\/seatalk\/fe\/static\/js\/chunk-src-[^/]+\.js$/.test(url.pathname);
-        } catch (_) { return false; }
+      return resolveAvatarResourceServices({
+        chunkUrl: runtime.esmChunkUrl, updater: runtime.esmUpdater, module,
+        urls: getLoadedAvatarModuleUrls(),
+        loadModule: url => import(url),
       });
-      if (!fileUrl || candidates.length !== 1 || typeof runtime.esmUpdater.forceFetchInfo !== "function") {
-        throw Error("RESOURCE_SERVICE_MISSING");
-      }
-      const accountModule = await import(candidates[0]);
-      const sessions = [...new Set(Object.values(accountModule))].filter(value =>
-        value && typeof value === "object" && value.loggedIn === true &&
-        Number.isSafeInteger(value.userId) && value.userId > 0 &&
-        typeof value.fileServerToken === "string" && value.fileServerToken.length > 0);
-      if (sessions.length !== 1) throw Error("ACCOUNT_MISSING");
-      return { session: sessions[0], fileUrl };
     }
 
     async function applyDirectAvatar(operation) {
@@ -4555,7 +4610,7 @@ async function applyRegisteredAvatar(gifId, adapters) {
         result = { type: "direct-submitted", avatarResourceId: registered.avatarId,
           chunkName: runtime.esmChunkUrl.split("/").pop() || "" };
       } catch (error) {
-        const codes = new Set(["ACCOUNT_MISSING", "RESOURCE_REGISTER_ERROR", "RESOURCE_INVALID",
+        const codes = new Set([...AVATAR_RESOURCE_DISCOVERY_CODES, "RESOURCE_REGISTER_ERROR", "RESOURCE_INVALID",
           "RESOURCE_CONTENT_ERROR", "RESOURCE_PROFILE_MISSING", "RESOURCE_PROFILE_CHANGED",
           "RESOURCE_ACCOUNT_CHANGED", "RESOURCE_OPERATION_CHANGED", "RESOURCE_SERVICE_MISSING"]);
         const code = codes.has(error?.flowCode || error?.message) ? (error.flowCode || error.message) : "API_ERROR";

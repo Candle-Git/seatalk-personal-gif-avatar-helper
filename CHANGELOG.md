@@ -4,6 +4,12 @@
 
 This file records public releases of SeaTalk Sticker Helper (formerly SeaTalk Personal GIF Avatar Helper).
 
+## 未发布 / Unreleased
+
+- 修复 SeaTalk 3.72 的个人 GIF 头像资源服务发现：同时检查 DOM 和已加载资源中的账号模块，兼容 `chunk-src` 与 `chunk-db-pure`，保留会话唯一性检查。
+- 启动自检在资源服务检查通过后才报告就绪；细分模块缺失、加载失败与匹配不唯一的诊断码。
+- Fix personal GIF avatar discovery on SeaTalk 3.72 using observed account modules from DOM and resource timing. Check resource services before reporting ready and distinguish missing, failed and ambiguous services.
+
 ## 5.2.1 - 2026-10-23
 
 - 修复打开助手后原生表情面板被隐藏形成黑色空白的问题。
