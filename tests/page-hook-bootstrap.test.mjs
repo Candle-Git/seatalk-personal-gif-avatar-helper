@@ -38,8 +38,8 @@ function fixture(mode = 'normal') {
       : mode === 'silent' ? () => () => {} : vm.runInContext('Function', page),
   };
   const sandbox = vm.createContext({
-    window: bridge, CustomEvent, unsafeWindow, groupUI: {pending:null},
-    state: { pageHookReady: false, selected: { gifId: 'test' } },
+    window: bridge, CustomEvent, unsafeWindow, groupUI: { pending: null }, avatarCheck: { active: 0 },
+    state: { avatarUnlocked: true, pageHookReady: false, selected: { gifId: 'test' } },
     HOOK_EVENTS: { statusEvent: 'status', configEvent: 'config' },
     t: (_key, { code }) => code,
     isCustomGifStickerId: () => true,
@@ -48,6 +48,15 @@ function fixture(mode = 'normal') {
   vm.runInContext(bootstrap + apply, sandbox);
   return { page, sandbox, events, listeners };
 }
+
+test('locked helper starts neither the page hook nor an avatar request', () => {
+  const { page, sandbox, events } = fixture();
+  sandbox.state.avatarUnlocked = false;
+  assert.equal(vm.runInContext('injectPageHook()', sandbox), false);
+  vm.runInContext('startAvatarApply()', sandbox);
+  assert.equal(page.__seatalkPersonalGifAvatarHookInstalled, undefined);
+  assert.equal(events.length, 0);
+});
 
 test('starts actual hook in page realm without inserting script; repeat startup is idempotent', () => {
   const { page, sandbox, listeners } = fixture();

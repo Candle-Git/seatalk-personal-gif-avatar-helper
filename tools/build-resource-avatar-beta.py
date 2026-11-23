@@ -32,6 +32,7 @@ replace('    API_PENDING: [', '''    RESOURCE_REGISTER_START: ["submit", "正在
     RESOURCE_FILE_URL_MISSING: ["discovery", "未找到图片地址服务", "Image URL service not found"],
     RESOURCE_FILE_URL_AMBIGUOUS: ["discovery", "图片地址服务匹配不唯一", "Multiple image URL services matched"],
     RESOURCE_PROFILE_SERVICE_MISSING: ["discovery", "未找到个人资料读取服务", "Profile read service not found"],
+    RESOURCE_MODULE_DECLARATIONS_INVALID: ["discovery", "无法唯一确认当前版本的头像模块", "Could not identify the current build’s avatar modules unambiguously"],
     RESOURCE_ACCOUNT_MODULE_MISSING: ["discovery", "已加载资源中未找到兼容的账号模块", "No compatible account module found in loaded resources"],
     RESOURCE_ACCOUNT_MODULE_IMPORT_FAILED: ["discovery", "账号模块加载失败", "Account module import failed"],
     ACCOUNT_AMBIGUOUS: ["discovery", "登录账号匹配不唯一，已停止更新", "Multiple signed-in accounts matched; update stopped"],
@@ -47,20 +48,59 @@ replace('        startAvatarVerification(state.activeOperation);',
 replace('    const runtime = {', (root / 'tools/avatar-resource-updater.js').read_text() + '\n    const runtime = {')
 replace('    const runtime = {', (root / 'tools/avatar-resource-discovery.js').read_text() + '\n    const runtime = {')
 
+# Account discovery uses the session exported by the account module. Reading
+# arbitrary style-module exports to guess a user ID can invoke unrelated getters.
+start = source.index('    function getMainChunkStylesUrls() {')
+end = source.index('    async function discoverEsmUpdater(', start)
+source = source[:start] + source[end:]
+replace('      esmSessionInfo: null,\n', '')
+start = source.index('          let updater = null;', source.index('    async function discoverEsmUpdater('))
+end = source.index('          if (!updater) {', start)
+source = source[:start] + '''          const updater = findAvatarUpdater(moduleNamespace, candidates.declaredBuild);
+
+''' + source[end:]
+replace('          runtime.esmSessionInfo = sessionInfo;\n', '')
+
 # Ready means both the updater and the resource/account services were checked.
 # Discovery performs no registration or profile update during startup.
+replace('      esmDiscoveryFailedFor: "",', '''      esmDiscoveryFailedFor: "",
+      esmAccountModuleUrl: "",
+      esmResourceFailure: "",''')
+replace('        const chunkUrls = getMainChunkStylesUrls();', '''        runtime.esmResourceFailure = "";
+        let candidates;
+        try { candidates = getAvatarModuleCandidates(); }
+        catch (error) {
+          runtime.esmResourceFailure = error?.message === "RESOURCE_ACCOUNT_MODULE_MISSING"
+            ? error.message : "RESOURCE_MODULE_DECLARATIONS_INVALID";
+          if (reportFailure) emit({ type: "compatibility-error", code: runtime.esmResourceFailure });
+          return false;
+        }
+        const chunkUrls = candidates.styles;''')
 replace('          runtime.esmUpdater = updater;', '''          try {
             await resolveAvatarResourceServices({ chunkUrl, updater, module: moduleNamespace,
-              urls: getLoadedAvatarModuleUrls(), loadModule: url => import(url) });
+              urls: candidates.accounts, loadModule: url => import(url) });
           } catch (error) {
             runtime.esmDiscoveryFailedFor = chunkUrl;
             const code = AVATAR_RESOURCE_DISCOVERY_CODES.includes(error?.message)
               ? error.message : "RESOURCE_SERVICE_MISSING";
-            emit({ type: "compatibility-error", code, chunkName: chunkUrl.split("/").pop() || "",
-              message: "启动自检失败：头像资源服务未就绪（" + code + "），未提交头像更新。" });
+            runtime.esmResourceFailure = code;
+            // Background checks may run before the account module has loaded.
+            // Leave the UI alone until discovery succeeds or a requested update times out.
+            if (reportFailure) {
+              emit({ type: "compatibility-error", code, chunkName: chunkUrl.split("/").pop() || "",
+                message: "启动自检失败：头像资源服务未就绪（" + code + "），未提交头像更新。" });
+            }
             return false;
           }
+          runtime.esmAccountModuleUrl = candidates.accounts[0];
           runtime.esmUpdater = updater;''')
+
+replace('''          result = { type: "error", code: "SERVICE_MISSING", fallbackAvailable: false,
+            message: "直接更新失败：没有找到 SeaTalk 用户资料更新服务。请刷新页面或重新检查。" };''',
+        '''          const resourceFailure = runtime.esmResourceFailure;
+          result = { type: "error", code: resourceFailure || "SERVICE_MISSING", fallbackAvailable: false,
+            message: resourceFailure ? "头像资源准备未完成，未提交个人头像更新；请检查诊断流程码。"
+              : "直接更新失败：没有找到 SeaTalk 用户资料更新服务。请刷新页面或重新检查。" };''')
 
 start = source.index('        const userId = findCurrentUserId();', source.index('    async function applyDirectAvatar(operation)'))
 end = source.index('      } finally {', start)
@@ -138,10 +178,14 @@ adapter = r'''
       return url;
     }
     async function discoverAvatarResourceServices() {
+      const candidates = getAvatarModuleCandidates();
+      if (!candidates.styles.includes(runtime.esmChunkUrl) || runtime.esmAccountModuleUrl !== candidates.accounts[0]) {
+        throw Error("RESOURCE_MODULE_DECLARATIONS_INVALID");
+      }
       const module = await import(runtime.esmChunkUrl);
       return resolveAvatarResourceServices({
         chunkUrl: runtime.esmChunkUrl, updater: runtime.esmUpdater, module,
-        urls: getLoadedAvatarModuleUrls(),
+        urls: candidates.accounts,
         loadModule: url => import(url),
       });
     }

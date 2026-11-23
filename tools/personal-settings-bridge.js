@@ -1,9 +1,6 @@
 async function discoverPersonalSettingsAccount() {
-  const urls = [...new Set(Array.from(document.querySelectorAll('link[href],script[src]'), element => element.href || element.src || ''))].filter(value => {
-    try { const url = new URL(value); return url.protocol === 'https:' && url.hostname === 'static.cdn.haiserve.com' && /\/seatalk\/fe\/static\/js\/chunk-src-[^/]+\.js$/.test(url.pathname); } catch (_) { return false; }
-  });
-  if (urls.length !== 1) throw Error('METADATA_ACCOUNT_CHANGED');
-  const module = await import(urls[0]);
+  /* FAVORITES_ACCOUNT_MODULE */
+  const module = await import(getFavoritesAccountModuleUrl());
   const sessions = [...new Set(Object.values(module))].filter(value => value && typeof value === 'object' && value.loggedIn === true && Number.isSafeInteger(value.userId) && value.userId > 0);
   if (sessions.length !== 1) throw Error('METADATA_ACCOUNT_CHANGED');
   return sessions[0].userId;

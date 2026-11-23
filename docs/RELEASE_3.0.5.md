@@ -4,7 +4,7 @@
 
 ## 自动化验证
 
-- `node --check SeaTalk-Personal-GIF-Avatar-Helper.user.js`
+- 脚本语法检查 / Userscript syntax check
 - `node --test tests/*.test.mjs`：23 项通过
 - `node tests/run-browser-fixture.mjs`：隔离 Chrome 配置、本地合成数据，12 项 DOM 断言通过
 - `git diff --check`

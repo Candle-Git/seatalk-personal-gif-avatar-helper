@@ -4,6 +4,26 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const helper=fs.readFileSync(new URL('../tools/workspace-account.js',import.meta.url),'utf8');
 const tasks=fs.readFileSync(new URL('../tools/favorites-tasks.js',import.meta.url),'utf8');
+const moduleLocator=fs.readFileSync(new URL('../tools/favorites-account-module.js',import.meta.url),'utf8');
+const cdn='https://static.cdn.haiserve.com/seatalk/fe/static/js/';
+function accountModule(version,release,tags) {
+  const document={
+    documentElement:{getAttribute:key=>({'data-web-semantic-version':version,'data-release-hash':release})[key]},
+    head:{querySelectorAll:()=>tags},
+  };
+  return vm.runInNewContext(moduleLocator+'\ngetFavoritesAccountModuleUrl()',{document});
+}
+test('favorites resolve the declared 3.72 account module without evaluating the media viewer',()=>{
+  const current=cdn+'chunk-db-pure-fixture.js',viewer=cdn+'chunk-src-DcOtnrHP.js';
+  assert.equal(accountModule('3.72.0','cba35692d',[{href:viewer},{src:current},{href:current}]),current);
+  assert.throws(()=>accountModule('3.72.0','cba35692d',[{href:viewer}]),/METADATA_ACCOUNT_CHANGED/);
+  assert.throws(()=>accountModule('3.72.0','cba35692d',[{href:current},{src:cdn+'chunk-db-pure-other.js'}]),/METADATA_ACCOUNT_CHANGED/);
+});
+test('favorites retain legacy main-page declarations and reject off-site or viewer-only candidates',()=>{
+  const legacy=cdn+'chunk-src-legacy.js',viewer=cdn+'chunk-src-DcOtnrHP.js';
+  assert.equal(accountModule('3.71.1','5e21d4ffd',[{src:legacy},{href:viewer}]),legacy);
+  assert.throws(()=>accountModule('3.71.1','5e21d4ffd',[{href:'https://invalid.example/chunk-src-legacy.js'},{href:viewer}]),/METADATA_ACCOUNT_CHANGED/);
+});
 const {createWorkspaceAccountGuard:bind}=vm.runInNewContext(helper+'\n({createWorkspaceAccountGuard,nativeWorkspaceAccountId})');
 test('unknown or replaced account snapshot fails before enabling mutations',()=>{
  const original=[];assert.throws(()=>bind({session:{loggedIn:false,userId:1}},original,()=>original));

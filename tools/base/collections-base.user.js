@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         SeaTalk GIF 助手（收藏整合测试版）
-// @name:en      SeaTalk GIF Helper (Collections Beta)
+// @name         SeaTalk 表情助手
+// @name:en      SeaTalk Sticker Helper
 // @namespace    https://seatalkweb.com/
 // @version      4.1.0-beta.1
-// @description  个人与群 GIF 头像、收藏预览筛选、批量管理和候选导出，本地测试版。
-// @description:en Personal and group GIF avatars, favorites curation and batch management. Local beta.
+// @description  在 SeaTalk 中同步收藏、搜索备注、分享表情、备份设置，并在发送前确认会话。
+// @description:en Sync SeaTalk favorites, search notes, share stickers, back up settings and confirm the chat before sending.
 // @author       Yixin.Zhong × Codex
 // @match        https://seatalkweb.com/*
 // @match        https://*.seatalkweb.com/*
@@ -14,24 +14,16 @@
 // @grant        GM_xmlhttpRequest
 // @connect      f.haiserve.com
 // @run-at       document-idle
+// @downloadURL  https://update.greasyfork.org/scripts/588931/SeaTalk%20Sticker%20Helper.user.js
+// @updateURL    https://update.greasyfork.org/scripts/588931/SeaTalk%20Sticker%20Helper.meta.js
 // ==/UserScript==
 
 (function () {
   "use strict";
 
   /*
-   * 使用方式：
-   * 1. 在 SeaTalk 网页端先给自己或任意聊天发送一张想用作头像的 GIF 表情。
-   * 2. 点击右下角“GIF头像助手”。
-   * 3. 点击“抓取最近发送的表情”，选择刚发送的那张表情。
-   * 4. 等待面板显示“直接更新入口已就绪”，再点击“直接应用 GIF 头像”。
-   * 5. 如果 SeaTalk 暂时没有加载完成，脚本会自动等待并允许一键重新检查。
-   *
-   * 重要说明：
-   * - 本脚本仅修改自己的头像或经确认的可编辑群头像。
-   * - 自动入口可用时，本脚本不会上传新文件，而是调用 SeaTalk 当前页面自己的 updateUserInfo 服务。
-   * - 脚本不会要求用户手动上传普通 PNG/JPG 图片作为中间步骤。
-   * - 每次刷新都会重新发现当前 chunk 文件并自检；如果前端结构变化，面板会显示具体失败阶段。
+   * 在聊天输入框旁打开表情面板，切换到爱心收藏页，再打开 SeaTalk 表情助手。
+   * 在「我的表情」中搜索和整理收藏。发送前可核对目标会话与所选表情。
    */
 
   // 沿用稳定版存储键，升级后继续保留用户的语言、选择和浮动按钮位置。
@@ -176,7 +168,7 @@
       noSelection: "还没有选择 GIF",
       noSelectionHelp: "可以随机体验，或从当前聊天抓取。",
       selectedReady: "已准备好，点击下方按钮即可更换。",
-      selectedChecking: "正在检查 SeaTalk 兼容性。",
+      selectedChecking: "已选好，点击应用时会检查头像服务。",
       selectedApplying: "正在提交头像更新。",
       apply: "换成这个 GIF 头像",
       applyLoading: "正在应用 GIF 头像...",
@@ -193,7 +185,7 @@
       diagnosticsSummary: "运行状态与调试信息",
       diagnosticsEmpty: "正在等待启动检查。",
       statusReady: "运行正常，可以直接更换头像。",
-      statusChecking: "正在检查当前 SeaTalk 版本。",
+      statusChecking: "点击应用时会检查头像服务。",
       statusApplying: "正在更新头像。",
       requestStillPending: "上一请求仍在等待接口返回，请勿重复提交。",
       statusError: "遇到问题，请展开调试信息查看详情。",
@@ -203,6 +195,8 @@
       successMessage: "快去给你的同事炫耀吧",
       successSubtitle: "你的动态头像已经成功上线。",
       successClose: "好耶！",
+      nativeViewUnavailable: "头像已保存，SeaTalk 主界面暂未显示。刷新页面即可继续。",
+      reloadSeaTalk: "刷新 SeaTalk",
       updateBadge: "NEW",
       updateVersion: "版本 {version}",
       updateTitle: "头像助手 + 我的收藏",
@@ -216,8 +210,7 @@
       helperToggle: "GIF头像助手",
       dragHint: "可拖动到不挡操作的位置",
       credit: "Yixin.Zhong × Codex 制作",
-      creditEasterEggHint: "点一下，有小惊喜",
-      creditEasterEggMessage: "✨ 被你发现啦！愿每次换头像都有好心情 ✨",
+      creditEasterEggMessage: "已解锁 GIF 头像",
       diagnosticSuccessGeneric: "技术检查通过。",
       hookStartFailed: "页面 Hook 启动失败（{code}）。请确认已授权新版脚本并刷新 SeaTalk；若仍失败，请提供此错误码和 Console 中的 CSP 报错。",
       diagnosticErrorGeneric: "检测到技术问题，请重试或把匿名化截图发给维护者。",
@@ -257,7 +250,7 @@
       noSelection: "No GIF selected yet",
       noSelectionHelp: "Try a random sample or capture one from this chat.",
       selectedReady: "Ready. Use the button below to update your avatar.",
-      selectedChecking: "Checking SeaTalk compatibility.",
+      selectedChecking: "Selected. The avatar service is checked when you apply.",
       selectedApplying: "Submitting the avatar update.",
       apply: "Use this GIF as my avatar",
       applyLoading: "Applying GIF avatar...",
@@ -274,7 +267,7 @@
       diagnosticsSummary: "Status and diagnostics",
       diagnosticsEmpty: "Waiting for the startup check.",
       statusReady: "Everything is ready. You can update your avatar now.",
-      statusChecking: "Checking this SeaTalk version.",
+      statusChecking: "The avatar service is checked when you apply.",
       statusApplying: "Updating your avatar.",
       requestStillPending: "The previous request is still pending. Please wait before submitting again.",
       statusError: "Something went wrong. Expand diagnostics for details.",
@@ -284,6 +277,8 @@
       successMessage: "Go show it off to your teammates",
       successSubtitle: "Your animated avatar is now live.",
       successClose: "Love it!",
+      nativeViewUnavailable: "Your avatar was saved. Refresh SeaTalk to restore the main view.",
+      reloadSeaTalk: "Refresh SeaTalk",
       updateBadge: "NEW",
       updateVersion: "Version {version}",
       updateTitle: "Avatar helper + My favorites",
@@ -297,8 +292,7 @@
       helperToggle: "GIF Avatar",
       dragHint: "Drag this button anywhere convenient",
       credit: "Made by Yixin.Zhong × Codex",
-      creditEasterEggHint: "Click for a little surprise",
-      creditEasterEggMessage: "✨ You found it! May every new avatar brighten your day ✨",
+      creditEasterEggMessage: "GIF avatars unlocked",
       diagnosticSuccessGeneric: "Technical check passed.",
       hookStartFailed: "Page hook failed to start ({code}). Approve the updated userscript permissions and reload SeaTalk. If it persists, share this code and the Console CSP error.",
       diagnosticErrorGeneric: "A technical issue was detected. Retry or share an anonymized screenshot with the maintainer.",
@@ -322,7 +316,24 @@
   }
 
   const groupUI = { mode: "personal", context: null, pending: null, sequence: 0, message: "", dialog: null };
+  const avatarCheck = { sequence: 0, active: 0, checkpoint: "", restored: false };
+  const CHECK_STORAGE_KEY = STORAGE_KEY + ":check:" + SCRIPT_VERSION;
+  const CHECK_MESSAGES = {
+    CHECK_MODULES: ["正在查找头像模块并观察主界面", "Checking avatar modules and observing the main view"],
+    CHECK_PROFILE: ["正在读取当前个人资料并观察主界面", "Reading your profile and observing the main view"],
+    CHECK_OK: ["两步检查均完成，观察期间主界面持续可见", "Both checks completed and the main view stayed visible"],
+    CHECK_NO_VIEW: ["检查开始时未找到可见的 SeaTalk 主界面", "The SeaTalk main view was unavailable before the check"],
+    CHECK_MODULES_VIEW_LOST: ["查找模块期间，SeaTalk 主界面消失", "The main view disappeared during the module check"],
+    CHECK_PROFILE_VIEW_LOST: ["读取资料期间，SeaTalk 主界面消失", "The main view disappeared during the profile check"],
+    CHECK_MODULES_FAILED: ["头像模块检查失败", "The avatar module check failed"],
+    CHECK_PROFILE_FAILED: ["当前账号的资料读取检查失败", "The profile check for the current account failed"],
+    CHECK_MODULES_TIMEOUT: ["等待头像模块超时", "The module check timed out"],
+    CHECK_PROFILE_TIMEOUT: ["等待读取资料超时", "The profile check timed out"],
+    CHECK_HOOK_FAILED: ["页面未响应检查请求", "The page did not acknowledge the check"],
+    CHECK_BUSY: ["另一项头像操作正在进行，检查未开始", "Another avatar operation is active"],
+  };
   const state = {
+    avatarUnlocked: false,
     selected: null,
     recentCandidates: [],
     enabled: false,
@@ -386,6 +397,7 @@
     API_SUCCESS: ["submit", "接口已确认更新成功", "API confirmed the update"],
     API_ERROR: ["submit", "接口返回错误，请检查 Console 后重试", "API returned an error; check Console before retrying"],
     VISUAL_SUCCESS: ["verification", "已观察到页面头像变化", "Avatar change observed on page"],
+    NATIVE_VIEW_UNAVAILABLE: ["verification", "头像已保存，但 SeaTalk 主界面暂未显示", "Avatar saved, but the SeaTalk main view is unavailable"],
     VISUAL_PENDING: ["verification", "提交成功，页面显示待确认", "Update submitted; visual confirmation pending"],
     RESULT_TIMEOUT: ["verification", "未收到接口成功回报，也未观察到头像变化", "No API success or avatar change observed"],
   };
@@ -439,6 +451,7 @@
       environment: getDiagnosticEnvironment(),
       hookReady: state.pageHookReady,
       serviceReady: state.directUpdaterReady,
+      ...(Object.hasOwn(CHECK_MESSAGES, avatarCheck.checkpoint) ? { avatarCheck: avatarCheck.checkpoint } : {}),
       attempt: state.diagnosticAttempt,
       events: state.diagnosticEvents.filter(e => Object.hasOwn(DIAGNOSTIC_CODES, e.code)).slice().reverse().map(e => ({
         attempt: e.attempt, elapsedMs: e.elapsedMs, level: e.level,
@@ -1367,6 +1380,7 @@
   }
 
   function bindToggleDrag(toggle) {
+    let helperActivated = false;
     let dragState = null;
     let suppressClick = false;
 
@@ -1447,7 +1461,15 @@
         return;
       }
       const panel = document.getElementById(PANEL_ID);
-      panel?.classList.toggle("spga-open");
+      if (panel?.classList.toggle("spga-open")) {
+        if (!helperActivated) {
+          helperActivated = true;
+          activateHelperPanel(panel);
+        } else if (state.avatarUnlocked) {
+          renderPanel();
+        }
+        if (!state.avatarUnlocked) openCollectionsWorkspace();
+      }
       positionPanelNearToggle();
     });
   }
@@ -2244,6 +2266,9 @@
         background: #065f46;
       }
 
+      #${SUCCESS_MODAL_ID} .spga-success-recovery { margin: 10px 0; font-size: 13px; }
+      #${SUCCESS_MODAL_ID} .spga-success-recovery p { margin: 0 0 6px; }
+
       #${SUCCESS_MODAL_ID} .spga-success-spark {
         position: absolute;
         width: 9px;
@@ -2467,6 +2492,45 @@
     return element;
   }
 
+  function syncCollectionsNavigation() {
+    const workspace = document.getElementById("st-favorites-curator");
+    const tabs = workspace?.shadowRoot?.querySelector(".workspace-tabs");
+    if (tabs) tabs.hidden = !state.avatarUnlocked;
+  }
+
+  function bindCreditGesture(panel) {
+    if (state.avatarUnlocked) return;
+    const clicks = [];
+    const reset = () => { clicks.length = 0; };
+    const onClick = event => {
+      const path = event.composedPath();
+      if (!path[0]?.closest?.('#helperCredit,[data-action="credit-easter-egg"]')) { reset(); return; }
+      const workspace = document.getElementById("st-favorites-curator");
+      const credit = workspace?.dataset.open === "true"
+        ? workspace.shadowRoot?.getElementById("helperCredit")
+        : panel.classList.contains("spga-open") && panel.querySelector('[data-action="credit-easter-egg"]');
+      if (!credit || !path.includes(credit)) { reset(); return; }
+      const now = performance.now();
+      while (clicks.length && now - clicks[0] > 10000) clicks.shift();
+      clicks.push(now);
+      if (clicks.length < 20) return;
+
+      state.avatarUnlocked = true;
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener("blur", reset);
+      document.removeEventListener("visibilitychange", reset);
+      showCreditEasterEgg(credit);
+      syncCollectionsNavigation();
+      bindHookStatusEvents();
+      bindGroupStatus();
+      new MutationObserver(syncGroupWatch).observe(panel, { attributes: true, attributeFilter: ["class"] });
+      if (panel.classList.contains("spga-open")) renderPanel();
+    };
+    document.addEventListener("click", onClick, true);
+    window.addEventListener("blur", reset);
+    document.addEventListener("visibilitychange", reset);
+  }
+
   /**
    * 点击底部制作署名后播放一个完全本地的轻量彩蛋。
    * 特效只创建短暂的 DOM 粒子，不加载图片、字体或第三方库，也不会发送网络请求。
@@ -2527,6 +2591,7 @@
     window.setTimeout(() => layer.remove(), 1700);
   }
 
+  let dismissSuccessNotice;
   function showSuccessCelebration(gifId, groupName = "") {
     const normalizedGifId = String(gifId || state.selected?.gifId || "");
     if (state.successModalShownForGifId === normalizedGifId) {
@@ -2536,26 +2601,24 @@
     // Do not steal focus/selection from a report the user is copying.
     if (state.manualDiagnosticReport) return;
 
-    document.getElementById(SUCCESS_MODAL_ID)?.remove();
+    dismissSuccessNotice?.();
+    const previousFocus = document.activeElement;
 
     const overlay = createElement("div", {
       attributes: {
         id: SUCCESS_MODAL_ID,
+        "aria-labelledby": `${SUCCESS_MODAL_ID}-title`,
         role: "dialog",
         "aria-modal": "true",
-        "aria-labelledby": `${SUCCESS_MODAL_ID}-title`,
       },
     });
     const card = createElement("div", { className: "spga-success-card" });
 
     for (let index = 0; index < 4; index += 1) {
-      card.append(createElement("span", { className: "spga-success-spark" }));
+      card.append(createElement("span", { className: "spga-success-spark", attributes: { "aria-hidden": "true" } }));
     }
+    card.append(createElement("div", { className: "spga-success-badge", textContent: "✓", attributes: { "aria-hidden": "true" } }));
 
-    const badge = createElement("div", {
-      className: "spga-success-badge",
-      textContent: "✓",
-    });
     const title = createElement("h2", {
       className: "spga-success-title",
       textContent: t("successTitle"),
@@ -2567,10 +2630,6 @@
       className: "spga-success-message",
       textContent: groupName ? groupText("已看到「" + groupName + "」的群头像更新", "Avatar update observed for “" + groupName + "”") : t("successMessage"),
     });
-    const subtitle = createElement("p", {
-      className: "spga-success-subtitle",
-      textContent: groupName ? groupText("可以继续选择 GIF 并更换，无需刷新。", "You can choose another GIF without refreshing.") : t("successSubtitle"),
-    });
     const closeButton = createElement("button", {
       className: "spga-success-close",
       textContent: t("successClose"),
@@ -2581,7 +2640,10 @@
 
     const closeModal = () => {
       document.removeEventListener("keydown", handleKeyDown);
+      const restoreFocus = overlay.contains(document.activeElement);
       overlay.remove();
+      dismissSuccessNotice = null;
+      if (restoreFocus && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -2596,11 +2658,22 @@
       }
     });
     document.addEventListener("keydown", handleKeyDown);
+    dismissSuccessNotice = closeModal;
 
-    card.append(badge, title, message, subtitle, closeButton);
+    card.append(title, message);
+    card.append(createElement("p", { className: "spga-success-subtitle",
+      textContent: groupName ? groupText("可以继续选择 GIF 并更换，无需刷新。", "You can choose another GIF without refreshing.") : t("successSubtitle") }));
+    if (!groupName) {
+      const recovery = createElement("div", { className: "spga-success-recovery", attributes: { hidden: "" } });
+      const reload = createElement("button", { textContent: t("reloadSeaTalk"), attributes: { type: "button" } });
+      reload.addEventListener("click", () => location.reload());
+      recovery.append(createElement("p", { textContent: t("nativeViewUnavailable") }), reload);
+      card.append(recovery);
+    }
+    card.append(closeButton);
     overlay.append(card);
     document.body.append(overlay);
-    closeButton.focus();
+    closeButton.focus({ preventScroll: true });
   }
 
   function shouldShowUpdateNotice(lastSeenVersion) {
@@ -2924,10 +2997,23 @@
     const env = getDiagnosticEnvironment();
     wrapper.append(createElement("div", { textContent: `Helper ${env.script} · SeaTalk ${env.seatalk} · Build ${env.release}` }));
     wrapper.append(createElement("div", { textContent: `${env.browser} · ${env.manager} ${env.managerVersion}` }));
+    if (groupUI.mode === "personal") {
+      if (!avatarCheck.restored) {
+        avatarCheck.restored = true;
+        try {
+          const saved = sessionStorage.getItem(CHECK_STORAGE_KEY);
+          if (Object.hasOwn(CHECK_MESSAGES, saved)) avatarCheck.checkpoint = saved;
+        } catch (_) { /* Storage may be disabled. */ }
+      }
+      const check = createButton(groupText("只检查，不更换头像", "Check without changing avatar"), "check-avatar");
+      check.disabled = Boolean(avatarCheck.active || state.requestPending || groupUI.pending);
+      wrapper.append(check, createElement("div", { textContent: avatarCheckText(),
+        attributes: { "data-role": "avatar-check-result", role: "status" } }));
+    }
     const copyButton = createElement("button", {
       className: "spga-button",
       textContent: state.locale === "zh" ? "复制脱敏诊断" : "Copy sanitized diagnostics",
-      attributes: { type: "button" },
+      attributes: { type: "button", "data-action": "copy-diagnostics" },
     });
     copyButton.addEventListener("click", () => copyDiagnosticReport(copyButton));
     wrapper.append(copyButton);
@@ -2998,6 +3084,43 @@
     return card;
   }
 
+  function createCreditRow() {
+    const creditButton = createElement("button", {
+      className: "spga-credit",
+      textContent: t("credit"),
+      attributes: {
+        type: "button",
+        "aria-label": t("credit"),
+        "data-action": "credit-easter-egg",
+      },
+    });
+    const versionBadge = createElement("span", {
+      className: "spga-version-badge",
+      textContent: `v${SCRIPT_VERSION}`,
+      attributes: {
+        title: `SeaTalk GIF Avatar Helper v${SCRIPT_VERSION}`,
+        "aria-label": `SeaTalk GIF Avatar Helper version ${SCRIPT_VERSION}`,
+      },
+    });
+    const creditRow = createElement("div", { className: "spga-credit-row" });
+    const githubLabel = groupText("查看 GitHub 项目", "View GitHub project");
+    const githubLink = createElement("a", {
+      className: "spga-github-link",
+      attributes: {
+        href: "https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper",
+        target: "_blank", rel: "noopener noreferrer", title: githubLabel, "aria-label": githubLabel,
+      },
+    });
+    const githubIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    for (const [key, value] of Object.entries({ viewBox: "0 0 16 16", width: "16", height: "16", fill: "currentColor", "aria-hidden": "true", focusable: "false" })) githubIcon.setAttribute(key, value);
+    const githubPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    githubPath.setAttribute("d", "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z");
+    githubIcon.append(githubPath);
+    githubLink.append(githubIcon);
+    creditRow.append(creditButton, versionBadge, githubLink);
+    return creditRow;
+  }
+
   function renderPanel() {
     const panel = document.getElementById(PANEL_ID);
     if (!panel) {
@@ -3014,16 +3137,30 @@
 
     const header = createElement("header", { className: "spga-header" });
     const heading = createElement("div", { className: "spga-heading" });
-    heading.append(
-      createElement("h2", { className: "spga-title", textContent: t("title") }),
-      createElement("p", { className: "spga-subtitle", textContent: t("subtitle") })
-    );
+    heading.append(createElement("h2", { className: "spga-title", textContent: t("title") }));
+    if (state.avatarUnlocked) heading.append(createElement("p", { className: "spga-subtitle", textContent: t("subtitle") }));
     header.append(heading, createLanguageToggle());
     bindPanelDrag(header, panel);
     const close = createButton("×", "close-panel");
     close.setAttribute("aria-label", groupText("关闭助手", "Close helper"));
     close.addEventListener("click", () => panel.classList.remove("spga-open"));
     header.append(close);
+
+    if (!state.avatarUnlocked) {
+      const body = createElement("div", { className: "spga-body" });
+      const card = createElement("section", { className: "spga-path-card" });
+      const open = createButton(groupText("打开我的表情", "Open my stickers"), "open-favorites", "spga-button-primary");
+      open.addEventListener("click", openCollectionsWorkspace);
+      card.append(createElement("h3", { className: "spga-path-title", textContent: groupText("我的收藏", "My favorites") }),
+        createElement("p", { className: "spga-path-description", attributes: { id: "spga-collections-hint", role: "status" },
+          textContent: groupText("在聊天输入框旁打开表情面板，切换到爱心收藏页，再打开我的表情。", "Open the sticker picker beside the chat composer, select Favorites (heart), then open My stickers.") }), open);
+      body.append(card);
+      const footer = createElement("footer", { className: "spga-sticky-footer" });
+      footer.append(createCreditRow());
+      panel.append(header, body, footer);
+      window.requestAnimationFrame(positionPanelNearToggle);
+      return;
+    }
 
     const randomButton = createButton(
       state.activeAction === "random" && state.showDelayedLoading ? t("randomPreparing") : t("randomApply"),
@@ -3097,41 +3234,7 @@
       attributes: { "data-role": "status", "aria-live": "polite" },
     });
     const applyButton = createButton(getEnableButtonText(), "enable", "spga-button-primary spga-apply-button");
-    applyButton.disabled = !state.selected || state.requestPending || (state.enabled && !state.directUpdaterFailed);
-    const creditButton = createElement("button", {
-      className: "spga-credit",
-      textContent: t("credit"),
-      attributes: {
-        type: "button",
-        title: t("creditEasterEggHint"),
-        "aria-label": `${t("credit")}：${t("creditEasterEggHint")}`,
-        "data-action": "credit-easter-egg",
-      },
-    });
-    const versionBadge = createElement("span", {
-      className: "spga-version-badge",
-      textContent: `v${SCRIPT_VERSION}`,
-      attributes: {
-        title: `SeaTalk GIF Avatar Helper v${SCRIPT_VERSION}`,
-        "aria-label": `SeaTalk GIF Avatar Helper version ${SCRIPT_VERSION}`,
-      },
-    });
-    const creditRow = createElement("div", { className: "spga-credit-row" });
-    const githubLabel = groupText("查看 GitHub 项目", "View GitHub project");
-    const githubLink = createElement("a", {
-      className: "spga-github-link",
-      attributes: {
-        href: "https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper",
-        target: "_blank", rel: "noopener noreferrer", title: githubLabel, "aria-label": githubLabel,
-      },
-    });
-    const githubIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    for (const [key, value] of Object.entries({ viewBox: "0 0 16 16", width: "16", height: "16", fill: "currentColor", "aria-hidden": "true", focusable: "false" })) githubIcon.setAttribute(key, value);
-    const githubPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    githubPath.setAttribute("d", "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z");
-    githubIcon.append(githubPath);
-    githubLink.append(githubIcon);
-    creditRow.append(creditButton, versionBadge, githubLink);
+    applyButton.disabled = personalApplyDisabled();
     if (groupUI.mode === "group") {
       status.textContent = groupUI.message || (groupUI.context
         ? groupText("预览后确认，即可更换群头像。", "Preview, then confirm to update the group avatar.")
@@ -3142,8 +3245,9 @@
       if (groupUI.pending) applyButton.textContent = groupText("正在确认结果…", "Checking result…");
       applyButton.disabled = !state.selected || !groupUI.context || !!groupUI.pending || state.requestPending;
     } else if (groupUI.pending) applyButton.disabled = true;
+    if (avatarCheck.active) applyButton.disabled = true;
     randomButton.disabled = randomButton.disabled || !!groupUI.pending;
-    footer.append(status, applyButton, creditRow);
+    footer.append(status, applyButton, createCreditRow());
 
     footer.style.flexShrink = "0";
     const featureTabs = createElement('nav', { className: 'spga-target-tabs', attributes: { 'aria-label': groupText('助手功能', 'Helper tools') } });
@@ -3414,6 +3518,11 @@
     }
   }
 
+  function isNativeMainViewVisible() {
+    const view = document.querySelector("#root .home-main-window");
+    return Boolean(view?.getClientRects().length);
+  }
+
   function markRequestStillPending() {
     if (!state.requestPending) return;
     state.requestSlow = true;
@@ -3427,9 +3536,22 @@
   function startAvatarVerification(operation) {
     clearVerificationTimer();
     const startedAt = Date.now();
+    let missingViewChecks = 0;
     state.verificationTimer = window.setInterval(() => {
       // Even an already-queued timer must not mutate a later attempt.
       if (state.activeOperation !== operation) return;
+      if (!state.requestPending && state.apiConfirmedGifId === operation.gifId &&
+          operation.nativeViewWasVisible && !isNativeMainViewVisible()) {
+        // Give the native view time to remount before treating it as unavailable.
+        if (++missingViewChecks < 2) return;
+        clearVerificationTimer();
+        state.hookStatus = t("nativeViewUnavailable");
+        addDiagnostic("", "info", "NATIVE_VIEW_UNAVAILABLE");
+        document.getElementById(SUCCESS_MODAL_ID)?.querySelector(".spga-success-recovery")?.removeAttribute("hidden");
+        renderPanel();
+        return;
+      }
+      missingViewChecks = 0;
       const currentUrls = getCurrentPersonalAvatarUrls();
       const containsGifId = currentUrls.some((url) => url.includes(operation.gifId));
       // An arbitrary URL change can belong to an old request or cache refresh.
@@ -3593,7 +3715,7 @@
   }
 
   function startAvatarApply(actionSource = "selected") {
-    if (groupUI.pending) return;
+    if (!state.avatarUnlocked || groupUI.pending || avatarCheck.active) return;
     if (state.requestPending) {
       markRequestStillPending();
       return;
@@ -3628,7 +3750,8 @@
       addDiagnostic("用户已重新检查自动更新入口。", "info");
     }
 
-    const operation = Object.freeze({ id: state.diagnosticAttempt, gifId: state.selected.gifId });
+    const operation = Object.freeze({ id: state.diagnosticAttempt, gifId: state.selected.gifId,
+      nativeViewWasVisible: isNativeMainViewVisible() });
     state.activeOperation = operation;
     state.requestPending = true;
     state.requestSlow = false;
@@ -3657,15 +3780,23 @@
 
   function groupText(zh, en) { return state.locale === "en" ? en : zh; }
 
+  function syncGroupWatch() {
+    if (!state.avatarUnlocked) return;
+    const watching = groupUI.mode === "group" && document.getElementById(PANEL_ID)?.classList.contains("spga-open");
+    if (watching && !state.pageHookReady && !injectPageHook()) return;
+    if (state.pageHookReady) sendHookConfig(watching ? "watch-group" : "unwatch-group");
+  }
+
   function createTargetSelector() {
     const box = createElement("div", { className: "spga-path-card" });
     const row = createElement("div", { className: "spga-target-tabs", attributes: { role: "tablist", "aria-label": groupText("头像目标", "Avatar target") } });
     for (const [mode, zh, en] of [["personal", "我的头像", "My avatar"], ["group", "当前群头像", "Group avatar"]]) {
       const button = createElement("button", { textContent: groupText(zh, en), attributes: { type: "button", role: "tab", "aria-selected": String(groupUI.mode === mode) } });
       button.className = "spga-button spga-target-tab";
-      button.disabled = !!groupUI.pending || state.requestPending;
+      button.disabled = !!groupUI.pending || state.requestPending || Boolean(avatarCheck.active);
       button.addEventListener("click", () => {
         groupUI.mode = mode; groupUI.message = "";
+        syncGroupWatch();
         if (mode === "group") addDiagnostic("", "info", groupUI.context ? "GROUP_CONTEXT_READY" : "GROUP_CONTEXT_MISSING");
         renderPanel();
       });
@@ -3683,7 +3814,7 @@
   }
 
   function confirmGroupAvatar() {
-    if (groupUI.dialog || groupUI.pending || state.requestPending || !groupUI.context || !isCustomGifStickerId(state.selected?.gifId)) return;
+    if (!state.avatarUnlocked || groupUI.dialog || groupUI.pending || state.requestPending || avatarCheck.active || !groupUI.context || !isCustomGifStickerId(state.selected?.gifId)) return;
     const operation = Object.freeze({ ...groupUI.context, gifId: state.selected.gifId, requestId: ++groupUI.sequence });
     const dialog = document.createElement("dialog");
     dialog.style.cssText = "border:0;border-radius:18px;padding:24px;max-width:400px;width:85%;box-shadow:0 12px 60px #0006;color:#17243b;background:white";
@@ -3741,7 +3872,9 @@
   }
 
   function bindPanelEvents() {
-    document.addEventListener("click", async (event) => {
+    const panel = document.getElementById(PANEL_ID);
+    bindCreditGesture(panel);
+    panel.addEventListener("click", async (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
         return;
@@ -3751,9 +3884,8 @@
       if (!action) {
         return;
       }
-
-      if (action === "credit-easter-egg") {
-        showCreditEasterEgg(target);
+      if (action === "check-avatar") {
+        startAvatarCheck();
         return;
       }
 
@@ -3767,6 +3899,7 @@
         return;
       }
 
+      if (!state.avatarUnlocked) return;
       if (action === "random-apply") {
         if (groupUI.pending || state.enabled || state.requestPending || !LOCAL_GIF_PRESETS.length) {
           return;
@@ -3834,31 +3967,13 @@
       }
     });
 
-    document.addEventListener("change", (event) => {
+    panel.addEventListener("change", (event) => {
       const target = event.target;
-
-      if (target instanceof HTMLInputElement && isFileInputForAvatarUpload(target)) {
-        const file = target.files?.[0];
-        if (file) {
-          // 先立刻通知页面 Hook，避免 SeaTalk 在文件签名检查完成前就开始上传。
-          sendHookConfig("avatar-file-selected", {
-            fileName: file.name,
-            fileType: file.type,
-            fileSize: file.size,
-          });
-          inspectSelectedAvatarFile(file);
-        } else {
-          addDiagnostic("文件选择窗口已关闭，但没有选中文件。", "error");
-          renderPanel();
-        }
-        return;
-      }
-
       if (!(target instanceof HTMLSelectElement)) {
         return;
       }
 
-      if (target.getAttribute("data-role") !== "local-select") {
+      if (!state.avatarUnlocked || target.getAttribute("data-role") !== "local-select") {
         return;
       }
 
@@ -3870,7 +3985,13 @@
     }, true);
   }
 
-  function createPanel() {
+  function activateHelperPanel(panel) {
+    bindPanelEvents();
+    renderPanel();
+    showUpdateNoticeIfNeeded();
+  }
+
+  function createPanel({ renderContents = true } = {}) {
     if (!document.getElementById(PANEL_ID)) {
       const panel = createElement("section", {
         attributes: {
@@ -3895,7 +4016,7 @@
       window.addEventListener("resize", () => applyFloatingPosition());
     }
 
-    renderPanel();
+    if (renderContents) renderPanel();
   }
 
   function sendHookConfig(command = "", extra = {}) {
@@ -3911,9 +4032,71 @@
     );
   }
 
+  function personalApplyDisabled() {
+    return Boolean(!state.selected || state.requestPending || groupUI.pending || avatarCheck.active ||
+      (state.enabled && !state.directUpdaterFailed));
+  }
+
+  function avatarCheckText() {
+    if (!Object.hasOwn(CHECK_MESSAGES, avatarCheck.checkpoint)) return "";
+    const message = CHECK_MESSAGES[avatarCheck.checkpoint][state.locale === "zh" ? 0 : 1];
+    return groupText("最近检查记录", "Last check") + " · " + avatarCheck.checkpoint + " · " + message;
+  }
+
+  function showAvatarCheck(code) {
+    if (!Object.hasOwn(CHECK_MESSAGES, code)) return;
+    avatarCheck.checkpoint = code;
+    avatarCheck.restored = true;
+    try { sessionStorage.setItem(CHECK_STORAGE_KEY, code); } catch (_) { /* In-memory result is still available. */ }
+    // Updating the read-only check must not remount GIF previews or initiate image loads.
+    const panel = document.getElementById?.(PANEL_ID);
+    if (!panel) return;
+    const result = panel.querySelector('[data-role="avatar-check-result"]');
+    if (result) result.textContent = avatarCheckText();
+    const check = panel.querySelector('[data-action="check-avatar"]');
+    if (check) check.disabled = Boolean(avatarCheck.active || state.requestPending || groupUI.pending);
+    const apply = panel.querySelector('[data-action="enable"]');
+    if (apply && groupUI.mode === "personal") apply.disabled = personalApplyDisabled();
+    for (const tab of panel.querySelectorAll('[role="tab"]')) {
+      tab.disabled = Boolean(avatarCheck.active || state.requestPending || groupUI.pending);
+    }
+    if (groupUI.mode === "personal") setStatus(buildStatusText());
+  }
+
+  function startAvatarCheck() {
+    if (!state.avatarUnlocked || avatarCheck.active || state.requestPending || groupUI.pending || groupUI.dialog || groupUI.mode !== "personal") return;
+    const checkId = ++avatarCheck.sequence;
+    avatarCheck.active = checkId;
+    if (!state.pageHookReady && !injectPageHook()) {
+      avatarCheck.active = 0;
+      showAvatarCheck("CHECK_HOOK_FAILED");
+      return;
+    }
+    let acknowledged = false;
+    const onCheck = ({ detail }) => {
+      if (detail?.type === "avatar-check" && detail.checkId === checkId) acknowledged = true;
+    };
+    window.addEventListener(HOOK_EVENTS.statusEvent, onCheck);
+    try {
+      window.dispatchEvent(new CustomEvent(HOOK_EVENTS.configEvent, { detail: { command: "check-avatar", checkId } }));
+    } finally {
+      window.removeEventListener(HOOK_EVENTS.statusEvent, onCheck);
+      if (!acknowledged) {
+        avatarCheck.active = 0;
+        showAvatarCheck("CHECK_HOOK_FAILED");
+      }
+    }
+  }
+
   function bindHookStatusEvents() {
     window.addEventListener(HOOK_EVENTS.statusEvent, (event) => {
       const detail = event.detail || {};
+      if (detail.type === "avatar-check") {
+        if (!avatarCheck.active || detail.checkId !== avatarCheck.active || !Object.hasOwn(CHECK_MESSAGES, detail.code)) return;
+        if (!["CHECK_MODULES", "CHECK_PROFILE"].includes(detail.code)) avatarCheck.active = 0;
+        showAvatarCheck(detail.code);
+        return;
+      }
       if (detail.type?.startsWith("group-")) return;
       if (detail.attemptId !== undefined) {
         if (detail.attemptId !== state.activeOperation?.id || detail.gifId !== state.activeOperation?.gifId) return;
@@ -3932,7 +4115,7 @@
           const wasReady = state.directUpdaterReady;
           state.directUpdaterReady = true;
           state.directUpdaterFailed = false;
-          state.diagnosticsOpen = false;
+          if (!avatarCheck.active) state.diagnosticsOpen = false;
           state.chunkName = detail.chunkName || "";
           state.hookStatus = `直接更新入口已就绪${state.chunkName ? `：${state.chunkName}` : ""}。`;
           if (!wasReady) {
@@ -3987,7 +4170,6 @@
         state.hookStatus = t("verificationConfirmed");
         addDiagnostic(t("diagnosticApiConfirmed"), "success", "API_SUCCESS");
         showSuccessCelebration(detail.gifId);
-        sendHookConfig();
       } else if (detail.type === "compatibility-error") {
         state.directUpdaterReady = false;
         state.directUpdaterFailed = true;
@@ -4023,11 +4205,12 @@
         saveState();
       }
 
-      renderPanel();
+      if (!avatarCheck.active) renderPanel();
     });
   }
 
   function injectPageHook() {
+    if (!state.avatarUnlocked) return false;
     let acknowledged = false;
     const onStarted = (event) => {
       if (event.detail?.type === "hook-started") acknowledged = true;
@@ -4085,23 +4268,12 @@
 
     const runtime = {
       enabled: false,
-      gifId: "",
-      webpackRequire: null,
-      wrappedCount: 0,
-      wrappedFunctions: new WeakMap(),
-      scannedObjects: new WeakSet(),
-      networkHookInstalled: false,
-      rewrittenUploadResponses: new WeakMap(),
-      xhrResponseCache: new WeakMap(),
-      uploadNoRewriteReported: false,
-      messageHookInstalled: false,
       esmUpdater: null,
       esmSessionInfo: null,
       esmChunkUrl: "",
       esmDiscoveryPromise: null,
       esmDiscoveryFailedFor: "",
       directOperation: null,
-      avatarFileSelectedAt: 0,
     };
 
     function isValidGifId(value) {
@@ -4333,7 +4505,7 @@
     function applyGroupAvatar(detail) {
       const editor = refreshGroupContext();
       const reject = () => emit({ type: "group-result", requestId: detail.requestId, code: "GROUP_TARGET_CHANGED" });
-      if (groupOperation || runtime.directOperation || !editor || editor.id !== detail.id || editor.name !== detail.name ||
+      if (groupOperation || runtime.directOperation || runtime.avatarCheck || !editor || editor.id !== detail.id || editor.name !== detail.name ||
           groupRevision !== detail.revision || !Number.isSafeInteger(detail.requestId) || detail.requestId <= 0 || !isValidGifId(detail.gifId)) { reject(); return; }
       groupOperation = Object.freeze({ id: editor.id, gifId: detail.gifId, requestId: detail.requestId });
       const operation = groupOperation;
@@ -4352,15 +4524,32 @@
         }
       }, 300);
     }
-    window.setInterval(refreshGroupContext, 400);
-    if (typeof MutationObserver !== "undefined") {
-      new MutationObserver(refreshGroupContext).observe(document.body, { childList: true, subtree: true });
+    let groupWatchTimer = null, groupObserver = null;
+    function setGroupWatch(watching) {
+      if (watching === (groupWatchTimer !== null)) return;
+      if (watching) {
+        groupWatchTimer = window.setInterval(refreshGroupContext, 400);
+        if (typeof MutationObserver !== "undefined") {
+          groupObserver = new MutationObserver(refreshGroupContext);
+          groupObserver.observe(document.body, { childList: true, subtree: true });
+        }
+        refreshGroupContext();
+      } else {
+        window.clearInterval(groupWatchTimer);
+        groupWatchTimer = null;
+        groupObserver?.disconnect();
+        groupObserver = null;
+        if (groupKey) {
+          groupKey = ""; groupRevision++;
+          emit({ type: "group-context", context: null });
+        }
+      }
     }
 
     function startDirectAvatar(detail) {
       if (groupOperation) return;
       const operation = Object.freeze({ id: detail.attemptId, gifId: detail.gifId });
-      if (runtime.directOperation) {
+      if (runtime.directOperation || runtime.avatarCheck) {
         emit({ type: "request-busy", code: "REQUEST_BUSY", level: "info",
           attemptId: operation.id, gifId: operation.gifId });
         return;
@@ -4418,897 +4607,86 @@
       }
     }
 
-    function getWebpackRequireFromChunk(chunkName) {
-      const chunk = window[chunkName];
-      if (!Array.isArray(chunk)) {
-        return null;
-      }
-
-      let webpackRequire = null;
-      const randomChunkId = `seatalk_personal_gif_avatar_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
-      try {
-        chunk.push([
-          [randomChunkId],
-          {},
-          function (require) {
-            webpackRequire = require;
-          },
-        ]);
-      } catch (_error) {
-        return null;
-      }
-
-      return webpackRequire;
+    function mainViewVisible() {
+      const view = document.querySelector("#root .home-main-window");
+      const bounds = view?.getBoundingClientRect();
+      return Boolean(bounds?.width > 0 && bounds.height > 0 && (typeof view.checkVisibility !== "function" ||
+        view.checkVisibility({ visibilityProperty: true, opacityProperty: true })));
     }
 
-    function findWebpackRequire() {
-      if (runtime.webpackRequire?.c) {
-        return runtime.webpackRequire;
-      }
-
-      const chunkNames = Object.keys(window).filter((key) => /^webpackChunk/i.test(key));
-      for (const chunkName of chunkNames) {
-        const require = getWebpackRequireFromChunk(chunkName);
-        if (require?.c) {
-          runtime.webpackRequire = require;
-          return require;
+    // Observe from immediately before the read until six seconds after it settles.
+    // Two consecutive missing samples allow a brief native remount.
+    function observeAvatarRead(read, phase) {
+      return new Promise((resolve, reject) => {
+        const started = Date.now();
+        let result, closed = false, finished = false, completedAt = 0, missingSamples = 0;
+        const timer = window.setInterval(() => {
+          missingSamples = mainViewVisible() ? 0 : missingSamples + 1;
+          if (missingSamples >= 2) end("VIEW_LOST");
+          else if (!finished && Date.now() - started >= 12000) end("TIMEOUT");
+          else if (finished && !missingSamples && Date.now() - completedAt >= 6000) end();
+        }, 250);
+        function end(failure) {
+          if (closed) return;
+          closed = true;
+          window.clearInterval(timer);
+          if (failure) reject(new Error(phase + "_" + failure));
+          else resolve(result);
         }
-      }
-
-      return null;
-    }
-
-    function getPatchMode(fn) {
-      if (typeof fn !== "function") {
-        return "";
-      }
-
-      if (fn.__spgaWrapped) {
-        return "";
-      }
-
-      let source = "";
-      try {
-        source = Function.prototype.toString.call(fn);
-      } catch (_error) {
-        return "";
-      }
-
-      // 头像上传路径有时只会构造 ContactUpdateUserInfo，avatar 字段可能在上游对象里。
-      // 真正是否改写仍由运行时参数里有没有 avatar 决定，所以这里放宽匹配，避免漏拦截。
-      if (source.includes("ContactUpdateUserInfo")) {
-        return "contact-update";
-      }
-
-      // 7.21 版 SeaTalk 会先执行类似 new UserInfo(userid, name, avatar, personalStatus)。
-      // 用户断点里修改的 n 正是第三个 avatar 参数，因此同时识别这个数据构造器。
-      const assignsAvatar = /this\s*\.\s*avatar\s*=/.test(source);
-      const assignsUserId = /this\s*\.\s*(?:userid|userId)\s*=/.test(source);
-      const assignsStatus = /this\s*\.\s*personalStatus\s*=/.test(source);
-      if (assignsAvatar && assignsUserId && assignsStatus) {
-        return "avatar-constructor";
-      }
-
-      return "";
-    }
-
-    function looksLikeUserInfoPayload(value) {
-      if (!value || typeof value !== "object") {
-        return false;
-      }
-
-      if (value instanceof Node || value instanceof Event) {
-        return false;
-      }
-
-      return "avatar" in value || ("name" in value && "personalStatus" in value);
-    }
-
-    function shouldSkipObject(value) {
-      return (
-        value instanceof Node ||
-        value instanceof Event ||
-        value instanceof Blob ||
-        value instanceof File ||
-        value instanceof FormData ||
-        value instanceof ArrayBuffer
-      );
-    }
-
-    function markPatched(label, options = {}) {
-      const autoDisable = options.autoDisable !== false;
-
-      if (autoDisable) {
-        // 头像替换是一次性的。成功改写 ContactUpdateUserInfo 入参后立刻关闭，
-        // 避免用户后续普通上传头像时继续被替换成 GIF ID。
-        runtime.enabled = false;
-      }
-
-      emit({
-        type: "patched",
-        label,
-        gifId: runtime.gifId,
-        autoDisabled: autoDisable,
+        Promise.resolve().then(read).then(value => {
+          if (closed) return;
+          result = value;
+          finished = true;
+          completedAt = Date.now();
+        }, () => end(mainViewVisible() ? "FAILED" : "VIEW_LOST"));
       });
     }
 
-    function patchPayload(value, seen = new WeakSet(), depth = 0) {
-      if (!value || typeof value !== "object" || depth > 5 || shouldSkipObject(value)) {
-        return false;
-      }
-
-      if (!runtime.enabled || !isValidGifId(runtime.gifId)) {
-        return false;
-      }
-
-      if (seen.has(value)) {
-        return false;
-      }
-      seen.add(value);
-
-      let changed = false;
-
+    async function checkPersonalAvatar(checkId) {
+      if (!Number.isSafeInteger(checkId) || checkId <= 0) return;
+      const report = code => emit({ type: "avatar-check", checkId, code });
+      if (runtime.avatarCheck || runtime.directOperation || groupOperation) { report("CHECK_BUSY"); return; }
+      if (!mainViewVisible()) { report("CHECK_NO_VIEW"); return; }
+      const check = {};
+      runtime.avatarCheck = check;
+      let phase = "CHECK_MODULES", result;
       try {
-        if (looksLikeUserInfoPayload(value)) {
-          value.avatar = runtime.gifId;
-          changed = true;
-        }
-
-        for (const key of Object.keys(value)) {
-          const child = value[key];
-          if (child && typeof child === "object" && patchPayload(child, seen, depth + 1)) {
-            changed = true;
-          }
-        }
-      } catch (_error) {
-        return false;
-      }
-
-      return changed;
-    }
-
-    function patchArguments(args) {
-      let changed = false;
-
-      for (const arg of args) {
-        if (patchPayload(arg)) {
-          changed = true;
-        }
-      }
-
-      return changed;
-    }
-
-    function wrapFunction(original, label, patchMode = "contact-update") {
-      if (runtime.wrappedFunctions.has(original)) {
-        return runtime.wrappedFunctions.get(original);
-      }
-
-      const wrapped = function (...args) {
-        let changed = patchArguments(args);
-
-        // 对应新版构造器的参数顺序：userid、name、avatar、personalStatus。
-        // 第三个参数通常是刚上传 jpg/png 后返回的图片 ID，直接换成选中的 GIF ID。
-        if (
-          !changed &&
-          patchMode === "avatar-constructor" &&
-          runtime.enabled &&
-          isValidGifId(runtime.gifId) &&
-          args.length >= 3
-        ) {
-          args[2] = runtime.gifId;
-          changed = true;
-        }
-
-        if (changed) {
-          markPatched(label);
-        }
-
-        // ES class 只能通过 new 调用；普通函数则保持原来的 this 调用方式。
-        if (new.target) {
-          return Reflect.construct(original, args, new.target);
-        }
-        return Reflect.apply(original, this, args);
-      };
-
-      try {
-        Object.defineProperty(wrapped, "name", {
-          value: original.name || "wrappedContactUpdateUserInfo",
-          configurable: true,
-        });
-      } catch (_error) {
-        // 部分浏览器不允许改 function.name，忽略即可。
-      }
-
-      wrapped.__spgaWrapped = true;
-      wrapped.__spgaOriginal = original;
-      runtime.wrappedFunctions.set(original, wrapped);
-      return wrapped;
-    }
-
-    function tryPatchObjectProperty(object, key, path) {
-      let descriptor = null;
-
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(object, key);
-      } catch (_error) {
-        return false;
-      }
-
-      if (!descriptor || typeof descriptor.value !== "function") {
-        return false;
-      }
-
-      const original = descriptor.value;
-      const patchMode = getPatchMode(original);
-      if (!patchMode) {
-        return false;
-      }
-
-      const wrapped = wrapFunction(original, `${path}.${String(key)}`, patchMode);
-
-      try {
-        Object.defineProperty(object, key, {
-          ...descriptor,
-          value: wrapped,
-        });
-        return true;
-      } catch (_error) {
-        try {
-          object[key] = wrapped;
-          return object[key] === wrapped;
-        } catch (__error) {
-          return false;
-        }
+        report(phase);
+        const { session, userId } = await observeAvatarRead(async () => {
+          if (!await waitForEsmUpdater() || runtime.avatarCheck !== check) throw new Error();
+          const { session } = await discoverAvatarResourceServices();
+          if (!session.loggedIn || !Number.isSafeInteger(session.userId) || session.userId <= 0) throw new Error();
+          return { session, userId: session.userId };
+        }, phase);
+        phase = "CHECK_PROFILE";
+        report(phase);
+        const sameAccount = () => session.loggedIn === true && session.userId === userId;
+        await observeAvatarRead(async () => {
+          if (!sameAccount()) throw new Error();
+          const profiles = await runtime.esmUpdater.forceFetchInfo(userId);
+          const own = profiles?.find(row => row.userid === userId)?.userInfo;
+          if (!sameAccount() || typeof own?.name !== "string" || typeof own.avatar !== "string") throw new Error();
+        }, phase);
+        result = sameAccount() ? "CHECK_OK" : "CHECK_PROFILE_FAILED";
+      } catch (error) {
+        const allowed = ["FAILED", "TIMEOUT", "VIEW_LOST"].map(suffix => phase + "_" + suffix);
+        result = allowed.includes(error?.message) ? error.message : phase + "_FAILED";
+      } finally {
+        runtime.avatarCheck = null;
+        report(result);
       }
     }
 
-    function scanExports(value, path, depth) {
-      if (!value || depth > 4) {
-        return 0;
+    window.addEventListener(events.configEvent, ({ detail }) => {
+      switch (detail?.command) {
+        case "check-avatar": void checkPersonalAvatar(detail.checkId); break;
+        case "watch-group": setGroupWatch(true); break;
+        case "unwatch-group": setGroupWatch(false); break;
+        case "apply-group": applyGroupAvatar(detail); break;
+        case "apply-direct": startDirectAvatar(detail); break;
       }
-
-      const valueType = typeof value;
-      if (valueType !== "object" && valueType !== "function") {
-        return 0;
-      }
-
-      if (runtime.scannedObjects.has(value)) {
-        return 0;
-      }
-      runtime.scannedObjects.add(value);
-
-      let count = 0;
-      const keys = [];
-
-      try {
-        keys.push(...Object.getOwnPropertyNames(value));
-      } catch (_error) {
-        return 0;
-      }
-
-      for (const key of keys) {
-        if (key === "caller" || key === "callee" || key === "arguments") {
-          continue;
-        }
-
-        if (tryPatchObjectProperty(value, key, path)) {
-          count += 1;
-          continue;
-        }
-
-        let child = null;
-        try {
-          child = value[key];
-        } catch (_error) {
-          continue;
-        }
-
-        if (child && (typeof child === "object" || typeof child === "function")) {
-          count += scanExports(child, `${path}.${String(key)}`, depth + 1);
-        }
-      }
-
-      return count;
-    }
-
-    function scanWebpackModules() {
-      const require = findWebpackRequire();
-      if (!require?.c) {
-        // 当前 SeaTalk 主站已经从 webpack 改为 ESM/Vite。只在 ESM 入口也没就绪时提示，
-        // 避免旧版扫描结果覆盖“直接更新入口已就绪”的新状态。
-        if (!runtime.esmUpdater && !runtime.esmDiscoveryPromise) {
-          emit({
-            type: "waiting",
-            message: "未找到旧版 webpack 运行时，正在改用 ESM chunk 自动发现。",
-          });
-        }
-        return;
-      }
-
-      let count = 0;
-      const cache = require.c;
-      runtime.scannedObjects = new WeakSet();
-
-      for (const moduleId of Object.keys(cache)) {
-        const module = cache[moduleId];
-        if (!module || !module.exports) {
-          continue;
-        }
-
-        const patchMode = getPatchMode(module.exports);
-        if (patchMode) {
-          module.exports = wrapFunction(module.exports, `module:${moduleId}`, patchMode);
-          count += 1;
-          continue;
-        }
-
-        count += scanExports(module.exports, `module:${moduleId}`, 0);
-      }
-
-      if (count > 0) {
-        runtime.wrappedCount += count;
-        emit({
-          type: "ready",
-          count: runtime.wrappedCount,
-        });
-      } else if (!runtime.wrappedCount && !runtime.esmUpdater) {
-        emit({
-          type: "waiting",
-          message: "未找到 ContactUpdateUserInfo 更新入口。打开左上角头像资料卡后可再等几秒。",
-        });
-      }
-    }
-
-    function patchJsonStringBody(body, label) {
-      if (!runtime.enabled || !isValidGifId(runtime.gifId) || typeof body !== "string") {
-        return body;
-      }
-
-      if (!body.includes("avatar")) {
-        return body;
-      }
-
-      try {
-        const parsed = JSON.parse(body);
-        const changed = patchPayload(parsed);
-        if (!changed) {
-          return body;
-        }
-
-        markPatched(label);
-        return JSON.stringify(parsed);
-      } catch (_error) {
-        return body;
-      }
-    }
-
-    function patchPlainObjectBody(body, label) {
-      if (!runtime.enabled || !isValidGifId(runtime.gifId) || !body || typeof body !== "object") {
-        return body;
-      }
-
-      if (shouldSkipObject(body)) {
-        return body;
-      }
-
-      const changed = patchPayload(body);
-      if (!changed) {
-        return body;
-      }
-
-      markPatched(label);
-      return body;
-    }
-
-    function patchRequestInit(init, label) {
-      if (!init || typeof init !== "object" || !("body" in init)) {
-        return init;
-      }
-
-      const nextInit = { ...init };
-      if (typeof nextInit.body === "string") {
-        nextInit.body = patchJsonStringBody(nextInit.body, label);
-      } else {
-        nextInit.body = patchPlainObjectBody(nextInit.body, label);
-      }
-
-      return nextInit;
-    }
-
-    function isHaiserveUploadUrl(url) {
-      const value = String(url || "");
-      try {
-        const parsed = new URL(value, location.href);
-        return /(^|\.)haiserve\.com$/i.test(parsed.hostname) && /\/upload(?:[/?#]|$)/i.test(parsed.pathname);
-      } catch (_error) {
-        return /haiserve\.com\/upload(?:[?#/]|$)/i.test(value);
-      }
-    }
-
-    function getFetchUrl(input) {
-      if (typeof input === "string") {
-        return input;
-      }
-
-      try {
-        if (input instanceof Request) {
-          return input.url || "";
-        }
-      } catch (_error) {
-        return "";
-      }
-
-      try {
-        if (input instanceof URL) {
-          return input.href;
-        }
-      } catch (_error) {
-        return "";
-      }
-
-      return "";
-    }
-
-    function rewriteUploadResponseText(text, label) {
-      if (!runtime.enabled || !isValidGifId(runtime.gifId) || typeof text !== "string") {
-        return text;
-      }
-
-      const oldText = text;
-      let nextText = text;
-
-      // 常见返回形态可能是 JSON：{"FileName":"xxx"} / {"filename":"xxx"} / {"url":"...download/xxx_600"}
-      try {
-        const parsed = JSON.parse(text);
-        const changed = replaceIdsInUploadResponseObject(parsed);
-        if (changed) {
-          markPatched(label, { autoDisable: false });
-          return JSON.stringify(parsed);
-        }
-      } catch (_error) {
-        // 不是 JSON 时继续走文本替换。
-      }
-
-      nextText = nextText.replace(/(\/download\/)([A-Za-z0-9]{32,})(?=[_?/#.]|$)/g, `$1${runtime.gifId}`);
-
-      // 上传接口响应通常只有一个刚上传图片 ID。这里只在 upload 响应中替换长 ID，
-      // 不影响普通业务请求。
-      nextText = nextText.replace(/\b[A-Za-z0-9]{48,}\b/g, runtime.gifId);
-
-      if (nextText !== oldText) {
-        markPatched(label, { autoDisable: false });
-      }
-
-      return nextText;
-    }
-
-    function replaceIdsInUploadResponseObject(value, seen = new WeakSet(), depth = 0) {
-      if (!value || typeof value !== "object" || depth > 6 || shouldSkipObject(value)) {
-        return false;
-      }
-
-      if (seen.has(value)) {
-        return false;
-      }
-      seen.add(value);
-
-      let changed = false;
-      const idLikeKeys = /^(id|fid|fileid|file_id|filename|file_name|mediaid|media_id|imageid|image_id|avatar|url|uri|downloadurl|download_url)$/i;
-
-      for (const key of Object.keys(value)) {
-        const item = value[key];
-
-        if (typeof item === "string") {
-          let nextValue = item;
-
-          if (item.includes("/download/")) {
-            nextValue = item.replace(/(\/download\/)([A-Za-z0-9]{32,})(?=[_?/#.]|$)/g, `$1${runtime.gifId}`);
-          } else if (idLikeKeys.test(key) && /^[A-Za-z0-9]{32,}$/.test(item)) {
-            nextValue = runtime.gifId;
-          }
-
-          if (nextValue !== item) {
-            value[key] = nextValue;
-            changed = true;
-          }
-        } else if (item && typeof item === "object") {
-          if (replaceIdsInUploadResponseObject(item, seen, depth + 1)) {
-            changed = true;
-          }
-        }
-      }
-
-      return changed;
-    }
-
-    function rewriteXhrUploadResponse(xhr, label) {
-      if (!runtime.enabled || !isValidGifId(runtime.gifId)) {
-        return;
-      }
-
-      if (runtime.rewrittenUploadResponses.has(xhr)) {
-        return;
-      }
-
-      let originalText = "";
-      try {
-        originalText = xhr.responseText;
-      } catch (_error) {
-        try {
-          const response = xhr.response;
-          if (response && typeof response === "object" && patchPlainObjectBody(response, label)) {
-            runtime.rewrittenUploadResponses.set(xhr, response);
-            return;
-          }
-        } catch (__error) {
-          return;
-        }
-      }
-
-      const rewrittenText = rewriteUploadResponseText(originalText, label);
-      if (rewrittenText === originalText) {
-        if (!runtime.uploadNoRewriteReported) {
-          runtime.uploadNoRewriteReported = true;
-          emit({
-            type: "waiting",
-            message: "已捕获 f.haiserve.com/upload 响应，但未在响应里找到可替换的图片 ID。需要查看该请求的 Response 内容继续适配。",
-          });
-        }
-        return;
-      }
-
-      runtime.rewrittenUploadResponses.set(xhr, rewrittenText);
-
-      try {
-        Object.defineProperty(xhr, "responseText", {
-          configurable: true,
-          get() {
-            return runtime.rewrittenUploadResponses.get(xhr) || rewrittenText;
-          },
-        });
-      } catch (_error) {
-        // 部分浏览器不允许覆盖 responseText，后面的 response 覆盖仍可能生效。
-      }
-
-      try {
-        Object.defineProperty(xhr, "response", {
-          configurable: true,
-          get() {
-            if (xhr.responseType && xhr.responseType !== "text") {
-              return runtime.rewrittenUploadResponses.get(xhr) || rewrittenText;
-            }
-            return runtime.rewrittenUploadResponses.get(xhr) || rewrittenText;
-          },
-        });
-      } catch (_error) {
-        // 忽略只读属性覆盖失败。
-      }
-    }
-
-    function rewriteXhrValueWhenRead(xhr, originalValue, responseName) {
-      if (!runtime.enabled || !isValidGifId(runtime.gifId)) {
-        return originalValue;
-      }
-
-      const requestUrl = xhr.__spgaRequestMeta?.url || "";
-      if (!isHaiserveUploadUrl(requestUrl)) {
-        return originalValue;
-      }
-
-      // 同一个响应可能会被 SeaTalk 多次读取。缓存改写结果，避免重复发送状态消息。
-      let cache = runtime.xhrResponseCache.get(xhr);
-      if (!cache) {
-        cache = Object.create(null);
-        runtime.xhrResponseCache.set(xhr, cache);
-      }
-      if (Object.prototype.hasOwnProperty.call(cache, responseName)) {
-        return cache[responseName];
-      }
-
-      const label = `xhr-read:${responseName}:${requestUrl}`;
-      let rewrittenValue = originalValue;
-
-      if (typeof originalValue === "string") {
-        rewrittenValue = rewriteUploadResponseText(originalValue, label);
-      } else if (originalValue && typeof originalValue === "object" && !shouldSkipObject(originalValue)) {
-        // responseType="json" 时浏览器直接返回对象，需要原地替换其中的图片 ID。
-        if (replaceIdsInUploadResponseObject(originalValue)) {
-          markPatched(label, { autoDisable: false });
-        }
-      }
-
-      cache[responseName] = rewrittenValue;
-      return rewrittenValue;
-    }
-
-    function installXhrResponseGetterHooks() {
-      // 旧实现是在 load/readystatechange 事件里覆盖 responseText。
-      // SeaTalk 自己的回调可能先执行并读走原值，所以 7.21 版必须在“读取属性”这一刻改写。
-      for (const responseName of ["responseText", "response"]) {
-        let descriptor = null;
-        try {
-          descriptor = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, responseName);
-        } catch (_error) {
-          continue;
-        }
-
-        if (!descriptor?.get || descriptor.configurable === false || descriptor.get.__spgaWrapped) {
-          continue;
-        }
-
-        const originalGetter = descriptor.get;
-        const wrappedGetter = function () {
-          const originalValue = Reflect.apply(originalGetter, this, []);
-          return rewriteXhrValueWhenRead(this, originalValue, responseName);
-        };
-        wrappedGetter.__spgaWrapped = true;
-
-        try {
-          Object.defineProperty(XMLHttpRequest.prototype, responseName, {
-            ...descriptor,
-            get: wrappedGetter,
-          });
-        } catch (_error) {
-          // 浏览器若禁止修改原型 getter，仍保留下面的 load 事件兜底逻辑。
-        }
-      }
-    }
-
-    function installMessageHooks() {
-      if (runtime.messageHookInstalled) {
-        return;
-      }
-      runtime.messageHookInstalled = true;
-
-      // 新版 SeaTalk 通过 DedicatedWorker / MessagePort 执行联系人更新。
-      // 如果消息还保持普通对象形态，就在进入 Worker 前递归寻找 avatar 并替换。
-      const targets = [
-        [window.Worker?.prototype, "Worker.postMessage"],
-        [window.MessagePort?.prototype, "MessagePort.postMessage"],
-        [window.BroadcastChannel?.prototype, "BroadcastChannel.postMessage"],
-      ];
-
-      for (const [prototype, label] of targets) {
-        if (!prototype || typeof prototype.postMessage !== "function" || prototype.postMessage.__spgaWrapped) {
-          continue;
-        }
-
-        const originalPostMessage = prototype.postMessage;
-        const wrappedPostMessage = function (message, ...rest) {
-          let changed = false;
-          try {
-            changed = patchPayload(message);
-          } catch (_error) {
-            changed = false;
-          }
-
-          if (changed) {
-            markPatched(label);
-          }
-          return Reflect.apply(originalPostMessage, this, [message, ...rest]);
-        };
-        wrappedPostMessage.__spgaWrapped = true;
-
-        try {
-          prototype.postMessage = wrappedPostMessage;
-        } catch (_error) {
-          // 某些浏览器对象不可写时跳过，不影响其他 hook。
-        }
-      }
-    }
-
-    function installNetworkHooks() {
-      if (runtime.networkHookInstalled) {
-        return;
-      }
-      runtime.networkHookInstalled = true;
-
-      const originalFetch = window.fetch;
-      if (typeof originalFetch === "function") {
-        window.fetch = function patchedFetch(input, init) {
-          let nextInput = input;
-          let nextInit = init;
-          const requestUrl = getFetchUrl(input);
-
-          try {
-            if (input instanceof Request) {
-              // Request.body 只能读取一次，不能安全同步改写。这里保守处理 init.body。
-              nextInit = patchRequestInit(init, "fetch:init");
-            } else {
-              nextInit = patchRequestInit(init, "fetch:init");
-            }
-          } catch (_error) {
-            nextInput = input;
-            nextInit = init;
-          }
-
-          const result = Reflect.apply(originalFetch, this, [nextInput, nextInit]);
-          if (!isHaiserveUploadUrl(requestUrl)) {
-            return result;
-          }
-
-          emit({
-            type: "stage",
-            message: `已捕获头像上传请求：${requestUrl}`,
-          });
-
-          return result.then((response) => {
-            if (!runtime.enabled || !isValidGifId(runtime.gifId)) {
-              return response;
-            }
-
-            return response
-              .clone()
-              .text()
-              .then((text) => {
-                const rewrittenText = rewriteUploadResponseText(text, `fetch:${requestUrl}`);
-                if (rewrittenText === text) {
-                  if (!runtime.uploadNoRewriteReported) {
-                    runtime.uploadNoRewriteReported = true;
-                    emit({
-                      type: "stage",
-                      level: "error",
-                      message: `上传接口已返回 HTTP ${response.status}，但响应里没有找到 FileName/filename/图片 ID。`,
-                    });
-                  }
-                  return response;
-                }
-
-                return new Response(rewrittenText, {
-                  status: response.status,
-                  statusText: response.statusText,
-                  headers: response.headers,
-                });
-              })
-              .catch((error) => {
-                emit({
-                  type: "stage",
-                  level: "error",
-                  message: `读取上传响应失败：${String(error?.message || error).slice(0, 180)}`,
-                });
-                return response;
-              });
-          }).catch((error) => {
-            emit({
-              type: "stage",
-              level: "error",
-              message: `头像上传请求失败：${String(error?.message || error).slice(0, 180)}`,
-            });
-            throw error;
-          });
-        };
-      }
-
-      const originalOpen = XMLHttpRequest.prototype.open;
-      const originalSend = XMLHttpRequest.prototype.send;
-
-      // 必须先安装 getter hook，确保 SeaTalk 第一次读取上传响应时拿到的就是 GIF ID。
-      installXhrResponseGetterHooks();
-      installMessageHooks();
-
-      XMLHttpRequest.prototype.open = function patchedOpen(method, url, ...rest) {
-        this.__spgaRequestMeta = {
-          method,
-          url: String(url || ""),
-        };
-        return Reflect.apply(originalOpen, this, [method, url, ...rest]);
-      };
-
-      XMLHttpRequest.prototype.send = function patchedSend(body) {
-        let nextBody = body;
-        const requestUrl = this.__spgaRequestMeta?.url || "";
-
-        try {
-          const label = `xhr:${requestUrl || "unknown"}`;
-          if (typeof body === "string") {
-            nextBody = patchJsonStringBody(body, label);
-          } else {
-            nextBody = patchPlainObjectBody(body, label);
-          }
-        } catch (_error) {
-          nextBody = body;
-        }
-
-        if (isHaiserveUploadUrl(requestUrl)) {
-          const xhr = this;
-          const label = `xhr-upload:${requestUrl}`;
-          emit({
-            type: "stage",
-            message: `已捕获头像上传请求：${requestUrl}`,
-          });
-          const patchWhenDone = () => {
-            if (xhr.readyState === 4) {
-              if (xhr.status < 200 || xhr.status >= 300) {
-                emit({
-                  type: "stage",
-                  level: "error",
-                  message: `头像上传失败：HTTP ${xhr.status || 0} ${xhr.statusText || ""}`.trim(),
-                });
-              }
-              rewriteXhrUploadResponse(xhr, label);
-            }
-          };
-
-          try {
-            xhr.addEventListener("readystatechange", patchWhenDone, true);
-            xhr.addEventListener("load", patchWhenDone, true);
-          } catch (_error) {
-            // 忽略监听失败，原始上传流程继续。
-          }
-        }
-
-        return Reflect.apply(originalSend, this, [nextBody]);
-      };
-
-      emit({
-        type: "waiting",
-        message: "已安装自动发现、上传响应和 Worker 诊断 Hook。",
-      });
-    }
-
-    window.addEventListener(events.configEvent, (event) => {
-      const detail = event.detail || {};
-      if (detail.command === "apply-group") { applyGroupAvatar(detail); return; }
-      if (detail.command === "apply-direct") {
-        startDirectAvatar(detail);
-        return;
-      }
-      if (runtime.directOperation) return;
-      runtime.enabled = Boolean(detail.enabled);
-      runtime.gifId = isValidGifId(detail.gifId) ? detail.gifId : "";
-
-      if (detail.command === "avatar-file-selected") {
-        runtime.avatarFileSelectedAt = Date.now();
-        emit({
-          type: "stage",
-          message: `页面 Hook 已收到文件选择事件：${String(detail.fileName || "未命名文件")}`,
-        });
-      }
-
-
-      if (!runtime.enabled) {
-        emit({
-          type: "disabled",
-        });
-      }
-
-      scanWebpackModules();
-      installNetworkHooks();
-      discoverEsmUpdater({ reportFailure: false });
     });
 
-    window.addEventListener("unhandledrejection", (event) => {
-      if (!runtime.enabled) {
-        return;
-      }
-
-      const reasonText = String(event.reason?.message || event.reason || "");
-      if (!/worker\s+init\s+error/i.test(reasonText)) {
-        return;
-      }
-
-      // DevTools 在断点暂停较久时，SeaTalk 的 Worker 初始化可能超时。
-      // 这里只更新助手状态，不调用 preventDefault，也不隐藏网页自身的报错。
-      runtime.enabled = false;
-      emit({
-        type: "error",
-        message: "SeaTalk Worker 初始化失败。本次替换已关闭，请刷新页面后直接用助手上传，不要停在手动断点。",
-      });
-    });
-
-    // SeaTalk 是单页应用，相关 chunk 可能在打开头像资料卡后才加载。
-    // 定时扫描可以在模块后加载时自动补上 hook。
-    scanWebpackModules();
-    installNetworkHooks();
-    discoverEsmUpdater({ reportFailure: false });
-    window.setInterval(scanWebpackModules, 1800);
-    window.setInterval(() => {
-      if (!runtime.esmUpdater) {
-        discoverEsmUpdater({ reportFailure: false });
-      }
-    }, 5000);
     window.__seatalkPersonalGifAvatarHookReady = true;
     emit({ type: "hook-started" });
   }
@@ -5320,6 +4698,7 @@
     try {
       if (typeof unsafeWindow === "undefined" || typeof unsafeWindow.Function !== "function") throw new Error('page-context');
       unsafeWindow.Function(`return (${launchFavoritesGallery.toString()})(${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))});`)();
+      syncCollectionsNavigation();
       document.getElementById(PANEL_ID)?.classList.remove('spga-open');
       if (hint) hint.textContent = '';
     } catch (_) {
@@ -5551,24 +4930,20 @@ function launchFavoritesGallery(presets = []) {
     window.visualViewport?.addEventListener("resize", positionPanelNearToggle);
     window.visualViewport?.addEventListener("scroll", positionPanelNearToggle);
     window.addEventListener('spga:collections-back', () => {
+      if (!state.avatarUnlocked) return;
       document.getElementById(PANEL_ID)?.classList.add('spga-open');
+      renderPanel();
       positionPanelNearToggle();
     });
     readSavedState();
     injectStyles();
-    createPanel();
-    showUpdateNoticeIfNeeded();
-    bindPanelEvents();
-    bindHookStatusEvents();
-    bindGroupStatus();
-    injectPageHook();
-    sendHookConfig();
+    createPanel({ renderContents: false });
   }
 
   // 仅供本地自动测试读取纯解析函数。正常安装时没有这个标记，不会暴露任何接口。
   if (globalThis.__SPGA_TEST_MODE__ === true) {
     globalThis.__SPGA_TEST_API__ = {
-      launchFavoritesGallery, openCollectionsWorkspace, groupUI, bindGroupStatus, confirmGroupAvatar, bindPanelEvents, injectStyles,
+      launchFavoritesGallery, openCollectionsWorkspace, init, groupUI, bindGroupStatus, confirmGroupAvatar, bindPanelEvents, injectStyles,
       localizeDiagnosticMessage, panelViewport, bindPanelDrag, positionPanelNearToggle,
       sanitizeDiagnosticText,
       getDiagnosticEnvironment,
@@ -5579,6 +4954,7 @@ function launchFavoritesGallery(presets = []) {
       createPanel,
       renderPanel,
       bindHookStatusEvents,
+      startAvatarCheck,
       startAvatarApply,
       startAvatarVerification,
       showSuccessCelebration, showUpdateNotice,

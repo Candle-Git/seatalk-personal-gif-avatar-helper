@@ -1,10 +1,10 @@
 <!doctype html><html lang="zh-CN"><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src data:; connect-src 'none';">
-<title>SeaTalk Sticker Helper · 5.1 feature preview</title>
+<title>SeaTalk 表情助手 · 我的表情预览</title>
 <style>
 body{margin:0;background:#edf2f8;color:#24354c;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:760px;margin:90px auto;padding:40px;background:#fff;border-radius:24px;box-shadow:0 14px 60px #14294a12}h1{font-size:30px}p{line-height:1.8;color:#586b83}button{font:inherit;padding:12px 22px;border-radius:10px;border:1px solid #0866c6;background:#0866c6;color:#fff;cursor:pointer;margin:6px}.pill{display:inline-block;padding:6px 12px;border-radius:100px;background:#e8f2ff;color:#0866c6}#preview-note{position:fixed;bottom:0;left:0;right:0;background:#142b47;color:white;padding:8px 20px;font-size:12px;z-index:2147483647;pointer-events:none}
 </style>
-<main><span class="pill">5.2.0 · 功能预览</span><h1>SeaTalk 表情助手 5.2</h1><p>整理、搜索、分享你的 SeaTalk 收藏表情，也能设置 GIF 头像。先预览，再安装测试。</p><button id="showFavorites">预览「我的表情」</button><button id="showAvatar">预览「GIF 头像」</button><p>本页使用虚构收藏与示意缩略图，供查看布局、筛选、多选和分享口令。不会连接 SeaTalk，也不会修改真实账号。此页仅供查看界面文案；真实账号操作另行验收。</p></main>
+<main><h1>SeaTalk 表情助手</h1><p>用备注搜索收藏，预览所选表情，或生成分享口令。</p><button id="showFavorites">预览「我的表情」</button><p>本页使用示例收藏与模拟聊天，可体验筛选、多选和分享。</p></main>
 <div class="sealabs-stickers-panel"><div class="sealabs-sticker"></div></div>
 <div id="preview-note">界面预览 · 示例数据 · 未连接真实账号</div>
 <script>window.__SPGA_TEST_MODE__=true;window.GM_setValue=()=>{};window.unsafeWindow=window;</script>
@@ -33,13 +33,15 @@ let demoCid=0;
 window.__SPGA_SHARE_FIXTURE_SERVICES__={actions,session:{loggedIn:true,userId:1},store:demoStore,tag:'fixture-sticker',fileUrl:id=>'https://f.haiserve.com/download/'+id+'_300',previewDimensions:()=>({width:170,height:170}),sendSticker:async({session,customSticker})=>{const cid='demo-'+(++demoCid);demoMessages['group-42-'+cid]={cid,mid:demoCid.toString(16).padStart(16,'0'),serverTimeStamp:Date.now(),senderId:1,tag:'fixture-sticker',content:{fileId:customSticker.url}};for(const fn of demoSubscribers)fn();const bubble=document.createElement('div');bubble.className='demo-bubble mine';bubble.textContent='[Demo sticker '+demoCid+' — no real message sent]';document.querySelector('.demo-messages')?.append(bubble);}};
 window.__SPGA_PERSONAL_SETTINGS_FIXTURE__={request(request){const key='spga-5.1-demo-notes:'+request.account;const current=JSON.parse(localStorage.getItem(key)||'{"schema":1,"revision":0,"items":[]}');if(request.kind==='save'){if(current.revision!==request.revision)throw Error('METADATA_CHANGED');const next={schema:1,revision:current.revision+1,items:request.items};localStorage.setItem(key,JSON.stringify(next));return next;}return current;}};
 const seed=document.querySelector('.sealabs-sticker');seed.__reactFiber$preview={memoizedProps:{stickers:list,isCustomTab:true},return:{memoizedProps:{actions}}};
-api.installHelperLayout();api.state.locale=new URLSearchParams(location.search).get('lang')==='en'?'en':'zh';api.injectStyles();api.createPanel();api.bindPanelEvents();
-window.addEventListener('spga:collections-back',()=>document.getElementById('seatalk-personal-gif-avatar-panel').classList.add('spga-open'));
+window.GM_getValue=()=>({locale:new URLSearchParams(location.search).get('lang')==='en'?'en':'zh',lastSeenUpdateNoticeVersion:'5.2.2'});
+api.init();
 function decorate(){const host=document.getElementById('st-favorites-curator');if(!host)return;const root=host.shadowRoot;
 for(const image of root.querySelectorAll('img')){if(image.src.startsWith('data:'))continue;const i=Number(((image.src.match(/download\/([^/]+)_300/)||[])[1]||'0').slice(-26))%12;image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180"><rect width="240" height="180" rx="16" fill="${['#f1f6ff','#fff4ed','#f0f8f3'][i%3]}"/><text x="120" y="115" text-anchor="middle" font-size="84">${emojis[i]}</text></svg>`);}
 }
-function showFavorites(){api.openCollectionsWorkspace();decorate();const root=document.getElementById('st-favorites-curator').shadowRoot;if(!root.previewObserver){root.previewObserver=new MutationObserver(decorate);root.previewObserver.observe(root,{childList:true,subtree:true});}}
+function showFavorites(){
+ if(document.getElementById('st-favorites-curator')) api.openCollectionsWorkspace();
+ else document.getElementById('seatalk-personal-gif-avatar-toggle').click();
+ decorate();const root=document.getElementById('st-favorites-curator').shadowRoot;if(!root.previewObserver){root.previewObserver=new MutationObserver(decorate);root.previewObserver.observe(root,{childList:true,subtree:true});}}
 document.getElementById('showFavorites')?.addEventListener('click',showFavorites);
-document.getElementById('showAvatar')?.addEventListener('click',()=>{const host=document.getElementById('st-favorites-curator');if(host&&host.__close?.(true)===false)return;document.getElementById('seatalk-personal-gif-avatar-panel').classList.add('spga-open')});
 showFavorites();
 </script></html>

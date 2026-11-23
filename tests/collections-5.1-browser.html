@@ -17,8 +17,12 @@ const change=(selector,value)=>{q(selector).value=value;q(selector).dispatchEven
 function code(rows){return 'STGIF2.'+btoa(Array.from(new TextEncoder().encode(JSON.stringify({v:2,stickers:rows})),v=>String.fromCharCode(v)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 function chooseFile(doc){const transfer=new DataTransfer();transfer.items.add(new File([JSON.stringify(doc)],'synthetic-notes.json',{type:'application/json'}));q('#personalImportFile').files=transfer.files;q('#personalImportFile').dispatchEvent(new Event('change'));}
 try{
-api.state.locale='en';api.injectStyles();api.createPanel();api.bindPanelEvents();api.openCollectionsWorkspace();await until(()=>q('#settingsOpen')&&!q('#settingsOpen').disabled);
-check(q('#summary').textContent==='My stickers: 3','English favorites inherit the avatar locale');
+window.GM_getValue=()=>({locale:'en',lastSeenUpdateNoticeVersion:'5.2.2'});api.init();document.getElementById('seatalk-personal-gif-avatar-toggle').click();await until(()=>q('#settingsOpen')&&!q('#settingsOpen').disabled);
+const nav=q('.workspace-tabs'),credit=q('#helperCredit');
+check(q('#summary').textContent==='My stickers: 3','the launcher opens favorites directly in the saved language');
+check(nav.hidden && !q('#backAvatar').getClientRects().length,'the default workspace has no visible avatar navigation');
+q('#backAvatar').click();window.dispatchEvent(new CustomEvent('spga:collections-back'));
+check(document.getElementById('st-favorites-curator').dataset.open==='true' && !document.querySelector('[data-action="enable"]'),'stale back navigation cannot open avatar controls');
 check(q('#sendSelected').disabled&&q('#personalSave'),'send and persistent note controls are present');
 all('.preview')[0].click();check(q('#zoom').open&&!q('#sendZoom').disabled&&q('#count').textContent==='0 selected','first sticker preview enables sending without selection or an earlier send');q('#sendZoom').click();await until(()=>q('#sendConfirmation').open);check(sends===0&&q('#sendTarget').textContent.includes('Demo group'),'first preview opens destination confirmation without sending');q('#sendCancel').click();
 all('.preview')[1].click();check(!q('#sendZoom').disabled,'reopening another preview keeps sending available');q('#zoomClose').click();
@@ -27,7 +31,12 @@ q('#personalName').value='Office cat';q('#personalKeywords').value='work, 上班
 check(snapshot.items.length===1&&snapshot.items[0].note==='private example','notes persist through the account-bound storage adapter');
 check(q('.card-name').textContent==='Office cat','saved note appears on the sticker card');
 change('#search','上班');check(all('.card').length===1,'keyword search finds a note');change('#search','开工');check(all('.card').length===1,'visible-text search finds a note');change('#search','');
-all('.card-bottom input')[0].click();q('#backAvatar').click();
+all('.card-bottom input')[0].click();
+for(let i=0;i<19;i++)credit.click();
+check(nav.hidden && !api.state.avatarUnlocked,'incomplete input keeps the default shadow-root navigation');
+credit.click();
+check(!nav.hidden && api.state.avatarUnlocked && !window.__seatalkPersonalGifAvatarHookInstalled && sends===0 && adds===0,'changing the workspace navigation performs no service call or write');
+q('#backAvatar').click();
 const panel=document.getElementById('seatalk-personal-gif-avatar-panel');panel.querySelector('[data-action="set-locale"][data-locale="zh"]').click();api.openCollectionsWorkspace();
 check(q('#count').textContent==='已选择 1 个'&&q('#settingsOpen').textContent==='设置','switching to Chinese keeps selection and updates new controls');
 q('#backAvatar').click();panel.querySelector('[data-action="set-locale"][data-locale="en"]').click();api.openCollectionsWorkspace();

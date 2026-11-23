@@ -21,6 +21,7 @@
   const event = detail => window.dispatchEvent(new CustomEvent('seatalk-personal-gif-avatar:hook-status', { detail }));
   try {
     api.state.locale = 'en';
+    api.state.avatarUnlocked = true;
     api.state.diagnosticsOpen = true;
     api.renderPanel();
     api.bindHookStatusEvents();
@@ -29,7 +30,7 @@
       writeText: () => new Promise((_, reject) => { rejectClipboard = reject; }),
     }});
     const initial = api.buildDiagnosticReport();
-    const copy = document.querySelector('.spga-diagnostics button');
+    const copy = document.querySelector('[data-action="copy-diagnostics"]');
     copy.click();
     event({ type: 'hook-started' }); // replaces the button while permission is pending
     assert(!copy.isConnected, 'background render replaces originating button');

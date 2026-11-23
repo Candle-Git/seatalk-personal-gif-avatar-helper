@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 // 它用于防止版本号、横幅链接、中英文说明和隐私边界在发布时漏改。
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(testDirectory, "..");
-const releaseVersion = "5.2.1";
+const releaseVersion = "5.2.2";
 
 function readProjectFile(relativePath) {
   return fs.readFileSync(path.join(projectDirectory, relativePath), "utf8");
@@ -24,6 +24,10 @@ const greasyForkEn = readProjectFile("docs/greasyfork-description.en.md");
 assert.match(script, new RegExp(`@version\\s+${releaseVersion.replaceAll(".", "\\.")}`), "脚本头部版本号未同步");
 assert.match(script, new RegExp(`SCRIPT_VERSION\\s*=\\s*"${releaseVersion.replaceAll(".", "\\.")}"`), "界面版本号未同步");
 assert.match(script, /@author\s+Yixin\.Zhong × Codex/, "正式版制作署名不正确");
+assert.match(script, /^\/\/ @name\s+SeaTalk 表情助手$/m);
+assert.match(script, /^\/\/ @name:en\s+SeaTalk Sticker Helper$/m);
+assert.match(script, /^\/\/ @updateURL\s+https:\/\/update\.greasyfork\.org\/scripts\/588931\/.+\.meta\.js$/m);
+assert.match(script, /^\/\/ @downloadURL\s+https:\/\/update\.greasyfork\.org\/scripts\/588931\/.+\.user\.js$/m);
 assert.match(script, /textContent:\s*`v\$\{SCRIPT_VERSION\}`/, "助手底部没有读取统一版本号");
 assert.match(script, /credit:\s*"Yixin\.Zhong × Codex 制作"/, "中文版制作署名不正确");
 assert.match(script, /credit:\s*"Made by Yixin\.Zhong × Codex"/, "英文版制作署名没有完成本地化");
@@ -37,10 +41,17 @@ for (const [name, content] of [
   assert.match(content, new RegExp(releaseVersion.replaceAll(".", "\\.")), `${name} 没有写入当前版本`);
 }
 
-assert.match(changelog, /## 5\.2\.1 - 2026-10-23/, "更新日志缺少 5.2.1 正式发布日期");
+assert.match(changelog, /## 5\.2\.2 - 2026-11-23/, "更新日志缺少 5.2.2 正式发布日期");
 
-const bannerZh = "docs/images/seatalk-sticker-helper-banner.zh.png";
-const bannerEn = "docs/images/seatalk-sticker-helper-banner.en.png";
+const bannerZh = "docs/images/seatalk-sticker-helper-banner.zh.svg";
+const bannerEn = "docs/images/seatalk-sticker-helper-banner.en.svg";
+function visibleCopy(text) {
+  return text.replace(/\]\([^)]*\)/g, "]").replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+}
+const docs = fs.readdirSync(path.join(projectDirectory, "docs")).filter(name => /\.(md|html)$/.test(name));
+for (const file of ["CHANGELOG.md", ...docs.map(name => "docs/" + name)]) {
+  assert.doesNotMatch(visibleCopy(readProjectFile(file)), /头像|avatars?\b|profile (?:picture|photo)/i, file);
+}
 assert.match(readmeZh, new RegExp(bannerZh.replaceAll(".", "\\.")), "中文 README 没有引用无版本横幅");
 assert.match(readmeEn, new RegExp(bannerEn.replaceAll(".", "\\.")), "英文 README 没有引用无版本横幅");
 assert.ok(fs.statSync(path.join(projectDirectory, bannerZh)).size > 500, "中文无版本横幅不存在或文件异常");
@@ -83,6 +94,7 @@ function bannerMetadataText(bytes) {
 for (const bannerPath of [bannerZh, bannerEn]) {
   const bannerBytes = fs.readFileSync(path.join(projectDirectory, bannerPath));
   const searchableBannerText = bannerMetadataText(bannerBytes);
+  assert.doesNotMatch(searchableBannerText, /头像|avatar/i);
   assert.doesNotMatch(searchableBannerText, /C:\\Users\\|candl/i, `${bannerPath} 包含本机路径信息`);
   assert.doesNotMatch(searchableBannerText, /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/, `${bannerPath} 包含邮箱格式信息`);
   assert.doesNotMatch(searchableBannerText, /userid=[0-9]+|token=[a-f0-9]{16,}/i, `${bannerPath} 包含带签名图片参数`);
@@ -96,6 +108,7 @@ for (const [name, content] of [
   ["英文 Greasy Fork 说明", greasyForkEn],
 ]) {
   assert.doesNotMatch(content, /banner-v\d/i, `${name} 仍引用带版本号的横幅`);
+  assert.doesNotMatch(content.replace(/\]\([^)]*\)/g, "]"), /头像|avatars?/i, `${name} 仍展示已下架的功能`);
 }
 
 // 正式公开材料不能包含带账号编号或临时签名参数的真实图片地址。
@@ -114,4 +127,4 @@ for (const [name, content] of [
 const connectHosts = Array.from(script.matchAll(/^\/\/ @connect\s+([^\s]+)$/gm), (match) => match[1]);
 assert.deepEqual(connectHosts, ["f.haiserve.com"], "跨域读取权限必须只允许 SeaTalk 图片域名");
 
-console.log("5.2.1 发布完整性检查通过：版本、双语文档、无版本横幅和隐私边界均已同步。");
+console.log("5.2.2 发布完整性检查通过：版本、双语文档、无版本横幅和隐私边界均已同步。");

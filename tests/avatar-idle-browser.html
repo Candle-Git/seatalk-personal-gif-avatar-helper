@@ -1,0 +1,105 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src data:; style-src 'unsafe-inline'">
+<title>SeaTalk idle startup regression</title>
+<div id="root"><div class="home-main-window"><input id="draft" value="Local test draft"></div></div>
+<pre id="result">Waiting for 15 seconds of idle time…</pre>
+<script>
+  window.unsafeWindow = window;
+  window.GM_getValue = () => ({ lastSeenUpdateNoticeVersion: '5.2.2', avatarUnlocked: true, selected: {
+    gifId: '0'.repeat(33) + 'b0705' + '0'.repeat(26), source: 'chat',
+    previewUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw='
+  } });
+  const saves = [], commands = [];
+  window.GM_setValue = (_key, value) => saves.push(value);
+  window.addEventListener('seatalk-personal-gif-avatar:set-config', event => commands.push(event.detail.command));
+  const methods = () => [window.fetch, XMLHttpRequest.prototype.open, XMLHttpRequest.prototype.send,
+    Worker.prototype.postMessage, MessagePort.prototype.postMessage, BroadcastChannel.prototype.postMessage];
+  const originals = methods();
+  const checks = [];
+  function check(ok, name) { if (!ok) throw Error(name); checks.push(name); }
+  const intervalTimes = new Map();
+  const set = window.setInterval.bind(window), clear = window.clearInterval.bind(window);
+  window.setInterval = (fn, ms, ...args) => {
+    const id = set(fn, ms, ...args); intervalTimes.set(id, ms); return id;
+  };
+  window.clearInterval = id => { intervalTimes.delete(id); clear(id); };
+  const nativeDraft = document.getElementById('draft');
+  nativeDraft.focus();
+</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<script>
+  async function run() {
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const panel = document.getElementById('seatalk-personal-gif-avatar-panel');
+    const toggle = document.getElementById('seatalk-personal-gif-avatar-toggle');
+    check(toggle && panel && !panel.hasChildNodes(), 'only launcher content on initial load');
+    await sleep(15000);
+    check(!panel.hasChildNodes() && !document.querySelector('img'), 'saved GIF not loaded in background');
+    check(intervalTimes.size === 0, 'no recurring work while idle');
+    check(!window.__seatalkPersonalGifAvatarHookInstalled && !window.__spgaHelperLayout, 'no page integration before opening');
+    check(!document.getElementById('seatalk-personal-gif-avatar-update-modal'), 'no automatic update dialog while idle');
+    check(document.activeElement === nativeDraft && nativeDraft.value === 'Local test draft', 'draft and input focus survive idle startup');
+    toggle.click();
+    const apply = () => panel.querySelector('[data-action="enable"]');
+    const credit = () => panel.querySelector('.spga-credit');
+    const tap = times => { for (let i = 0; i < times; i++) credit().click(); };
+    check(panel.classList.contains('spga-open') && panel.querySelector('[data-action="open-favorites"]') && !apply(), 'fresh document only offers stickers when the native picker is closed');
+    check(!document.querySelector('img') && !/头像|avatar/i.test(panel.innerText), 'even a saved selection and stale unlock flag do not reveal avatar controls or load a preview');
+    window.dispatchEvent(new CustomEvent('spga:credit-celebrate'));
+    window.dispatchEvent(new CustomEvent('spga:collections-back'));
+    check(!apply() && !document.getElementById('seatalk-personal-gif-avatar-easter-egg'), 'older navigation and celebration events cannot unlock');
+    let clock = 10;
+    Object.defineProperty(performance, 'now', {configurable: true, value: () => clock});
+    tap(1);
+    check(!apply() && !document.getElementById('seatalk-personal-gif-avatar-easter-egg'), 'an ordinary interaction keeps the default workspace');
+    tap(18);
+    check(!apply(), 'incomplete input keeps the default workspace');
+    clock += 10001;
+    tap(1);
+    check(!apply(), 'expired input is discarded');
+    tap(18);
+    nativeDraft.click();
+    tap(1);
+    check(!apply(), 'unrelated input is discarded');
+    tap(18);
+    panel.querySelector('[data-action="set-locale"][data-locale="en"]').click();
+    tap(1);
+    check(!apply() && panel.innerText.includes('Open my stickers'), 'language changes preserve the sticker-only landing page and reset the streak');
+    tap(18);
+    window.dispatchEvent(new Event('blur'));
+    tap(1);
+    check(!apply(), 'leaving the tab resets the streak');
+    clock += 10000;
+    tap(19);
+    delete performance.now;
+    check(apply() && document.getElementById('seatalk-personal-gif-avatar-easter-egg'), 'completed input makes optional navigation available');
+    check(!window.__seatalkPersonalGifAvatarHookInstalled && commands.length === 0, 'unlocking alone performs no service check or avatar submission');
+    panel.querySelector('[data-action="set-locale"][data-locale="zh"]').click();
+    check(saves.length && saves.every(value => !Object.hasOwn(value, 'avatarUnlocked')), 'unlock is never saved as a preference');
+    const selectGroup = () => panel.querySelectorAll('[role="tab"]')[1].click();
+    selectGroup();
+    check(window.__seatalkPersonalGifAvatarHookReady && [...intervalTimes.values()].filter(ms => ms === 400).length === 1, 'group selection starts exactly one group watcher');
+    toggle.click(); await sleep(25);
+    check(intervalTimes.size === 0, 'closing the group panel stops its watcher');
+    toggle.click(); await sleep(25);
+    check([...intervalTimes.values()].filter(ms => ms === 400).length === 1, 'reopening the group panel restores one watcher');
+    panel.querySelector('[role="tab"]').click();
+    check(intervalTimes.size === 0, 'returning to personal stops group watching');
+    check(methods().every((fn, i) => fn === originals[i]), 'native network and messaging functions retain their identities');
+    const diagnostics = panel.querySelector('.spga-disclosure-status');
+    diagnostics.open = true;
+    const checkButton = diagnostics.querySelector('[data-action="check-avatar"]');
+    check(checkButton && !checkButton.disabled, 'read-only check is accessible in personal diagnostics');
+    checkButton.click();
+    const result = diagnostics.querySelector('[data-role="avatar-check-result"]');
+    check(result.textContent.includes('CHECK_MODULES') && checkButton.disabled, 'check displays the active phase immediately');
+    check(panel.querySelector('[data-action="enable"]').disabled, 'update is locked during check');
+    const until = Date.now() + 9000;
+    while (!result.textContent.includes('CHECK_MODULES_FAILED') && Date.now() < until) await sleep(100);
+    check(result.textContent.includes('CHECK_MODULES_FAILED') && !checkButton.disabled, 'missing modules produce a bounded check result');
+    check(nativeDraft.isConnected && nativeDraft.value === 'Local test draft', 'native draft survives read-only check');
+    document.getElementById('result').textContent = 'PASS ' + checks.length + '\n' + checks.join('\n');
+  }
+  run().catch(error => { document.getElementById('result').textContent = 'FAIL ' + error.message; });
+</script>
