@@ -51,8 +51,28 @@
       for(const fn of subscriptions)fn();
     }
   };
-  let loadSettings;
-  window.__SPGA_PERSONAL_SETTINGS_FIXTURE__={request:()=>new Promise(resolve=>{loadSettings=()=>resolve({schema:1,revision:0,items:[]});})};
+  const groupName=locale==='zh'?'常用':'Reactions';
+  const lastGroup=locale==='zh'?'问候':'Greetings';
+  const allLabel=locale==='zh'?'全部':'All';
+  const fixtureGroups=[
+    {name:groupName,gifIds:saved.slice(0,70).map(row=>row.id)},
+    {name:allLabel,gifIds:[id(99)]},
+    ...Array.from({length:9},(_,i)=>({name:(locale==='zh'?'备用分组 ':'Extra group ')+(i+1),gifIds:[]})),
+    {name:lastGroup,gifIds:[id(114)]},
+  ];
+  let loadSettings, firstLoad=true, settings={schema:2,revision:1,items:[],groups:fixtureGroups};
+  window.__SPGA_PERSONAL_SETTINGS_FIXTURE__={request({kind}){
+    if(kind!=='load')throw Error('Unexpected settings write');
+    if(!firstLoad)return Promise.resolve(settings);
+    firstLoad=false;
+    return new Promise(resolve=>{loadSettings=()=>resolve(settings);});
+  }};
+  function replaceGroups(groups){
+    settings={...settings,revision:settings.revision+1,groups};
+    window.dispatchEvent(new CustomEvent('spga:personal-settings-changed',{
+      detail:JSON.stringify({account,revision:settings.revision})
+    }));
+  }
 </script>
 <script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
 <script>
@@ -105,7 +125,8 @@
     check(!document.getElementById('st-quick-stickers'),'changing the chat during first load closes quick stickers');
     loadSettings(); switchTo(7); await new Promise(r=>setTimeout(r,40));
     button.click();
-    const root=document.getElementById('st-quick-stickers').shadowRoot, all=()=>root.querySelectorAll('.sticker');
+    let root=document.getElementById('st-quick-stickers').shadowRoot;
+    const all=()=>root.querySelectorAll('.sticker');
     check(await wait(()=>all().length===50),'toolbar loads 50 cards without the native Favorites picker');
     check(root.querySelector('#target').textContent.includes('Self'),'current recipient is visible');
     const text=(zh,en)=>locale==='zh'?zh:en;
@@ -127,6 +148,59 @@
     const search=root.querySelector('input');search.value='saved 99';search.dispatchEvent(new Event('input'));
     check(all().length===1&&all()[0].title==='Saved 99','search reaches records beyond the first loaded page');
     all()[0].click(); check(sent.length===0,'untrusted page clicks cannot send');
+    const pinned=()=>root.querySelector('#allGroups'), strip=()=>root.querySelector('#groupStrip');
+    const group=name=>[...strip().querySelectorAll('button')].find(tab=>tab.value===name);
+    const pressed=tab=>tab?.getAttribute('aria-pressed')==='true';
+    const setQuery=query=>{
+      const input=root.querySelector('input');
+      input.value=query;input.dispatchEvent(new Event('input'));
+    };
+    check(pressed(pinned()) && pinned().textContent.includes(allLabel) && !strip().contains(pinned()),
+      'All starts selected and stays outside the scrolling group list');
+    check(group('').textContent.includes(text('未分组','Ungrouped')) && group('').type==='button',
+      'Ungrouped is localized and keyboard-accessible');
+    check(strip().scrollWidth>strip().clientWidth,'many groups overflow the strip');
+    const pinnedLeft=pinned().getBoundingClientRect().left;
+    strip().scrollLeft=strip().scrollWidth;
+    check(strip().scrollLeft>0 && near(pinned().getBoundingClientRect().left,pinnedLeft),
+      'horizontal scrolling keeps All pinned');
+    group(groupName).click();
+    check(pressed(group(groupName)) && search.value==='saved 99' && !all().length,
+      'switching groups keeps the query and excludes other groups');
+    check(search.getAttribute('aria-label').includes(groupName),'search announces the selected group');
+    setQuery('');
+    check(all().length===50 && all()[0].title==='Saved 70','the selected group renders the first 50 in the chosen order');
+    scroller.scrollTop=scroller.scrollHeight;scroller.dispatchEvent(new Event('scroll'));
+    check(all().length===70 && all()[69].title==='Saved 1','scrolling loads only remaining items in this group');
+    sort.click();
+    check(all().length===50 && all()[0].title==='Saved 1' && scroller.scrollTop===0,
+      'sorting a group resets its page without leaving the group');
+    setQuery('saved 70');
+    check(all().length===1 && all()[0].title==='Saved 70','a group search finds a sticker outside its first page');
+    group(allLabel).click();setQuery('');
+    check(pressed(group(allLabel)) && !pressed(pinned()) && all().length===1 && all()[0].title==='Saved 99',
+      'a custom group with the same name as All has its own membership');
+    group('').click();
+    check(all().length===43 && ![...all()].some(cell=>cell.title==='Saved 99') && [...all()].some(cell=>cell.title==='Saved 100'),
+      'Ungrouped contains exactly the favorites absent from saved groups');
+    group(fixtureGroups[2].name).click();
+    check(pressed(group(fixtureGroups[2].name)) && !all().length && root.querySelector('#status').textContent.trim(),
+      'empty saved groups have a visible status');
+    group(lastGroup).click();
+    replaceGroups(fixtureGroups.map(row=>row.name===lastGroup?{...row,gifIds:[id(115)]}:row));
+    check(await wait(()=>all().length===1 && all()[0].title==='Saved 115'),
+      'a settings revision updates the open group when memberships change');
+    replaceGroups([]);
+    check(await wait(()=>pressed(pinned()) && all().length===50 && !group(lastGroup)),
+      'removing all custom groups falls back to All without stale membership');
+    replaceGroups(fixtureGroups);
+    check(await wait(()=>!!group(lastGroup)),'new saved groups are reflected in the open picker');
+    group(lastGroup).click();
+    check(pressed(group(lastGroup)) && sent.length===0,'choosing group controls never sends a sticker');
+    root.querySelector('#close').click();button.click();
+    root=document.getElementById('st-quick-stickers').shadowRoot;
+    check(await wait(()=>pressed(pinned()) && all().length===50),'each fresh open starts on All');
+    root.querySelector('#sort').click();setQuery('saved 99');
     result.textContent='PASS '+checks.length+'\n'+checks.join('\n');document.title='PASS · Quick stickers';
   }catch(e){result.textContent='FAIL '+e.stack;document.title='FAIL · Quick stickers';}
 })();

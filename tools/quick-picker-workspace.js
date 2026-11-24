@@ -97,12 +97,21 @@
       .icon-action,#collect{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:34px;min-height:34px}.st-icon{flex:none;pointer-events:none}
       .search-field{position:relative;flex:1;min-width:0}.search-field>.st-icon{position:absolute;inset-inline-start:9px;top:50%;transform:translateY(-50%);color:#667085}
       .search-field input{width:100%;height:34px;border:1px solid #ccd6e2;border-radius:7px;padding:6px 8px;padding-inline-start:35px;background:#fff}#sort{border:1px solid #ccd6e2}
+      #groupTabs{display:flex;align-items:center;gap:4px;padding:0 10px 4px;flex:none}#groupTabs[hidden]{display:none}
+      #groupStrip{display:flex;min-width:0;gap:4px;overflow-x:auto;overscroll-behavior-x:contain;padding:3px;scrollbar-width:thin}
+      #groupTabs button{flex:none;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid #e1e7ee;border-radius:16px;background:white;color:#46556b;font-size:12px;min-height:28px;padding:3px 9px}
+      #groupTabs button:hover,#groupStrip [aria-pressed=true]{background:#eaf3ff;color:#0757a6;border-color:#a9c9ee}
+      #groupTabs #allGroups{background:#edf7f5;border-color:#acd6cf;color:#176258;font-weight:600}#groupTabs #allGroups[aria-pressed=true]{background:#14695e;border-color:#14695e;color:white}
       main{min-height:0;overflow:auto;overscroll-behavior:contain;padding:3px 10px;scrollbar-gutter:stable}#stickers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.sticker{min-width:0;aspect-ratio:1;display:grid;place-items:center;touch-action:manipulation}.sticker img{width:100%;height:100%;object-fit:contain;pointer-events:none}
       #status{flex:1;min-width:0;margin:0;color:#53657a;font-size:12px;overflow-wrap:anywhere}footer{flex-wrap:wrap;border-top:1px solid #e8edf2}footer button{color:#0866c6;font-weight:550}#collect{gap:5px}#collect:disabled{opacity:.5;cursor:default}
     </style><div class="picker"><header><strong></strong><span id="target"></span><button id="manage" class="icon-action" type="button">${stickerIcon('grid')}</button><button id="close" class="icon-action" type="button">${stickerIcon('x')}</button></header>
-    <div class="searchbar"><label class="search-field">${stickerIcon('search')}<input type="search"></label><button id="sort" class="icon-action" type="button"></button></div><main><div id="stickers"></div></main><footer><p id="status" role="status" aria-live="polite"></p><button id="collect" type="button">${stickerIcon('collect')}<span></span></button></footer></div>`;
+    <div class="searchbar"><label class="search-field">${stickerIcon('search')}<input type="search"></label><button id="sort" class="icon-action" type="button"></button></div>
+    <div id="groupTabs" role="group" hidden><button id="allGroups" type="button"><span></span></button><div id="groupStrip"></div></div>
+    <main><div id="stickers"></div></main><footer><p id="status" role="status" aria-live="polite"></p><button id="collect" type="button">${stickerIcon('collect')}<span></span></button></footer></div>`;
     const el = selector => quickRoot.querySelector(selector);
     const search = el('input'), sort = el('#sort'), grid = el('#stickers'), scroller = el('main'), status = el('#status');
+    const groupTabs = el('#groupTabs'), allTab = el('#allGroups'), strip = el('#groupStrip');
+    groupTabs.setAttribute('aria-label',tr('收藏分组'));
     function labelAction(button, label) {
       button.title = label;
       button.setAttribute('aria-label', label);
@@ -181,7 +190,17 @@
     position(); search.focus({preventScroll:true});
 
     let all = [], matches = [], loaded = 0, verified = false, lastSource = null;
+    let selectedGroup = null;
     const byId = new Map();
+    function chooseQuickGroup(group) {
+      if (group === selectedGroup) return;
+      selectedGroup = group;
+      allTab.setAttribute('aria-pressed',String(group === null));
+      for (const button of strip.children) button.setAttribute('aria-pressed',String(button.value === group));
+      showMatches();
+    }
+    allTab.onclick = () => chooseQuickGroup(null);
+    strip.addEventListener('focusin',keepGroupFocusVisible);
     function appendPage() {
       const end = Math.min(matches.length, loaded + 50);
       const fragment = document.createDocumentFragment();
@@ -197,20 +216,34 @@
       grid.append(fragment);
     }
     function showMatches() {
-      matches = filterQuickFavorites(all,search.value,!quickOldestFirst);
+      const label = selectedGroup || tr('未分组');
+      search.placeholder = selectedGroup === null ? ui('搜索全部收藏','Search all favorites') : ui('在「' + label + '」中搜索','Search in ' + label);
+      search.setAttribute('aria-label',search.placeholder);
+      const rows = selectedGroup === null ? all : all.filter(row => personalGroupFor(row.gifId) === selectedGroup);
+      matches = filterQuickFavorites(rows,search.value,!quickOldestFirst);
       loaded = 0; scroller.scrollTop = 0; grid.replaceChildren(); appendPage();
       if (sendUncertain) status.textContent = sendMessage('SEND_UNCONFIRMED');
       else if (!verified) status.textContent = ui('请在原生表情面板打开一次爱心「收藏」，然后重新打开快选。','Open the Favorites heart in SeaTalk’s sticker picker once, then reopen Quick stickers.');
+      else if (!matches.length && selectedGroup !== null) status.textContent = search.value
+        ? ui('本组没有匹配的表情','No matching stickers in this group') : ui('这个分组还没有表情','No stickers in this group yet');
       else if (!matches.length) status.textContent = search.value ? ui('没有匹配的表情','No matching stickers') : ui('还没有收藏的表情','No favorites yet');
       else status.textContent = ui('点表情即可发送','Click a sticker to send');
     }
-    function refresh(list) {
-      const next = quickFavoriteRows(list.rows,personalRecords(),known,n => ui('收藏 ' + n,'Favorite ' + n));
+    function refresh(list, settingsChanged = false) {
+      const settingsReady = personalReady && personalAccount === view.account;
+      const next = quickFavoriteRows(list.rows,settingsReady ? personalRecords() : new Map(),known,n => ui('收藏 ' + n,'Favorite ' + n));
       const unchanged = lastSource && verified === list.verified && next.length === all.length &&
         next.every((row,index) => row.gifId === all[index].gifId && row.label === all[index].label);
       lastSource = list.rows;
-      if (unchanged) return;
+      if (unchanged && !settingsChanged) return;
       verified = list.verified; all = next;
+      const groups = settingsReady ? personalGroupNames() : [];
+      const lostGroup = selectedGroup !== null && (!settingsReady || (selectedGroup !== '' && !groups.includes(selectedGroup)));
+      const groupHadFocus = strip.contains(quickRoot.activeElement);
+      if (lostGroup) selectedGroup = null;
+      groupTabs.hidden = !settingsReady;
+      if (settingsReady) fillGroupTabs(allTab, strip, all, groups, selectedGroup, chooseQuickGroup);
+      if (lostGroup && groupHadFocus) (settingsReady ? allTab : search).focus({preventScroll:true});
       byId.clear(); for (const row of all) byId.set(row.gifId,row);
       showMatches();
     }
@@ -246,6 +279,11 @@
       titleWatch.disconnect();
       el('#target').textContent = ui('发给 ','To ') + view.target.name;
       el('#target').title = view.target.name; el('#collect').disabled = false;
+      view.refreshSettings = () => {
+        if (quickView !== view) return;
+        if (!quickTargetMatches(view)) { closeQuickPicker(); return; }
+        refresh(currentQuickList(services),true);
+      };
       refresh(currentQuickList(services));
       view.unsubscribe = services.store.subscribe(() => {
         if (!quickTargetMatches(view)) { closeQuickPicker(); return; }

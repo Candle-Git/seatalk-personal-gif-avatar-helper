@@ -4958,7 +4958,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "留空保留原备注": "Leave blank to keep existing notes",
     "保存整理": "Save changes",
     "分组与批量整理": "Groups and bulk editing",
-    "管理页搜索当前分组。「全部」固定在最左侧，点击即可跨组搜索。聊天工具栏的「表情快选」会搜索全部收藏。": "Search in the manager covers the current group. All stays on the left and searches across groups. Quick stickers searches all favorites.",
+    "管理页搜索当前分组。聊天工具栏的「表情快选」默认搜索全部收藏，切换分组后只搜索该组。两处都可以点最左侧的「全部」跨组搜索。": "The manager searches the current group. Quick stickers starts in All. Choose a group to search within it. In either panel, choose All on the left to search across groups.",
     "多选后点「批量整理」，可改名、选分组或追加搜索关键字。重复的关键字会合并。留空可保留原值，覆盖已有名称前会显示数量。": "Use Organize selection to rename stickers, change their group or add search keywords. Duplicate keywords are merged. Leave fields blank to keep their values. The preview shows how many existing names will be replaced.",
     "单击选一张，Ctrl 或 ⌘ 加单击可增减选择，Shift 加单击可连续选择。从网格空白处拖动可框选，按住 Shift 拖动可追加。选中一张后可放大预览或编辑名称、搜索关键字和分组。在「工具」内可全选本页或筛选。": "Click to select one sticker. Ctrl-click or ⌘-click to add or remove one, or Shift-click for a range. Drag from a gap to select an area. Hold Shift while dragging to add to your selection. Select one sticker to preview it or edit its name, keywords and group. Open Tools to select a page or change filters.",
     "每个口令最多分享 100 张表情。勾选「附带名称和搜索关键字」即可一起分享。": "Each code can contain up to 100 stickers. Select Include names and search keywords to share those details.",
@@ -5841,7 +5841,7 @@ function getFavoritesAccountModuleUrl() {
     <section><h3>开始前</h3><p>点击聊天输入框工具栏的「表情快选」。点击表情可直接发送，点「管理表情」可整理收藏。若收藏尚未载入，先在 SeaTalk 原生表情面板打开一次爱心收藏。</p></section>
     <section><h3>从聊天收藏</h3><p>打开「表情快选 → 从聊天收藏」，拖过消息选择表情。可选分组、追加搜索关键字，或直接确认收藏。按 Esc 可取消。</p></section>
     <section><h3>收藏同步</h3><p>助手打开时，每 1.5 秒读取 SeaTalk 当前账号的收藏状态，自动同步新增和移除；也可点击「同步收藏」。原生表情面板关闭后仍可同步。这只更新右侧列表，保留备注、筛选和仍在收藏中的勾选，不会刷新网页或重新请求服务器。发送、添加、删除、识别或弹窗打开期间暂停同步，结束后恢复。操作结果不确定时，仍需刷新网页核对服务器保存结果。</p></section>
-    <section><h3>分组与批量整理</h3><p>管理页搜索当前分组。「全部」固定在最左侧，点击即可跨组搜索。聊天工具栏的「表情快选」会搜索全部收藏。</p><p>多选后点「批量整理」，可改名、选分组或追加搜索关键字。重复的关键字会合并。留空可保留原值，覆盖已有名称前会显示数量。</p></section>
+    <section><h3>分组与批量整理</h3><p>管理页搜索当前分组。聊天工具栏的「表情快选」默认搜索全部收藏，切换分组后只搜索该组。两处都可以点最左侧的「全部」跨组搜索。</p><p>多选后点「批量整理」，可改名、选分组或追加搜索关键字。重复的关键字会合并。留空可保留原值，覆盖已有名称前会显示数量。</p></section>
     <section><h3>选择和查看表情</h3><p>单击选一张，Ctrl 或 ⌘ 加单击可增减选择，Shift 加单击可连续选择。从网格空白处拖动可框选，按住 Shift 拖动可追加。选中一张后可放大预览或编辑名称、搜索关键字和分组。在「工具」内可全选本页或筛选。</p><p>「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在「编辑表情」中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。</p></section>
     <section><h3>分享给朋友</h3><p>选择表情 → 点击「生成分享口令」→ 复制完整口令发给朋友。</p><p>每个口令最多分享 100 张表情。勾选「附带名称和搜索关键字」即可一起分享。</p></section>
     <section><h3>添加朋友分享的表情</h3><p>点击「导入口令」→ 粘贴完整口令 → 点击「解析并预览」→ 选择表情 → 确认添加。</p><p>已收藏的表情不会重复添加，但可以导入备注。已有备注默认保留，并合并去重关键词；也可逐条选择使用朋友的备注。预览失败的新表情暂时不能添加。</p></section>
@@ -6194,6 +6194,7 @@ function getFavoritesAccountModuleUrl() {
     personalSnapshot = snapshot;
     personalMemberships = groupMemberships(snapshot.groups);
     refreshPersonalLabels();
+    quickView?.refreshSettings?.();
   }
   function settingsRequest(kind,rows,groups) {
     assertWorkspaceAccount();
@@ -6399,13 +6400,7 @@ function getFavoritesAccountModuleUrl() {
       'Format: '+form+' · Notes: '+noteState+' · Inspection: '+detectionText(item));
   }
   function renderGroupTabs() {
-    const counts = new Map(), active = activeItems();
-    for (const item of active) {
-      const group = personalGroupFor(item.gifId);
-      counts.set(group, (counts.get(group) || 0) + 1);
-    }
-    const all = $('#allGroups'), strip = $('#groupStrip');
-    const names = personalGroupNames();
+    const active = activeItems(), names = personalGroupNames();
     if (activeGroup && !names.includes(activeGroup)) activeGroup = '';
     const search = $('#search');
     const groupLabel = activeGroup || tr('未分组');
@@ -6417,9 +6412,17 @@ function getFavoritesAccountModuleUrl() {
     }
     search.placeholder = scope;
     search.setAttribute('aria-label', scope);
-    all.querySelector('span').textContent = tr('全部') + ' (' + active.length + ')';
-    all.setAttribute('aria-pressed', String(activeGroup === null));
-    const focused = strip.contains(root.activeElement) ? root.activeElement.value : null;
+    fillGroupTabs($('#allGroups'), $('#groupStrip'), active, names, activeGroup, chooseGroup);
+  }
+  function fillGroupTabs(all, strip, rows, names, selectedGroup, onChoose) {
+    const counts = new Map();
+    for (const item of rows) {
+      const group = personalGroupFor(item.gifId);
+      counts.set(group, (counts.get(group) || 0) + 1);
+    }
+    all.querySelector('span').textContent = tr('全部') + ' (' + rows.length + ')';
+    all.setAttribute('aria-pressed', String(selectedGroup === null));
+    const focused = strip.contains(strip.getRootNode().activeElement) ? strip.getRootNode().activeElement.value : null;
     const scrollLeft = strip.scrollLeft;
     const fragment = document.createDocumentFragment();
     for (const group of ['', ...names]) {
@@ -6429,8 +6432,8 @@ function getFavoritesAccountModuleUrl() {
       const label = group || tr('未分组'), total = counts.get(group) || 0;
       button.textContent = label + ' (' + total + ')';
       button.title = button.textContent;
-      button.setAttribute('aria-pressed', String(group === activeGroup));
-      button.onclick = () => chooseGroup(group);
+      button.setAttribute('aria-pressed', String(group === selectedGroup));
+      button.onclick = () => onChoose(group);
       fragment.append(button);
     }
     strip.replaceChildren(fragment);
@@ -6445,14 +6448,15 @@ function getFavoritesAccountModuleUrl() {
     $('#groupTabs [aria-pressed=true]')?.focus({preventScroll:true});
   }
   $('#allGroups').onclick = () => chooseGroup(null);
-  $('#groupStrip').addEventListener('focusin', event => {
+  function keepGroupFocusVisible(event) {
     const strip = event.currentTarget, button = event.target;
     if (!button.matches('button:focus-visible')) return;
     const bounds = strip.getBoundingClientRect(), tab = button.getBoundingClientRect();
     const inset = 4; // Keep the keyboard focus ring within the scrollable strip.
     if (tab.left < bounds.left + inset) strip.scrollLeft += tab.left - bounds.left - inset;
     else if (tab.right > bounds.right - inset) strip.scrollLeft += tab.right - bounds.right + inset;
-  });
+  }
+  $('#groupStrip').addEventListener('focusin', keepGroupFocusVisible);
   const activeFilters = $('#activeFilters');
   const filterIndicators = ['animation', 'metadataFilter', 'detectionFilter', 'filter'].map(id => {
     const control = $('#' + id), chip = document.createElement('button'), label = document.createElement('span');
@@ -6964,12 +6968,21 @@ function getFavoritesAccountModuleUrl() {
       .icon-action,#collect{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:34px;min-height:34px}.st-icon{flex:none;pointer-events:none}
       .search-field{position:relative;flex:1;min-width:0}.search-field>.st-icon{position:absolute;inset-inline-start:9px;top:50%;transform:translateY(-50%);color:#667085}
       .search-field input{width:100%;height:34px;border:1px solid #ccd6e2;border-radius:7px;padding:6px 8px;padding-inline-start:35px;background:#fff}#sort{border:1px solid #ccd6e2}
+      #groupTabs{display:flex;align-items:center;gap:4px;padding:0 10px 4px;flex:none}#groupTabs[hidden]{display:none}
+      #groupStrip{display:flex;min-width:0;gap:4px;overflow-x:auto;overscroll-behavior-x:contain;padding:3px;scrollbar-width:thin}
+      #groupTabs button{flex:none;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid #e1e7ee;border-radius:16px;background:white;color:#46556b;font-size:12px;min-height:28px;padding:3px 9px}
+      #groupTabs button:hover,#groupStrip [aria-pressed=true]{background:#eaf3ff;color:#0757a6;border-color:#a9c9ee}
+      #groupTabs #allGroups{background:#edf7f5;border-color:#acd6cf;color:#176258;font-weight:600}#groupTabs #allGroups[aria-pressed=true]{background:#14695e;border-color:#14695e;color:white}
       main{min-height:0;overflow:auto;overscroll-behavior:contain;padding:3px 10px;scrollbar-gutter:stable}#stickers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.sticker{min-width:0;aspect-ratio:1;display:grid;place-items:center;touch-action:manipulation}.sticker img{width:100%;height:100%;object-fit:contain;pointer-events:none}
       #status{flex:1;min-width:0;margin:0;color:#53657a;font-size:12px;overflow-wrap:anywhere}footer{flex-wrap:wrap;border-top:1px solid #e8edf2}footer button{color:#0866c6;font-weight:550}#collect{gap:5px}#collect:disabled{opacity:.5;cursor:default}
     </style><div class="picker"><header><strong></strong><span id="target"></span><button id="manage" class="icon-action" type="button">${stickerIcon('grid')}</button><button id="close" class="icon-action" type="button">${stickerIcon('x')}</button></header>
-    <div class="searchbar"><label class="search-field">${stickerIcon('search')}<input type="search"></label><button id="sort" class="icon-action" type="button"></button></div><main><div id="stickers"></div></main><footer><p id="status" role="status" aria-live="polite"></p><button id="collect" type="button">${stickerIcon('collect')}<span></span></button></footer></div>`;
+    <div class="searchbar"><label class="search-field">${stickerIcon('search')}<input type="search"></label><button id="sort" class="icon-action" type="button"></button></div>
+    <div id="groupTabs" role="group" hidden><button id="allGroups" type="button"><span></span></button><div id="groupStrip"></div></div>
+    <main><div id="stickers"></div></main><footer><p id="status" role="status" aria-live="polite"></p><button id="collect" type="button">${stickerIcon('collect')}<span></span></button></footer></div>`;
     const el = selector => quickRoot.querySelector(selector);
     const search = el('input'), sort = el('#sort'), grid = el('#stickers'), scroller = el('main'), status = el('#status');
+    const groupTabs = el('#groupTabs'), allTab = el('#allGroups'), strip = el('#groupStrip');
+    groupTabs.setAttribute('aria-label',tr('收藏分组'));
     function labelAction(button, label) {
       button.title = label;
       button.setAttribute('aria-label', label);
@@ -7048,7 +7061,17 @@ function getFavoritesAccountModuleUrl() {
     position(); search.focus({preventScroll:true});
 
     let all = [], matches = [], loaded = 0, verified = false, lastSource = null;
+    let selectedGroup = null;
     const byId = new Map();
+    function chooseQuickGroup(group) {
+      if (group === selectedGroup) return;
+      selectedGroup = group;
+      allTab.setAttribute('aria-pressed',String(group === null));
+      for (const button of strip.children) button.setAttribute('aria-pressed',String(button.value === group));
+      showMatches();
+    }
+    allTab.onclick = () => chooseQuickGroup(null);
+    strip.addEventListener('focusin',keepGroupFocusVisible);
     function appendPage() {
       const end = Math.min(matches.length, loaded + 50);
       const fragment = document.createDocumentFragment();
@@ -7064,20 +7087,34 @@ function getFavoritesAccountModuleUrl() {
       grid.append(fragment);
     }
     function showMatches() {
-      matches = filterQuickFavorites(all,search.value,!quickOldestFirst);
+      const label = selectedGroup || tr('未分组');
+      search.placeholder = selectedGroup === null ? ui('搜索全部收藏','Search all favorites') : ui('在「' + label + '」中搜索','Search in ' + label);
+      search.setAttribute('aria-label',search.placeholder);
+      const rows = selectedGroup === null ? all : all.filter(row => personalGroupFor(row.gifId) === selectedGroup);
+      matches = filterQuickFavorites(rows,search.value,!quickOldestFirst);
       loaded = 0; scroller.scrollTop = 0; grid.replaceChildren(); appendPage();
       if (sendUncertain) status.textContent = sendMessage('SEND_UNCONFIRMED');
       else if (!verified) status.textContent = ui('请在原生表情面板打开一次爱心「收藏」，然后重新打开快选。','Open the Favorites heart in SeaTalk’s sticker picker once, then reopen Quick stickers.');
+      else if (!matches.length && selectedGroup !== null) status.textContent = search.value
+        ? ui('本组没有匹配的表情','No matching stickers in this group') : ui('这个分组还没有表情','No stickers in this group yet');
       else if (!matches.length) status.textContent = search.value ? ui('没有匹配的表情','No matching stickers') : ui('还没有收藏的表情','No favorites yet');
       else status.textContent = ui('点表情即可发送','Click a sticker to send');
     }
-    function refresh(list) {
-      const next = quickFavoriteRows(list.rows,personalRecords(),known,n => ui('收藏 ' + n,'Favorite ' + n));
+    function refresh(list, settingsChanged = false) {
+      const settingsReady = personalReady && personalAccount === view.account;
+      const next = quickFavoriteRows(list.rows,settingsReady ? personalRecords() : new Map(),known,n => ui('收藏 ' + n,'Favorite ' + n));
       const unchanged = lastSource && verified === list.verified && next.length === all.length &&
         next.every((row,index) => row.gifId === all[index].gifId && row.label === all[index].label);
       lastSource = list.rows;
-      if (unchanged) return;
+      if (unchanged && !settingsChanged) return;
       verified = list.verified; all = next;
+      const groups = settingsReady ? personalGroupNames() : [];
+      const lostGroup = selectedGroup !== null && (!settingsReady || (selectedGroup !== '' && !groups.includes(selectedGroup)));
+      const groupHadFocus = strip.contains(quickRoot.activeElement);
+      if (lostGroup) selectedGroup = null;
+      groupTabs.hidden = !settingsReady;
+      if (settingsReady) fillGroupTabs(allTab, strip, all, groups, selectedGroup, chooseQuickGroup);
+      if (lostGroup && groupHadFocus) (settingsReady ? allTab : search).focus({preventScroll:true});
       byId.clear(); for (const row of all) byId.set(row.gifId,row);
       showMatches();
     }
@@ -7113,6 +7150,11 @@ function getFavoritesAccountModuleUrl() {
       titleWatch.disconnect();
       el('#target').textContent = ui('发给 ','To ') + view.target.name;
       el('#target').title = view.target.name; el('#collect').disabled = false;
+      view.refreshSettings = () => {
+        if (quickView !== view) return;
+        if (!quickTargetMatches(view)) { closeQuickPicker(); return; }
+        refresh(currentQuickList(services),true);
+      };
       refresh(currentQuickList(services));
       view.unsubscribe = services.store.subscribe(() => {
         if (!quickTargetMatches(view)) { closeQuickPicker(); return; }

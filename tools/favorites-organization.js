@@ -9,13 +9,7 @@
       'Format: '+form+' · Notes: '+noteState+' · Inspection: '+detectionText(item));
   }
   function renderGroupTabs() {
-    const counts = new Map(), active = activeItems();
-    for (const item of active) {
-      const group = personalGroupFor(item.gifId);
-      counts.set(group, (counts.get(group) || 0) + 1);
-    }
-    const all = $('#allGroups'), strip = $('#groupStrip');
-    const names = personalGroupNames();
+    const active = activeItems(), names = personalGroupNames();
     if (activeGroup && !names.includes(activeGroup)) activeGroup = '';
     const search = $('#search');
     const groupLabel = activeGroup || tr('未分组');
@@ -27,9 +21,17 @@
     }
     search.placeholder = scope;
     search.setAttribute('aria-label', scope);
-    all.querySelector('span').textContent = tr('全部') + ' (' + active.length + ')';
-    all.setAttribute('aria-pressed', String(activeGroup === null));
-    const focused = strip.contains(root.activeElement) ? root.activeElement.value : null;
+    fillGroupTabs($('#allGroups'), $('#groupStrip'), active, names, activeGroup, chooseGroup);
+  }
+  function fillGroupTabs(all, strip, rows, names, selectedGroup, onChoose) {
+    const counts = new Map();
+    for (const item of rows) {
+      const group = personalGroupFor(item.gifId);
+      counts.set(group, (counts.get(group) || 0) + 1);
+    }
+    all.querySelector('span').textContent = tr('全部') + ' (' + rows.length + ')';
+    all.setAttribute('aria-pressed', String(selectedGroup === null));
+    const focused = strip.contains(strip.getRootNode().activeElement) ? strip.getRootNode().activeElement.value : null;
     const scrollLeft = strip.scrollLeft;
     const fragment = document.createDocumentFragment();
     for (const group of ['', ...names]) {
@@ -39,8 +41,8 @@
       const label = group || tr('未分组'), total = counts.get(group) || 0;
       button.textContent = label + ' (' + total + ')';
       button.title = button.textContent;
-      button.setAttribute('aria-pressed', String(group === activeGroup));
-      button.onclick = () => chooseGroup(group);
+      button.setAttribute('aria-pressed', String(group === selectedGroup));
+      button.onclick = () => onChoose(group);
       fragment.append(button);
     }
     strip.replaceChildren(fragment);
@@ -55,14 +57,15 @@
     $('#groupTabs [aria-pressed=true]')?.focus({preventScroll:true});
   }
   $('#allGroups').onclick = () => chooseGroup(null);
-  $('#groupStrip').addEventListener('focusin', event => {
+  function keepGroupFocusVisible(event) {
     const strip = event.currentTarget, button = event.target;
     if (!button.matches('button:focus-visible')) return;
     const bounds = strip.getBoundingClientRect(), tab = button.getBoundingClientRect();
     const inset = 4; // Keep the keyboard focus ring within the scrollable strip.
     if (tab.left < bounds.left + inset) strip.scrollLeft += tab.left - bounds.left - inset;
     else if (tab.right > bounds.right - inset) strip.scrollLeft += tab.right - bounds.right + inset;
-  });
+  }
+  $('#groupStrip').addEventListener('focusin', keepGroupFocusVisible);
   const activeFilters = $('#activeFilters');
   const filterIndicators = ['animation', 'metadataFilter', 'detectionFilter', 'filter'].map(id => {
     const control = $('#' + id), chip = document.createElement('button'), label = document.createElement('span');

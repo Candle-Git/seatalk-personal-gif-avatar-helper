@@ -4,7 +4,7 @@
 
 ![在聊天里发送、收藏和分组](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.zh.png)
 
-想回一张「大笑」？打开输入框旁的 **表情快选**，按名称或关键字搜索全部收藏。核对面板顶部的会话名，点一张就发出。
+想回一张「大笑」？打开输入框旁的 **表情快选**，默认在「全部」中按名称或关键字搜索。点「未分组」或自己的分组，就能在组内查找。核对面板顶部的会话名，点一张就发出。
 
 群里刚发了几张想留的表情？点 **从聊天收藏**，拖过消息，预览后选一个分组，再确认收藏。纯文字会跳过，重复的表情只收一次。
 

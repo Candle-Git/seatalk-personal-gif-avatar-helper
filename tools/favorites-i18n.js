@@ -21,7 +21,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "留空保留原备注": "Leave blank to keep existing notes",
     "保存整理": "Save changes",
     "分组与批量整理": "Groups and bulk editing",
-    "管理页搜索当前分组。「全部」固定在最左侧，点击即可跨组搜索。聊天工具栏的「表情快选」会搜索全部收藏。": "Search in the manager covers the current group. All stays on the left and searches across groups. Quick stickers searches all favorites.",
+    "管理页搜索当前分组。聊天工具栏的「表情快选」默认搜索全部收藏，切换分组后只搜索该组。两处都可以点最左侧的「全部」跨组搜索。": "The manager searches the current group. Quick stickers starts in All. Choose a group to search within it. In either panel, choose All on the left to search across groups.",
     "多选后点「批量整理」，可改名、选分组或追加搜索关键字。重复的关键字会合并。留空可保留原值，覆盖已有名称前会显示数量。": "Use Organize selection to rename stickers, change their group or add search keywords. Duplicate keywords are merged. Leave fields blank to keep their values. The preview shows how many existing names will be replaced.",
     "单击选一张，Ctrl 或 ⌘ 加单击可增减选择，Shift 加单击可连续选择。从网格空白处拖动可框选，按住 Shift 拖动可追加。选中一张后可放大预览或编辑名称、搜索关键字和分组。在「工具」内可全选本页或筛选。": "Click to select one sticker. Ctrl-click or ⌘-click to add or remove one, or Shift-click for a range. Drag from a gap to select an area. Hold Shift while dragging to add to your selection. Select one sticker to preview it or edit its name, keywords and group. Open Tools to select a page or change filters.",
     "每个口令最多分享 100 张表情。勾选「附带名称和搜索关键字」即可一起分享。": "Each code can contain up to 100 stickers. Select Include names and search keywords to share those details.",

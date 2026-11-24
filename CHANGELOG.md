@@ -2,10 +2,10 @@
 
 ## 5.3.0
 
-- 在聊天工具栏打开「表情快选」，搜索所有收藏并单击发送。从聊天中拖选表情可一次收藏多张。
+- 在聊天工具栏打开「表情快选」，默认显示「全部」，也可切到「未分组」或自己的分组，在组内搜索并单击表情发送。从聊天中拖选表情可一次收藏多张。
 - 管理页支持分组、框选、批量改名和追加搜索关键字。「全部」固定在可横滚分组栏的最左侧。批量发送前可核对接收人和全部图片。
 - 分享口令改用 `STGIF3`，个人备份改用第 3 版。需要恢复 5.2 备份时，请先在 5.2 中导入，再原地升级。
-- Quick stickers opens beside the chat input. Search all favorites and click a sticker to send it, or drag across chat messages to collect several at once.
+- Quick stickers opens on **All** beside the chat input. Choose **Ungrouped** or one of your groups to search within it. Click a sticker to send it, or drag across chat messages to collect several at once.
 - In Manage stickers, organize groups, drag to select, rename a batch or add search keywords. All stays pinned on the left. Check the recipient and selected stickers before a batch send.
 - Sharing now uses `STGIF3` codes and backups use format version 3. Restore any 5.2 backup in 5.2 before updating in place.
 

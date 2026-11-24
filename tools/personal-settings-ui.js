@@ -31,6 +31,7 @@
     personalSnapshot = snapshot;
     personalMemberships = groupMemberships(snapshot.groups);
     refreshPersonalLabels();
+    quickView?.refreshSettings?.();
   }
   function settingsRequest(kind,rows,groups) {
     assertWorkspaceAccount();

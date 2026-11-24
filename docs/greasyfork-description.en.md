@@ -4,7 +4,7 @@
 
 ![Send, collect and group favorite stickers in a chat](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.en.png)
 
-Looking for a laughing sticker? Open **Quick stickers** beside the chat input and search all your favorite sticker names and keywords for “laugh.” Check the chat name at the top, then click a sticker to send it.
+Looking for a laughing sticker? Open **Quick stickers** beside the chat input and search names and keywords for “laugh.” The picker opens on **All**. Choose **Ungrouped** or one of your groups to search within it. Check the chat name at the top, then click a sticker to send it.
 
 Found a few you like in a group chat? Choose **Collect from chat**, drag across the messages and review your selection. Pick a group and confirm to save them together. Text is skipped and repeated stickers count once.
 
