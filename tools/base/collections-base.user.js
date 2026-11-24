@@ -3,8 +3,8 @@
 // @name:en      SeaTalk Sticker Helper
 // @namespace    https://seatalkweb.com/
 // @version      4.1.0-beta.1
-// @description  在 SeaTalk 中同步收藏、搜索备注、分享表情、备份设置，并在发送前确认会话。
-// @description:en Sync SeaTalk favorites, search notes, share stickers, back up settings and confirm the chat before sending.
+// @description  从聊天工具栏点选发送表情，拖选收藏，按组整理、搜索和备份个人备注。
+// @description:en Send a sticker from the chat toolbar, collect stickers from messages, and organize, search and back up your notes.
 // @author       Yixin.Zhong × Codex
 // @match        https://seatalkweb.com/*
 // @match        https://*.seatalkweb.com/*
@@ -22,8 +22,8 @@
   "use strict";
 
   /*
-   * 在聊天输入框旁打开表情面板，切换到爱心收藏页，再打开 SeaTalk 表情助手。
-   * 在「我的表情」中搜索和整理收藏。发送前可核对目标会话与所选表情。
+   * 从聊天输入框工具栏打开表情快选。
+   * 在管理页中选择、分组和备注。批量发送会列出会话与所选表情供核对。
    */
 
   // 沿用稳定版存储键，升级后继续保留用户的语言、选择和浮动按钮位置。
@@ -1324,7 +1324,7 @@
     header.addEventListener("lostpointercapture", end);
   }
   function positionPanelNearToggle() {
-    const toggle = document.getElementById(TOGGLE_ID);
+    const toggle = document.getElementById('spga-quick-toggle') || document.getElementById(TOGGLE_ID);
     const panel = document.getElementById(PANEL_ID);
     if (!toggle || !panel || !panel.classList.contains("spga-open")) {
       return;
@@ -4001,21 +4001,6 @@
       document.body.appendChild(panel);
     }
 
-    if (!document.getElementById(TOGGLE_ID)) {
-      const toggle = createElement("button", {
-        textContent: t("helperToggle"),
-        attributes: {
-          id: TOGGLE_ID,
-          type: "button",
-          title: t("dragHint"),
-        },
-      });
-      document.body.appendChild(toggle);
-      bindToggleDrag(toggle);
-      applyFloatingPosition();
-      window.addEventListener("resize", () => applyFloatingPosition());
-    }
-
     if (renderContents) renderPanel();
   }
 
@@ -4693,7 +4678,7 @@
 
 
   // Collections are run in the page realm, where SeaTalk owns its React state.
-  function openCollectionsWorkspace() {
+  function openCollectionsWorkspace(entry = 'manage') {
     const hint = document.getElementById('spga-collections-hint');
     try {
       if (typeof unsafeWindow === "undefined" || typeof unsafeWindow.Function !== "function") throw new Error('page-context');
@@ -4938,6 +4923,16 @@ function launchFavoritesGallery(presets = []) {
     readSavedState();
     injectStyles();
     createPanel({ renderContents: false });
+    let activated = false;
+    installQuickPickerToolbar(() => {
+      if (!activated) {
+        installPersonalSettingsBridge();
+        startHelperLayout();
+        bindPanelEvents();
+        activated = true;
+      }
+      openCollectionsWorkspace('quick');
+    }, () => state.locale);
   }
 
   // 仅供本地自动测试读取纯解析函数。正常安装时没有这个标记，不会暴露任何接口。

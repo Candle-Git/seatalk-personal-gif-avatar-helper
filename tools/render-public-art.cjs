@@ -11,8 +11,8 @@ const fonts = "'Segoe UI','Microsoft YaHei','Noto Sans CJK SC',sans-serif";
 
 // 文字与插画分开保存：中英文共用一张插画，翻译或发新版时不必重新画。
 const labels = {
-  zh: ["SeaTalk 表情助手", "我的表情", "用备注找到表情，确认后再发送。", "挥手", "搜索收藏"],
-  en: ["SeaTalk Sticker Helper", "MY STICKERS", "Find a sticker by its notes. Preview it before sending.", "Wave", "Search favorites"],
+  zh: ["SeaTalk 表情助手", "我的表情", "在聊天里搜收藏，点一下就发送。", "挥手", "搜索收藏"],
+  en: ["SeaTalk Sticker Helper", "MY STICKERS", "Find a favorite in chat. Click to send.", "Wave", "Search favorites"],
 };
 
 function xml(s) { return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
@@ -72,7 +72,7 @@ const guides = {
   zh: {
     product:"SeaTalk 表情助手", setup:["首次安装","三步装好表情助手","准备好浏览器扩展后，就可以打开自己的收藏。"],
     steps:[["安装 Tampermonkey","从官网安装浏览器扩展，","并确认扩展已启用。"],["允许用户脚本","打开扩展详情，开启","「允许用户脚本」。"],["安装表情助手","在 Greasy Fork 点击","「安装此脚本」，再刷新 SeaTalk。"]],
-    ready:"打开爱心「收藏」页签，再进入助手的「我的表情」。",
+    ready:"打开一个聊天，点输入框工具栏的「表情快选」。",
     perm:["浏览器授权","允许用户脚本","Chrome 或 Edge · 只需设置一次。下图为操作示意。"],
     manage:"打开扩展设置", enable:"开启运行权限", menu:"管理扩展程序", toggle:"允许用户脚本", on:"已开启",
     hints:["右键点击工具栏上的 Tampermonkey 图标，","选择「管理扩展程序」。","在 Tampermonkey 的详情页找到此开关，","开启后，刷新 SeaTalk 网页版。"],
@@ -81,7 +81,7 @@ const guides = {
   en: {
     product:"SeaTalk Sticker Helper", setup:["FIRST-TIME SETUP","Set up in three steps","Start with the browser extension, then open your sticker collection."],
     steps:[["Install Tampermonkey","Get the browser extension from","its official site and enable it."],["Allow user scripts","Open the extension settings and","turn on “Allow User Scripts”."],["Install Sticker Helper","Select “Install this script” on","Greasy Fork, then reload SeaTalk."]],
-    ready:"Open the heart-shaped Favorites tab in SeaTalk, then open My stickers.",
+    ready:"Open a chat and click Quick stickers beside the message box.",
     perm:["BROWSER PERMISSIONS","Allow user scripts","Chrome or Edge · One-time setup. The controls below are illustrations."],
     manage:"Open extension settings", enable:"Turn on the permission", menu:"Manage extension", toggle:"Allow User Scripts", on:"On",
     hints:["Right-click the Tampermonkey icon in the","browser toolbar and choose “Manage extension”.","Find this switch in the Tampermonkey details","page. Turn it on, then reload SeaTalk Web."],

@@ -41,8 +41,7 @@
     const worker = async () => {
       while (!scanCancelled && next < queue.length && host.isConnected) {
         const item = queue[next++]; await detect(item); done++; status();
-        const badge = [...root.querySelectorAll('.badge')].find(element => element.dataset.id === item.gifId);
-        if (badge) { badge.textContent = badgeText(item); badge.dataset.kind = effectiveAnimation(item); badge.title = ui('自动检测：','Automatic detection: ')+detectionText(item); }
+        if (item.selected) showSelectionDetails(selection());
       }
     };
     try { await Promise.all([worker(), worker(), worker()]); }

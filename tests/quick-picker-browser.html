@@ -1,0 +1,86 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src data:; style-src 'unsafe-inline';">
+<title>Quick stickers — offline browser fixture</title>
+<style>body{font:16px system-ui}.messages-message-editor{position:fixed;bottom:24px;left:22px}.toolbar-left{display:flex;align-items:center;gap:5px}.fixture-sticker{width:20px;height:20px}#result{white-space:pre-wrap}</style>
+<div class="messages-message-detail-view-header"><div class="title-wrap"><span class="title">Self</span></div></div>
+<div class="messages-message-editor"><div class="toolbar"><div class="toolbar-left"><span class="icon-container">Native stickers</span></div></div><div class="seatalk-editor-content" contenteditable="true">Fixture draft</div></div>
+<pre id="result">Loading…</pre>
+<script>
+  window.__SPGA_TEST_MODE__=true; window.unsafeWindow=window;
+  const locale=new URLSearchParams(location.search).get('locale')==='zh'?'zh':'en';
+  window.GM_getValue=()=>({locale}); window.GM_setValue=()=>{};
+  const id=n=>'c'.repeat(33)+'b0705'+String(n).padStart(26,'0');
+  const saved=Array.from({length:115},(_,i)=>({id:id(i+1),name:'Saved '+(i+1)}));
+  const subscriptions=new Set(), messages={}, sent=[];
+  let chat=7, account=7, releaseDimensions=null, deferDimensions=false, holdReceipt=false, rejectReceipt=null;
+  function switchTo(next) {
+    chat=next; document.querySelector('.title-wrap>.title').textContent=next===7?'Self':'Second chat';
+    for(const fn of subscriptions) fn();
+  }
+  window.quickFixture={sent, switchTo,
+    setAccount(value){account=value;for(const fn of subscriptions) fn();},
+    holdPreview(){deferDimensions=true;}, resumePreview(){releaseDimensions?.();}, holdReceipt(){holdReceipt=true;}, rejectReceipt(){rejectReceipt?.(Error('Synthetic failure'));},
+    get receiptPending(){return !!rejectReceipt;},
+    get previewPending(){return !!releaseDimensions;},
+  };
+  window.__SPGA_SHARE_FIXTURE_SERVICES__={
+    store:{getState:()=>({messages:{customStickers:saved,selectedSession:{id:chat,type:'buddy'},messages},contact:{userInfo:{7:{name:'Self'},8:{name:'Second chat'}}}}),subscribe(fn){subscriptions.add(fn);return ()=>subscriptions.delete(fn);}},
+    session:{userId:7,loggedIn:true}, accountId:()=>account, fileUrl:value=>'https://f.haiserve.com/download/'+value,
+    tag:'sticker', actions:{actionRemoveCustomStickers(){throw Error('Unexpected remove');}},
+    previewDimensions(){
+      if(!deferDimensions)return {width:64,height:64};
+      deferDimensions=false; return new Promise(resolve=>releaseDimensions=()=>{releaseDimensions=null;resolve({width:64,height:64});});
+    },
+    sendSticker({session,customSticker}){
+      if(holdReceipt){holdReceipt=false;return new Promise((_,reject)=>{rejectReceipt=reject;});}
+      sent.push({chat:session.id,id:customSticker.url});
+      const cid=String(sent.length);
+      messages['buddy-'+session.id+'-'+cid]={cid,mid:cid.padStart(16,'0'),serverTimeStamp:1,senderId:account,tag:'sticker',content:{fileId:customSticker.url}};
+      for(const fn of subscriptions)fn();
+    }
+  };
+  let loadSettings;
+  window.__SPGA_PERSONAL_SETTINGS_FIXTURE__={request:()=>new Promise(resolve=>{loadSettings=()=>resolve({schema:1,revision:0,items:[]});})};
+</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<script>
+(async()=>{
+  const result=document.getElementById('result'), checks=[];
+  function check(value,name){if(!value)throw Error(name);checks.push(name);}
+  const wait=async(fn)=>{const deadline=Date.now()+2500;while(!fn()&&Date.now()<deadline)await new Promise(r=>setTimeout(r,20));return fn();};
+  try {
+    window.__SPGA_TEST_API__.init();
+    const button=document.getElementById('spga-quick-toggle');
+    button.click();
+    await wait(()=>typeof loadSettings==='function');
+    switchTo(8); await Promise.resolve();
+    check(!document.getElementById('st-quick-stickers'),'changing the chat during first load closes quick stickers');
+    loadSettings(); switchTo(7); await new Promise(r=>setTimeout(r,40));
+    button.click();
+    const root=document.getElementById('st-quick-stickers').shadowRoot, all=()=>root.querySelectorAll('.sticker');
+    check(await wait(()=>all().length===50),'toolbar loads 50 cards without the native Favorites picker');
+    check(root.querySelector('#target').textContent.includes('Self'),'current recipient is visible');
+    const text=(zh,en)=>locale==='zh'?zh:en;
+    const labeledIcon=(selector,label)=>{
+      const button=root.querySelector(selector);
+      return button.title===label && button.getAttribute('aria-label')===label && button.querySelector('svg[aria-hidden="true"]') && !button.textContent.trim();
+    };
+    check(labeledIcon('#close',text('关闭','Close')) && labeledIcon('#manage',text('管理表情','Manage stickers')), 'management and close icons have localized names and tooltips');
+    check(root.querySelector('#collect').textContent.trim()===text('从聊天收藏','Collect from chat'), 'chat collection keeps its visible label');
+    check(root.querySelector('input').getAttribute('aria-label')===text('搜索全部收藏','Search all favorites'), 'search announces its scope');
+    const sort=root.querySelector('#sort'), firstIcon=sort.innerHTML;
+    check(labeledIcon('#sort',text('最新在前，点击切换为最早在前','Newest first. Switch to oldest first')), 'sort shows the initial order and its action');
+    const scroller=root.querySelector('main');
+    scroller.scrollTop=scroller.scrollHeight;scroller.dispatchEvent(new Event('scroll'));
+    check(all().length>=100,'scrolling adds results without navigation');
+    sort.click();
+    check(all()[0].title==='Saved 115','reverse order starts with the last native favorite');
+    check(firstIcon!==sort.innerHTML && labeledIcon('#sort',text('最早在前，点击切换为最新在前','Oldest first. Switch to newest first')), 'reversing order also updates the icon and accessible action');
+    const search=root.querySelector('input');search.value='saved 99';search.dispatchEvent(new Event('input'));
+    check(all().length===1&&all()[0].title==='Saved 99','search reaches records beyond the first loaded page');
+    all()[0].click(); check(sent.length===0,'untrusted page clicks cannot send');
+    result.textContent='PASS '+checks.length+'\n'+checks.join('\n');document.title='PASS · Quick stickers';
+  }catch(e){result.textContent='FAIL '+e.stack;document.title='FAIL · Quick stickers';}
+})();
+</script>

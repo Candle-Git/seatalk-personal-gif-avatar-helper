@@ -1,0 +1,91 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'">
+<title>Quick sticker hints · offline test</title>
+<style>.home-main-window{min-height:200px}.toolbar-left{display:flex}</style>
+<div id="root"><input id="login" aria-label="Mock login"></div>
+<pre id="result">Running…</pre>
+<script>
+  window.__SPGA_TEST_MODE__=true; window.unsafeWindow=window;
+  const options=new URLSearchParams(location.search), mode=options.get('mode') || 'handoff';
+  const locale=options.get('locale')==='en'?'en':'zh', homeHintKey='spga:quick-picker:home-hint-seen';
+  const settings={locale,retained:'untouched'}, stored=new Map(), writes=[];
+  if(mode==='return') stored.set(homeHintKey,true);
+  window.GM_getValue=(key,fallback)=>key===homeHintKey ? (stored.get(key)??fallback) : settings;
+  window.GM_setValue=(key,value)=>{writes.push(key);stored.set(key,value);};
+</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<script>
+(async()=>{
+  const result=document.getElementById('result'), checks=[];
+  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  const check=(ok,label)=>{if(!ok)throw Error(label);checks.push(label);};
+  async function wait(predicate) {
+    for(let i=0;i<100;i++){if(predicate())return true;await sleep(30);}
+    return !!predicate();
+  }
+  const root=document.getElementById('root');
+  const hint=kind=>document.querySelector('body > [role="status"][data-hint="'+kind+'"]');
+  const hints=()=>document.querySelectorAll('body > [role="status"][data-hint]').length;
+  function setHidden(value) {
+    Object.defineProperty(document,'hidden',{configurable:true,value});
+    document.dispatchEvent(new Event('visibilitychange'));
+  }
+  function mountChat(home) {
+    const editor=document.createElement('section');
+    editor.className='messages-message-editor';
+    editor.innerHTML='<div class="toolbar"><div class="toolbar-left"><button class="icon-container">Mock</button></div></div>';
+    home.append(editor); return editor;
+  }
+  try {
+    window.__SPGA_TEST_API__.init();
+    await sleep(700);
+    check(!hints() && writes.length===0,'a signed-out surface does not show or consume the home hint');
+    setHidden(true);
+    const home=document.createElement('div'); home.className='home-main-window';
+    const input=document.createElement('input'); input.value='Untouched draft';
+    home.append(input);root.replaceChildren(home);input.focus();
+    await sleep(700);
+    check(!hints() && writes.length===0,'a background page does not consume hints');
+    setHidden(false);
+    if(mode==='restored') {
+      mountChat(home);
+      check(await wait(()=>hint('toolbar')),'a restored conversation gets the toolbar hint');
+      await sleep(700);
+      check(!hint('home') && !writes.length,'restoring a conversation skips the welcome hint');
+    } else if(mode==='return') {
+      await sleep(750);
+      check(!hints() && !writes.length,'a previously seen home hint is skipped on the next visit');
+      mountChat(home);
+      check(await wait(()=>hint('toolbar')),'returning visitors can still see the toolbar entry');
+    } else {
+      check(await wait(()=>hint('home')),'a new visible signed-in home shows the welcome hint');
+      const current=hint('home');
+      const iconPath=current.querySelector('svg[aria-hidden="true"] path')?.getAttribute('d');
+      check(!!iconPath,'the home hint includes a decorative sticker icon');
+      check(current.textContent.includes(locale==='en'?'Sticker Helper loaded':'表情助手已加载') &&
+        getComputedStyle(current).pointerEvents==='none' && document.activeElement===input && input.value==='Untouched draft',
+        'welcome copy follows the language and the hint passes clicks through and preserves focus');
+      check(writes.length===1 && stored.get(homeHintKey)===true && settings.retained==='untouched','only the independent onboarding flag is persisted');
+      const rerender=document.createElement('div');rerender.className='toolbar';home.append(rerender);rerender.remove();
+      await sleep(140);
+      check(hint('home')===current,'background native redraws do not shorten or repeat the welcome hint');
+      if(mode==='expiry'){
+        await sleep(4100);
+        check(!hints() && writes.length===1,'welcome hint expires once while the home remains still');
+      } else if(mode==='dismiss') {
+        document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+        check(!hints() && document.activeElement===input,'Escape dismisses the hint without moving focus');
+      }
+      const composer=mountChat(home);
+      check(await wait(()=>hint('toolbar')) && hints()===1 && !hint('home'),'the anchored hint takes over without overlapping the home hint');
+      check(document.querySelector('#spga-quick-toggle svg path').getAttribute('d')===iconPath,'the toolbar and home hint use the same sticker silhouette');
+      composer.remove();await sleep(75);mountChat(home);
+      check(await wait(()=>document.getElementById('spga-quick-toggle')) && !hints() && writes.length===1,
+        'switching back and remounting the editor does not repeat either hint');
+    }
+    result.textContent='PASS '+checks.length+'\n'+checks.join('\n');
+  } catch(error){result.textContent='FAIL '+error.stack+'\n'+checks.join('\n');}
+  document.title=result.textContent.split('\n')[0];
+})();
+</script>

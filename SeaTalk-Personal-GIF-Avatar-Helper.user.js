@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         SeaTalk 表情助手
-// @name:en      SeaTalk Sticker Helper
+// @name:zh-CN   SeaTalk 表情助手 · v5.3.0
+// @name:en      SeaTalk Sticker Helper · v5.3.0
 // @namespace    https://seatalkweb.com/
-// @version      5.2.2
-// @description  在 SeaTalk 中同步收藏、搜索备注、分享表情、备份设置，并在发送前确认会话。
-// @description:en Sync SeaTalk favorites, search notes, share stickers, back up settings and confirm the chat before sending.
+// @version      5.3.0
+// @description  从聊天工具栏点选发送表情，拖选收藏，按组整理、搜索和备份个人备注。
+// @description:en Send a sticker from the chat toolbar, collect stickers from messages, and organize, search and back up your notes.
 // @author       Yixin.Zhong × Codex
 // @match        https://seatalkweb.com/*
 // @match        https://*.seatalkweb.com/*
@@ -22,8 +23,8 @@
   "use strict";
 
   /*
-   * 在聊天输入框旁打开表情面板，切换到爱心收藏页，再打开 SeaTalk 表情助手。
-   * 在「我的表情」中搜索和整理收藏。发送前可核对目标会话与所选表情。
+   * 从聊天输入框工具栏打开表情快选。
+   * 在管理页中选择、分组和备注。批量发送会列出会话与所选表情供核对。
    */
 
   // 沿用稳定版存储键，升级后继续保留用户的语言、选择和浮动按钮位置。
@@ -36,7 +37,7 @@
   const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
   const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
   // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
-  const SCRIPT_VERSION = "5.2.2";
+  const SCRIPT_VERSION = "5.3.0";
   const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
 
   // 动图验证只读取 SeaTalk 图片域名中的候选文件，不会上传、保存或打印带签名参数的地址。
@@ -199,12 +200,12 @@
       reloadSeaTalk: "刷新 SeaTalk",
       updateBadge: "NEW",
       updateVersion: "版本 {version}",
-      updateTitle: "打开助手，直达「我的表情」",
-      updateSubtitle: "在当前聊天中整理、搜索和分享收藏。",
-      updateHighlightOne: "首次使用时，在聊天输入框旁打开表情面板，选择爱心收藏页",
-      updateHighlightTwo: "用名称、关键词或表情文字搜索收藏",
-      updateHighlightThree: "发送前可以核对目标会话和所选图片",
-      updateHighlightFour: "修复 SeaTalk Web 3.72 中偶发的页面空白",
+      updateTitle: "从聊天工具栏打开表情快选",
+      updateSubtitle: "在聊天中发送表情，在管理页整理收藏。",
+      updateHighlightOne: "点一张直接发送到当前聊天",
+      updateHighlightTwo: "从聊天拖选多张表情，确认后收藏",
+      updateHighlightThree: "按组整理收藏，批量写备注",
+      updateHighlightFour: "在管理页按住 Ctrl 或 ⌘ 多选，按住 Shift 连选",
       updateClose: "知道了，去试试！",
       toggleLabel: "语言",
       helperToggle: "SeaTalk 表情助手",
@@ -281,12 +282,12 @@
       reloadSeaTalk: "Refresh SeaTalk",
       updateBadge: "NEW",
       updateVersion: "Version {version}",
-      updateTitle: "Open the helper to My stickers",
-      updateSubtitle: "Find, organize and share your favorites from the current chat.",
-      updateHighlightOne: "To get started, open the sticker picker beside the chat box and select the Favorites heart",
-      updateHighlightTwo: "Find a sticker by its name, keywords or text",
-      updateHighlightThree: "Review the chat and selected stickers before sending",
-      updateHighlightFour: "Fixed a blank-page issue in SeaTalk Web 3.72",
+      updateTitle: "Open Quick stickers in the chat toolbar",
+      updateSubtitle: "Send from your chat and organize favorites in My stickers.",
+      updateHighlightOne: "Click a sticker to send it to the current chat",
+      updateHighlightTwo: "Drag across chat stickers and confirm to save them",
+      updateHighlightThree: "Organize favorites in groups and edit notes in batches",
+      updateHighlightFour: "Use Ctrl or ⌘ to toggle items and Shift to select a range",
       updateClose: "Got it — let me try!",
       toggleLabel: "Language",
       helperToggle: "SeaTalk Sticker Helper",
@@ -1342,7 +1343,7 @@
     header.addEventListener("lostpointercapture", end);
   }
   function positionPanelNearToggle() {
-    const toggle = document.getElementById(TOGGLE_ID);
+    const toggle = document.getElementById('spga-quick-toggle') || document.getElementById(TOGGLE_ID);
     const panel = document.getElementById(PANEL_ID);
     if (!toggle || !panel || !panel.classList.contains("spga-open")) {
       return;
@@ -4036,21 +4037,6 @@
       document.body.appendChild(panel);
     }
 
-    if (!document.getElementById(TOGGLE_ID)) {
-      const toggle = createElement("button", {
-        textContent: t("helperToggle"),
-        attributes: {
-          id: TOGGLE_ID,
-          type: "button",
-          title: t("dragHint"),
-        },
-      });
-      document.body.appendChild(toggle);
-      bindToggleDrag(toggle);
-      applyFloatingPosition();
-      window.addEventListener("resize", () => applyFloatingPosition());
-    }
-
     if (renderContents) renderPanel();
   }
 
@@ -4881,11 +4867,11 @@ async function resolveAvatarResourceServices({ chunkUrl, updater, module, urls, 
 
 
   // Collections are run in the page realm, where SeaTalk owns its React state.
-  function openCollectionsWorkspace() {
+  function openCollectionsWorkspace(entry = 'manage') {
     const hint = document.getElementById('spga-collections-hint');
     try {
       if (typeof unsafeWindow === "undefined" || typeof unsafeWindow.Function !== "function") throw new Error('page-context');
-      unsafeWindow.Function(`return (${launchFavoritesGallery.toString()})(${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))}, ${JSON.stringify(state.locale)});`)();
+      unsafeWindow.Function(`return (${launchFavoritesGallery.toString()})(${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))}, ${JSON.stringify(state.locale)}, ${JSON.stringify(entry)});`)();
       syncCollectionsNavigation();
       document.getElementById(PANEL_ID)?.classList.remove('spga-open');
       if (hint) hint.textContent = '';
@@ -4898,11 +4884,68 @@ async function resolveAvatarResourceServices({ chunkUrl, updater, module, urls, 
   }
 
 /* Integrated favorites window. Signed URLs and all workspace state stay in page memory. */
-function launchFavoritesGallery(presets = [], initialLocale = 'zh') {
+function launchFavoritesGallery(presets = [], initialLocale = 'zh', entry = 'manage') {
+// Only fixed artwork from this table is inserted into either panel.
+const stickerIconPaths = {
+  groups: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18m6-18v18M3 9h18M3 15h18"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+  'sort-desc': '<path d="M7 4v16m-4-4 4 4 4-4M13 6h8m-8 5h6m-6 5h4"/>',
+  'sort-asc': '<path d="M7 20V4M3 8l4-4 4 4m2 10h8m-8-5h6m-6-5h4"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  collect: '<path d="M14 4H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2v3l4-3h5a2 2 0 0 0 2-2v-4m0-10v7m-3.5-3.5h7"/>',
+  x: '<path d="m6 6 12 12M18 6 6 18"/>',
+  minimize: '<path d="M5 12h14"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.2 1.8c-.9.7-1.7 1.2-1.7 2.7m0 3h.01"/>',
+  settings: '<path d="m9.2 4 .5-2h4.6l.5 2 1.6.9 2-.6 2.3 4-1.5 1.5v2.4l1.5 1.5-2.3 4-2-.6-1.6.9-.5 2H9.7l-.5-2-1.6-.9-2 .6-2.3-4 1.5-1.5V9.8L3.3 8.3l2.3-4 2 .6z"/><circle cx="12" cy="11" r="3"/>',
+  sliders: '<path d="M3 7h4m5 0h9M3 17h10m5 0h3"/><circle cx="9.5" cy="7" r="2.5"/><circle cx="15.5" cy="17" r="2.5"/>',
+  first: '<path d="M5 5v14m12-14-7 7 7 7"/>',
+  prev: '<path d="m15 5-7 7 7 7"/>',
+  next: '<path d="m9 5 7 7-7 7"/>',
+  last: '<path d="M19 5v14M7 5l7 7-7 7"/>',
+  enter: '<path d="M20 5v9H4m5-5-5 5 5 5"/>',
+  clear: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/>',
+  organize: '<path d="M3 7V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M8 12h8m-8 4h5"/>',
+  edit: '<path d="M13 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6m-1-10 3 3L11 16l-4 1 1-4z"/>',
+  zoom: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5M7.5 10.5h6m-3-3v6"/>',
+  selected: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 3 3 5-6"/>',
+  send: '<path d="m21 3-6 18-4-8-8-4 18-6Zm0 0L11 13"/>',
+  share: '<path d="M12 15V3m-4 4 4-4 4 4M6 10H4v10h16V10h-2"/>',
+  trash: '<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/>',
+};
+function stickerIcon(name) {
+  return '<svg class="st-icon" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + stickerIconPaths[name] + '</svg>';
+}
+
 /* Only authored UI copy is translated; sticker names and share-code data are never translated. */
 function createFavoritesLocalizer(initialLocale = 'zh') {
   let locale = initialLocale === 'en' ? 'en' : 'zh';
   const labels = {
+    "从聊天收藏": "Collect from chat",
+    "打开「表情快选 → 从聊天收藏」，拖过消息选择表情。可选分组、追加搜索关键字，或直接确认收藏。按 Esc 可取消。": "Choose Quick stickers → Collect from chat and drag across messages. Pick a group or add search keywords if you like, then confirm. Press Esc to cancel.",
+    "工具": "Tools",
+    "生效的筛选条件": "Active filters",
+    "收藏分组": "Sticker groups",
+    "收藏表情": "Favorite stickers",
+    "全部": "All",
+    "未分组": "Ungrouped",
+    "批量整理": "Organize selection",
+    "整理所选表情": "Organize selected stickers",
+    "关闭整理": "Close organizer",
+    "移到分组": "Move to group",
+    "新分组名称": "New group name",
+    "统一显示名称": "Display name for selected stickers",
+    "例如「奶龙」，留空保留原名称": "e.g. Laughing. Leave blank to keep existing names",
+    "追加搜索关键字": "Add search keywords",
+    "留空保留原备注": "Leave blank to keep existing notes",
+    "保存整理": "Save changes",
+    "分组与批量整理": "Groups and bulk editing",
+    "管理页搜索当前分组。「全部」固定在最左侧，点击即可跨组搜索。聊天工具栏的「表情快选」会搜索全部收藏。": "Search in the manager covers the current group. All stays on the left and searches across groups. Quick stickers searches all favorites.",
+    "多选后点「批量整理」，可改名、选分组或追加搜索关键字。重复的关键字会合并。留空可保留原值，覆盖已有名称前会显示数量。": "Use Organize selection to rename stickers, change their group or add search keywords. Duplicate keywords are merged. Leave fields blank to keep their values. The preview shows how many existing names will be replaced.",
+    "单击选一张，Ctrl 或 ⌘ 加单击可增减选择，Shift 加单击可连续选择。从网格空白处拖动可框选，按住 Shift 拖动可追加。选中一张后可放大预览或编辑名称、搜索关键字和分组。在「工具」内可全选本页或筛选。": "Click to select one sticker. Ctrl-click or ⌘-click to add or remove one, or Shift-click for a range. Drag from a gap to select an area. Hold Shift while dragging to add to your selection. Select one sticker to preview it or edit its name, keywords and group. Open Tools to select a page or change filters.",
+    "每个口令最多分享 100 张表情。勾选「附带名称和搜索关键字」即可一起分享。": "Each code can contain up to 100 stickers. Select Include names and search keywords to share those details.",
+    "备份包含表情包名称、搜索关键字、分组、图片形式及复核状态。导入只更新本机设置。": "Backups include sticker names, search keywords, groups, image formats and review status. Imports update local settings only.",
+    "已有备注和分组优先保留，可逐条选择使用备份内容。需复核项默认不勾选。": "Keep existing notes and groups by default, or choose the backup for individual entries. Items needing review start unchecked.",
+    "确认导入所选设置": "Import selected settings",
     "Yixin.Zhong × Codex 制作": "Made by Yixin.Zhong × Codex",
     "查看 GitHub 项目": "View GitHub project",
     "窗口布局": "Window layout",
@@ -4934,7 +4977,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "静态图（手动）": "Still image (manual)",
     "未知（手动）": "Unknown (manual)",
     "手动标注优先于检测结果；选择「自动识别」可撤销手动标注。未检测或识别失败也能编辑备注。保存备注后将解除「需复核」。": "Manual labels override detection. Select Automatic detection to remove the override. You can edit notes even without a successful inspection. Saving notes clears Needs review.",
-    "「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在备注编辑中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。": "Image format filters the effective animated, still or unknown value. Note status filters notes or items needing review. Inspection status separately filters uninspected, inspected or failed images. Inspect animations or manually set a format in the note editor. Manual labels take priority; Automatic detection removes the override. Inspection is not required to edit, search or share notes.",
+    "「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在「编辑表情」中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。": "Image format filters the effective animated, still or unknown value. Note status filters notes or items needing review. Inspection status separately filters uninspected, inspected or failed images. Inspect animations or manually set a format in Edit sticker. Manual labels take priority; Automatic detection removes the override. Inspection is not required to edit, search or share notes.",
     "SeaTalk 表情助手": "SeaTalk Sticker Helper",
     "SeaTalk 表情助手 · 我的表情": "SeaTalk Sticker Helper · My stickers",
     "调整侧栏宽度": "Resize sidebar",
@@ -4989,7 +5032,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "我的表情使用指南": "My stickers guide",
     "关闭使用指南": "Close guide",
     "开始前": "Before you start",
-    "在 SeaTalk 打开表情面板，切换到爱心「收藏」页签，再打开助手的「我的表情」。": "Open SeaTalk's sticker picker, select the heart Favorites tab, then open My stickers in the helper.",
+    "点击聊天输入框工具栏的「表情快选」。点击表情可直接发送，点「管理表情」可整理收藏。若收藏尚未载入，先在 SeaTalk 原生表情面板打开一次爱心收藏。": "Choose Quick stickers on the chat toolbar. Click a sticker to send it immediately, or choose Manage stickers to organize favorites. If your favorites have not loaded yet, open the Favorites heart once in the SeaTalk sticker picker.",
     "选择和查看表情": "Select and preview stickers",
     "点击图片可放大，勾选复选框可选择。「全选本页」只选择当前页；翻页或切换筛选后，之前的选择仍会保留。点击「查看已选」可统一核对。": "Click an image to enlarge it and check its box to select it. Select page affects only the current page. Paging and filtering keep earlier selections. Use Review selected to check them all.",
     "如需只看动图，先点击「识别动图」，再筛选「动图」。浏览和分享无需先识别。识别失败的图片会显示「未能识别」，不会当成静态图。": "To show only animations, first choose Inspect animation, then filter by Animated. Browsing and sharing need no inspection. Failed images appear as Could not identify, rather than still images.",
@@ -5003,7 +5046,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "选择表情 → 点击「删除所选表情」→ 核对图片和数量 → 确认删除。": "Select stickers → Remove selected → Check the images and count → Confirm removal.",
     "删除只影响你的收藏，不会删除聊天消息。本助手无法撤销删除，分享口令也不保证能恢复。筛选之外的已选表情也会包括在确认清单中。": "Removal affects only your favorites, not chat messages. The helper cannot undo removal, and a share code does not guarantee recovery. The confirmation includes selected stickers outside the current filter.",
     "收起、关闭和结果核对": "Minimize, close and check results",
-    "点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。在「设置 → 窗口布局」选择「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。": "Use − to minimize while keeping your page, filters, selections and inspection progress. Click the small entry to restore. Wide screens use split view with SeaTalk on the left; drag the divider to resize. Choose Settings → Window layout → Float to move the window by its title bar or resize its lower-right corner. Closing or minimizing restores SeaTalk's original layout.",
+    "点击顶栏「−」保留页码、筛选和选择。下次通过「表情快选 → 管理表情」可以继续整理。宽屏时助手与聊天并排，拖动分隔线可调整宽度；在「设置 → 窗口布局」可切换为浮窗。": "Use − to keep your page, filters and selections. Return through Quick stickers → Manage stickers. On wide screens, drag the divider to adjust the workspace width. Use Settings → Window layout for a floating window.",
     "操作结果不确定时，先刷新 SeaTalk 核对收藏，再决定是否重试。刷新会清空本次勾选。添加或删除进行中时，停止会等待当前表情的结果，再停止后续操作。": "If a result is uncertain, reload SeaTalk and check favorites before retrying. Reloading clears selections. During add or removal, Stop waits for the current sticker result before stopping later items.",
     "知道了，返回管理": "Got it",
     "表情预览": "Sticker preview",
@@ -5104,15 +5147,19 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "添加结果尚未确认，已停止。请刷新收藏核对，勿立即重复添加": "The addition is unconfirmed. Operation stopped. Reload favorites and check before adding again.",
     "请刷新 SeaTalk 核对保存结果。": "Reload SeaTalk to check saved results.",
     "设置": "Settings",
-    "搜索名称、关键词或表情文字": "Search notes, keywords or text",
+    "搜索名称或关键字": "Search names or keywords",
     "发送所选表情": "Send selected",
+    "发送": "Send",
     "发送到当前会话": "Send to this conversation",
-    "附带备注名称、关键词与表情文字（不含私人说明）": "Include names, keywords and sticker text (no private notes)",
-    "同时导入备注，已有备注默认保留": "Import notes too; keep existing notes by default",
-    "编辑备注与关键词": "Edit notes and keywords",
-    "关闭备注编辑": "Close note editor",
-    "备注名称": "Display name",
+    "附带名称和搜索关键字": "Include names and search keywords",
+    "同时导入名称和搜索关键字，默认保留已有名称": "Import names and search keywords. Keep existing names by default",
+    "编辑表情": "Edit sticker",
+    "关闭表情编辑": "Close sticker editor",
+    "表情包名称": "Sticker name",
     "关键词": "Keywords",
+    "搜索关键字": "Search keywords",
+    "分组": "Group",
+    "标记为已复核": "Mark as reviewed",
     "用逗号分隔，例如：工作，上班，打工人": "Separate keywords with commas, e.g. work, office, busy",
     "表情文字": "Text on the sticker",
     "私人说明（默认不分享）": "Private note (not shared by default)",
@@ -5135,9 +5182,9 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
     "停止后续发送": "Stop later sends",
     "确认发送": "Confirm send",
     "备注、备份与发送": "Notes, backups and sending",
-    "备注自动保存在当前账号的油猴本地存储。可在「设置」导出备份或预览导入标签文件。分享可附带备注，但不包含私人说明。含备注的分享口令需要 5.1 或更新版本；取消附带备注可生成兼容旧版的口令。预览或选择表情后，核对目标会话并确认发送；切换账号或会话后停止。": "Notes are saved in Tampermonkey for the current account. Use Settings to export a backup or preview imported labels. Share codes can include notes, but never private notes. Codes with notes require version 5.1 or later. Uncheck metadata to create a code compatible with older versions. Preview or select stickers, check the destination and confirm sending. Changing accounts or conversations stops the operation.",
+    "名称和搜索关键字保存在当前账号的油猴本地存储。个人备份还包含分组、图片形式和复核状态。到「设置」可以导出备份或预览导入。分享口令可按需附带名称和搜索关键字。发送前请核对目标会话。": "Names and search keywords are saved locally for this account. Personal backups also include groups, image formats and review status. Open Settings to export a backup or preview an import. Share codes can optionally include names and search keywords. Check the conversation before sending.",
     "每次最多分享 100 个。表情越多，口令越长。点击名称旁的编辑按钮可保存备注、关键词和表情文字，用于搜索，不会修改 SeaTalk 原收藏。": "Share up to 100 stickers per code. More stickers produce longer codes. Edit a sticker to save its name, keywords and visible text for searching. SeaTalk favorites are not renamed.",
-    "请粘贴完整的 STGIF1 或 STGIF2 分享口令": "Paste the complete STGIF1 or STGIF2 share code"
+    "请粘贴完整的 STGIF3 分享口令": "Paste a complete STGIF3 share code"
 };
   const messages = new Map();
   function ui(zh, en) {
@@ -5176,34 +5223,58 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
 
   const language = createFavoritesLocalizer(initialLocale);
   const { ui, tr } = language;
-  const helperVersion = "5.2.2";
+  const helperVersion = "5.3.0";
 /* Metadata only. This module never stores preview URLs, credentials or account identifiers in exports. */
 function validMetadataId(id) { return typeof id === 'string' && /^[a-zA-Z0-9]{64}$/.test(id) && ['b0701','b0702','b0705'].includes(id.slice(33,38)); }
 function metadataText(value, max, multiline = false) {
   if (typeof value !== 'string' || value.length > max || (multiline ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/ : /[\u0000-\u001f\u007f]/).test(value)) throw Error('METADATA_INVALID');
   return value.trim();
 }
+function mergePersonalKeywords(...lists) {
+  const words = new Map();
+  for (const list of lists) {
+    if (!Array.isArray(list)) throw Error('METADATA_INVALID');
+    for (const word of list) {
+      const text = metadataText(word,60), key = text.normalize('NFKC').toLocaleLowerCase();
+      if (!text) throw Error('METADATA_INVALID');
+      if (!words.has(key)) words.set(key,text);
+      if (words.size > 30) throw Error('METADATA_KEYWORDS_LIMIT');
+    }
+  }
+  return [...words.values()];
+}
+function splitPersonalKeywords(text) {
+  return mergePersonalKeywords(text.split(/[,，\n]/).map(word => word.trim()).filter(Boolean));
+}
 function normalizePersonalRecord(row, candidate = false) {
   const allowed = ['gifId','name','keywords','visibleText','note','source','updatedAt','confidence','needsReview','reviewReason','animationOverride', ...(candidate ? ['index'] : [])];
   if (!row || typeof row !== 'object' || Array.isArray(row) || Object.keys(row).some(key => !allowed.includes(key)) || !validMetadataId(row.gifId)) throw Error('METADATA_INVALID');
   const name = metadataText(row.name,80), visibleText = metadataText(row.visibleText ?? '',500,true), note = metadataText(row.note ?? '',1000,true);
-  if (!name || !Array.isArray(row.keywords) || row.keywords.length > 30) throw Error('METADATA_INVALID');
-  const keywords = [], seen = new Set();
-  for (const keyword of row.keywords) {
-    const text = metadataText(keyword,60), key = text.normalize('NFKC').toLocaleLowerCase();
-    if (!text) throw Error('METADATA_INVALID');
-    if (!seen.has(key)) { keywords.push(text); seen.add(key); }
-  }
+  const keywords = mergePersonalKeywords(row.keywords);
   const source = candidate ? 'ai' : row.source ?? 'manual';
   if (!['manual','shared','ai'].includes(source) || row.needsReview !== undefined && typeof row.needsReview !== 'boolean') throw Error('METADATA_INVALID');
   const confidence = row.confidence ?? 'high';
   if (!['high','medium','low'].includes(confidence)) throw Error('METADATA_INVALID');
   const animationOverride = row.animationOverride ?? 'auto';
   if (!['auto','unknown','animated','static'].includes(animationOverride)) throw Error('METADATA_INVALID');
+  if (!name && (source !== 'manual' || !(keywords.length || visibleText || note || animationOverride !== 'auto'))) throw Error('METADATA_INVALID');
   const reviewReason = metadataText(row.reviewReason ?? '',500,true);
   const updatedAt = row.updatedAt ?? '';
   if (typeof updatedAt !== 'string' || updatedAt.length > 40 || updatedAt && !Number.isFinite(Date.parse(updatedAt))) throw Error('METADATA_INVALID');
   return {gifId:row.gifId,name,keywords,visibleText,note,source,updatedAt,confidence,needsReview:row.needsReview ?? false,reviewReason,...(animationOverride === 'auto' ? {} : {animationOverride})};
+}
+function applyPersonalRecordEdit(records, gifId, {name,keywords,animationOverride,acceptReview}, now = new Date().toISOString()) {
+  const previous = records.get(gifId), oldKeywords = previous?.keywords || [];
+  const nextName = metadataText(name,80);
+  const sameKeywords = keywords.length === oldKeywords.length && keywords.every((word,index) => word === oldKeywords[index]);
+  if (nextName === (previous?.name || '') && sameKeywords && animationOverride === (previous?.animationOverride || 'auto') && !(acceptReview && previous?.needsReview)) return false;
+  if (!nextName && !keywords.length && animationOverride === 'auto' && !previous?.visibleText && !previous?.note) {
+    return records.delete(gifId);
+  }
+  records.set(gifId,normalizePersonalRecord({
+    ...previous,gifId,name:nextName,keywords,animationOverride,source:'manual',updatedAt:now,needsReview:false,confidence:'high',reviewReason:''
+  }));
+  return true;
 }
 function normalizePersonalRows(rows, candidate = false) {
   if (!Array.isArray(rows) || rows.length > 10000) throw Error('METADATA_INVALID');
@@ -5215,47 +5286,214 @@ function normalizePersonalRows(rows, candidate = false) {
   }
   return result;
 }
-function parsePersonalImport(text) {
-  if (typeof text !== 'string' || text.length > 10 * 1024 * 1024) throw Error('METADATA_INVALID');
-  let doc; try { doc = JSON.parse(text); } catch (_) { throw Error('METADATA_INVALID'); }
-  if (Array.isArray(doc)) {
-    if(doc.length>10000 || doc.some(row=>!row || typeof row!=='object' || Object.keys(row).some(key=>!['gifId','label'].includes(key))))throw Error('METADATA_INVALID');
-    return {kind:'legacy',items:normalizePersonalRows(doc.map(row=>({gifId:row.gifId,name:row.label,keywords:[],source:'manual'})))};
-  }
-  if (!doc || typeof doc !== 'object') throw Error('METADATA_INVALID');
-  if (doc.kind === 'seatalk-personal-settings' && doc.schema === 1 && Object.keys(doc).every(k=>['kind','schema','exportedAt','items'].includes(k))) return {kind:'backup',items:normalizePersonalRows(doc.items)};
-  if (doc.metadata && Array.isArray(doc.items) && Object.keys(doc).every(k=>['metadata','items'].includes(k))) return {kind:'candidates',items:normalizePersonalRows(doc.items,true)};
-  throw Error('METADATA_INVALID');
+const maxPersonalImportChars = 10 * 1024 * 1024;
+async function readPersonalImportFile(file) {
+  // UTF-8 needs up to three bytes per UTF-16 code unit (two units for supplementary characters).
+  if (file.size > 3 * maxPersonalImportChars) throw Error('METADATA_INVALID');
+  return parsePersonalImport(await file.text());
 }
-function exportPersonalSettings(rows, now = new Date().toISOString()) {
-  return JSON.stringify({kind:'seatalk-personal-settings',schema:1,exportedAt:now,items:normalizePersonalRows(rows)},null,2);
+function parsePersonalImport(text) {
+  if (typeof text !== 'string' || text.length > maxPersonalImportChars) throw Error('METADATA_INVALID');
+  let doc; try { doc = JSON.parse(text); } catch (_) { throw Error('METADATA_INVALID'); }
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw Error('METADATA_INVALID');
+  const fields = ['gifId','name','keywords','source','confidence','needsReview','animationOverride'];
+  const backup = doc.kind === 'seatalk-personal-settings';
+  if (backup) {
+    if (doc.schema !== 3 || Object.keys(doc).some(key => !['kind','schema','exportedAt','items','groups'].includes(key))) throw Error('METADATA_INVALID');
+  } else {
+    if (!doc.metadata || typeof doc.metadata !== 'object' || Array.isArray(doc.metadata) || Object.keys(doc).some(key => !['metadata','items'].includes(key))) throw Error('METADATA_INVALID');
+    fields.push('index');
+  }
+  if (!Array.isArray(doc.items) || doc.items.length > 10000 || doc.items.some(row => !row || typeof row !== 'object' || Object.keys(row).some(key => !fields.includes(key)))) throw Error('METADATA_INVALID');
+  const items = normalizePersonalRows(doc.items,!backup);
+  return backup ? {kind:'backup',items,groups:normalizePersonalGroups(doc.groups)} : {kind:'candidates',items};
+}
+function exportPersonalSettings(rows, now = new Date().toISOString(), groups = []) {
+  const items = [];
+  for (const row of normalizePersonalRows(rows)) {
+    const {gifId,name,keywords,source,confidence,needsReview,animationOverride} = row;
+    if (name || keywords.length || animationOverride) {
+      items.push({gifId,name,keywords,source,confidence,needsReview,...(animationOverride ? {animationOverride} : {})});
+    }
+  }
+  const backup = {kind:'seatalk-personal-settings',schema:3,exportedAt:now,items,groups:normalizePersonalGroups(groups)};
+  const readable = JSON.stringify(backup,null,2);
+  // Indentation alone can push a valid account snapshot past the text limit for imports.
+  if (readable.length <= maxPersonalImportChars) return readable;
+  const compact = JSON.stringify(backup);
+  if (compact.length > maxPersonalImportChars) throw Error('METADATA_INVALID');
+  return compact;
 }
 function mergePersonalRecord(current, incoming, replace = false, mergeKeywords = true) {
   const next = normalizePersonalRecord(incoming);
   if (!current) return next;
   const previous = normalizePersonalRecord(current);
-  const result = replace ? {...next} : {...previous};
-  if (mergeKeywords) {
-    const seen = new Set(); result.keywords = [];
-    for (const keyword of [...previous.keywords,...next.keywords]) {
-      const key = keyword.normalize('NFKC').toLocaleLowerCase();
-      if (!seen.has(key)) { result.keywords.push(keyword); seen.add(key); }
-    }
-    if (result.keywords.length > 30) throw Error('METADATA_KEYWORDS_LIMIT');
-  }
+  const result = replace ? {...next,note:previous.note,visibleText:previous.visibleText} : {...previous};
+  if (mergeKeywords) result.keywords = mergePersonalKeywords(previous.keywords,next.keywords);
   return normalizePersonalRecord(result);
+}
+function mergeSharedPersonalRecord(current, shared, gifId, replace, now = new Date().toISOString()) {
+  const incoming = normalizePersonalRecord({
+    gifId, name:shared.label, keywords:shared.keywords || [], animationOverride:current?.animationOverride || 'auto',
+    source:'shared', updatedAt:now
+  });
+  const merged = mergePersonalRecord(current,incoming,replace,true);
+  if (!merged.name) merged.name = incoming.name;
+  return merged;
 }
 function personalMetadataMatches(row, query) {
   const terms = String(query).normalize('NFKC').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
   const searchable = [row.name,...(row.keywords || []),row.visibleText || '',row.note || ''].join(' ').normalize('NFKC').toLocaleLowerCase();
   return terms.every(term=>searchable.includes(term));
 }
-function validateSettingsSnapshot(value) {
-  if (!value || value.schema !== 1 || !Number.isSafeInteger(value.revision) || value.revision < 0 || Object.keys(value).some(k=>!['schema','revision','items'].includes(k))) throw Error('METADATA_STORAGE_INVALID');
-  return {schema:1,revision:value.revision,items:normalizePersonalRows(value.items)};
+function personalGroupKey(name) { return name.normalize('NFKC').toLowerCase(); }
+
+function normalizePersonalGroups(groups) {
+  if (!Array.isArray(groups) || groups.length > 1000) throw Error('METADATA_INVALID');
+  const names = new Set(), ids = new Set();
+  return groups.map(group => {
+    if (!group || typeof group !== 'object' || Object.keys(group).some(key => !['name','gifIds'].includes(key)) || !Array.isArray(group.gifIds)) throw Error('METADATA_INVALID');
+    const name = metadataText(group.name, 60), key = personalGroupKey(name);
+    if (!name || names.has(key)) throw Error('METADATA_INVALID');
+    names.add(key);
+    for (const id of group.gifIds) {
+      if (!validMetadataId(id) || ids.has(id) || ids.size >= 10000) throw Error('METADATA_INVALID');
+      ids.add(id);
+    }
+    return {name, gifIds:[...group.gifIds]};
+  });
 }
 
-/* The caller must obtain explicit confirmation for this exact account, target and frozen selection. */
+function validateSettingsSnapshot(value) {
+  if (!value || ![1,2].includes(value.schema) || !Number.isSafeInteger(value.revision) || value.revision < 0) throw Error('METADATA_STORAGE_INVALID');
+  const fields = value.schema === 1 ? ['schema','revision','items'] : ['schema','revision','items','groups'];
+  if (Object.keys(value).some(key => !fields.includes(key))) throw Error('METADATA_STORAGE_INVALID');
+  return {schema:2, revision:value.revision, items:normalizePersonalRows(value.items), groups:value.schema === 1 ? [] : normalizePersonalGroups(value.groups)};
+}
+
+function groupMemberships(groups) {
+  const membership = new Map();
+  for (const group of groups) for (const id of group.gifIds) membership.set(id,group.name);
+  return membership;
+}
+
+// Preview and save all organization changes against the same settings revision.
+function planPersonalOrganization(snapshot, ids, changes, now = new Date().toISOString()) {
+  if (!Array.isArray(ids) || !changes || typeof changes !== 'object' ||
+      Object.keys(changes).some(key => !['group','name','keywords'].includes(key))) throw Error('METADATA_INVALID');
+  const selected = new Set(ids);
+  if (selected.size > 10000 || [...selected].some(id => !validMetadataId(id))) throw Error('METADATA_INVALID');
+  const {revision,items,groups} = validateSettingsSnapshot(snapshot);
+  const name = metadataText(changes.name ?? '',80);
+  const keywords = mergePersonalKeywords(changes.keywords === undefined ? [] : changes.keywords);
+  let group = changes.group === undefined ? undefined : metadataText(changes.group,60);
+  const records = new Map(items.map(row => [row.gifId,row]));
+  let movedCount = 0, nameChangedCount = 0, nameOverwriteCount = 0, keywordChangedCount = 0;
+  if (group !== undefined && selected.size) {
+    const previous = groupMemberships(groups);
+    let destination = groups.find(entry => personalGroupKey(entry.name) === personalGroupKey(group));
+    if (group && !destination) { destination = {name:group,gifIds:[]}; groups.push(destination); }
+    if (destination) group = destination.name;
+    const moved = new Set([...selected].filter(id => (previous.get(id) || '') !== group));
+    movedCount = moved.size;
+    if (movedCount) {
+      for (const entry of groups) entry.gifIds = entry.gifIds.filter(id => !moved.has(id));
+      if (destination) destination.gifIds.push(...moved);
+    }
+  }
+  if (name || keywords.length) {
+    for (const id of selected) {
+      const existing = records.get(id);
+      const changeName = name && name !== existing?.name;
+      const oldKeywords = existing?.keywords || [];
+      const combined = keywords.length ? mergePersonalKeywords(oldKeywords, keywords) : oldKeywords;
+      const changeKeywords = combined.length !== oldKeywords.length;
+      if (!changeName && !changeKeywords) continue;
+      const row = existing ? {...existing} : {gifId:id,name:'',keywords:[],source:'manual'};
+      if (changeName) {
+        if (row.name) nameOverwriteCount++;
+        nameChangedCount++;
+        row.name = name;
+      }
+      if (changeKeywords) {
+        keywordChangedCount++;
+        row.keywords = combined;
+      }
+      records.set(id,normalizePersonalRecord({...row,updatedAt:now}));
+    }
+  }
+  const result = validateSettingsSnapshot({schema:2,revision,items:[...records.values()],groups});
+  return {...result,group,selectedCount:selected.size,movedCount,nameChangedCount,nameOverwriteCount,keywordChangedCount};
+}
+
+function personalBackupEntries(parsed, snapshot) {
+  const localRecords = new Map(snapshot.items.map(row => [row.gifId,row]));
+  const localGroups = groupMemberships(snapshot.groups);
+  const incomingGroups = groupMemberships(parsed.groups || []);
+  const records = new Map(parsed.items.map(row => [row.gifId,row]));
+  const ids = new Set([...records.keys(),...incomingGroups.keys()]);
+  const entries = [...ids].map(gifId => {
+    const record = records.get(gifId), group = incomingGroups.get(gifId);
+    const localRecord = localRecords.get(gifId), localGroup = localGroups.get(gifId);
+    const hasConflict = Boolean(record && localRecord || group && localGroup && personalGroupKey(group) !== personalGroupKey(localGroup));
+    return {gifId,record,group,localRecord,localGroup,needsReview:!!record?.needsReview,hasConflict};
+  });
+  for (const group of parsed.groups || []) {
+    if (!group.gifIds.length) entries.push({group:group.name,hasConflict:false,needsReview:false});
+  }
+  return entries;
+}
+
+function mergePersonalBackup(snapshot, entries, mergeKeywords) {
+  const records = new Map(snapshot.items.map(row => [row.gifId,row]));
+  const groups = new Map(snapshot.groups.map(({name,gifIds}) => [personalGroupKey(name),{name,ids:new Set(gifIds)}]));
+  const memberships = groupMemberships(snapshot.groups);
+  for (const {gifId,record,group,replace} of entries) {
+    if (record) records.set(gifId,mergePersonalRecord(records.get(gifId),record,replace,mergeKeywords));
+    if (!group) continue;
+    const key = personalGroupKey(group), existing = memberships.get(gifId);
+    if (existing && personalGroupKey(existing) !== key && !replace) continue;
+    if (!groups.has(key)) groups.set(key,{name:group,ids:new Set()});
+    if (!gifId) continue;
+    if (existing) groups.get(personalGroupKey(existing)).ids.delete(gifId);
+    const destination = groups.get(key);
+    destination.ids.add(gifId);
+    memberships.set(gifId,destination.name);
+  }
+  return validateSettingsSnapshot({schema:2,revision:snapshot.revision,items:[...records.values()],
+    groups:[...groups.values()].map(({name,ids}) => ({name,gifIds:[...ids]}))});
+}
+
+async function requestPersonalSettingsBridge(account, request) {
+  if (!Number.isSafeInteger(account) || account <= 0) return Promise.reject(Error('METADATA_ACCOUNT_CHANGED'));
+  const completed = result => {
+    if (request.kind === 'save') window.dispatchEvent(new CustomEvent('spga:personal-settings-changed',{detail:JSON.stringify({account,revision:result.revision})}));
+    return result;
+  };
+  if (globalThis.__SPGA_TEST_MODE__ === true && globalThis.__SPGA_PERSONAL_SETTINGS_FIXTURE__) {
+    return completed(validateSettingsSnapshot(await globalThis.__SPGA_PERSONAL_SETTINGS_FIXTURE__.request({...request,account})));
+  }
+  return new Promise((resolve,reject) => {
+    const id = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+    const finish = (error,value) => {
+      clearTimeout(timer);
+      window.removeEventListener('spga:settings-response',receive);
+      if (error) reject(error); else resolve(value);
+    };
+    const receive = event => {
+      if (typeof event.detail !== 'string') return;
+      let result; try { result = JSON.parse(event.detail); } catch (_) { return; }
+      if (result.id !== id) return;
+      if (!result.ok) { finish(Error(result.error)); return; }
+      try { finish(null,validateSettingsSnapshot(result.value)); } catch (error) { finish(error); }
+    };
+    const timer = setTimeout(() => finish(Error('METADATA_SAVE_FAILED')),6000);
+    window.addEventListener('spga:settings-response',receive);
+    window.dispatchEvent(new CustomEvent('spga:settings-request',{detail:JSON.stringify({...request,id,account})}));
+  }).then(completed);
+}
+
+/* The caller binds the current account and chat to the confirmed batch or individual quick-picker click. */
 async function sendSelectedStickers(selected, adapters) {
   if (!Array.isArray(selected) || !selected.length || selected.length > 100 || selected.some(item=>!validMetadataId(item.gifId))) throw Error('SEND_SELECTION_INVALID');
   const pending = selected.map(item=>Object.freeze({...item}));
@@ -5298,38 +5536,54 @@ function findStickerSendReceipt(messages, before, target, gifId, sender, tag, ci
   return {status:/^[0-9a-f]{16}$/i.test(mid) && BigInt('0x'+mid)>0n && Number(message.serverTimeStamp)>0 ? 'confirmed' : 'pending',cid:nextCid};
 }
 
-/* Versioned, self-contained share codes. No URLs, credentials or account fields. */
-function normalizeSharedStickers(value, metadata = false) {
+/* Versioned, self-contained share codes. Only names and keywords are public metadata. */
+function normalizeSharedStickers(value) {
   if (!Array.isArray(value) || !value.length || value.length > 100) throw Error('请选择 1–100 个表情');
+  const metadata = Object.hasOwn(value[0] ?? {}, 'keywords');
+  const fields = metadata ? ['gifId','label','keywords'] : ['gifId','label'];
   const seen = new Set(), stickers = [];
   for (const item of value) {
-    if (!item || typeof item !== 'object' || Array.isArray(item) || Object.keys(item).some(key=>!(metadata?['gifId','label','keywords','visibleText']:['gifId','label']).includes(key)) || typeof item.gifId !== 'string' || !/^[a-zA-Z0-9]{64}$/.test(item.gifId) || !['b0701','b0702','b0705'].includes(item.gifId.slice(33,38)) || typeof item.label !== 'string' || !item.label.trim() || item.label.length>80 || /[\u0000-\u001f\u007f]/.test(item.label)) throw Error('口令包含无效的表情或名称');
-    const row={gifId:item.gifId,label:item.label.trim()};
-    if(metadata){
-      if(!Array.isArray(item.keywords) || item.keywords.length>30 || item.keywords.some(word=>typeof word!=='string' || !word.trim() || word.length>60 || /[\u0000-\u001f\u007f]/.test(word)) || typeof item.visibleText!=='string' || item.visibleText.length>500 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(item.visibleText))throw Error('口令包含无效的表情或名称');
-      const keywords=new Map();for(const word of item.keywords){const text=word.trim(),key=text.normalize('NFKC').toLocaleLowerCase();if(!keywords.has(key))keywords.set(key,text);}
-      row.keywords=[...keywords.values()];row.visibleText=item.visibleText.trim();
+    if (!item || typeof item !== 'object' || Array.isArray(item) ||
+        fields.some(key => !Object.hasOwn(item,key)) || Object.keys(item).length !== fields.length ||
+        typeof item.gifId !== 'string' || !/^[a-zA-Z0-9]{64}$/.test(item.gifId) ||
+        !['b0701','b0702','b0705'].includes(item.gifId.slice(33,38)) ||
+        typeof item.label !== 'string' || !item.label.trim() || item.label.length > 80 || /[\u0000-\u001f\u007f]/.test(item.label)) {
+      throw Error('口令包含无效的表情或名称');
     }
-    if(!seen.has(row.gifId)){stickers.push(row);seen.add(row.gifId);}
+    const row = {gifId:item.gifId, label:item.label.trim()};
+    if (metadata) {
+      if (!Array.isArray(item.keywords) || item.keywords.length > 30) throw Error('口令包含无效的表情或名称');
+      const keywords = new Map();
+      for (const word of item.keywords) {
+        if (typeof word !== 'string' || !word.trim() || word.length > 60 || /[\u0000-\u001f\u007f]/.test(word)) {
+          throw Error('口令包含无效的表情或名称');
+        }
+        const text = word.trim(), key = text.normalize('NFKC').toLocaleLowerCase();
+        if (!keywords.has(key)) keywords.set(key,text);
+      }
+      row.keywords = [...keywords.values()];
+    }
+    if (!seen.has(row.gifId)) { stickers.push(row); seen.add(row.gifId); }
   }
   return stickers;
 }
 function encodeStickerShare(stickers) {
-  const metadata=Array.isArray(stickers) && stickers.some(row=>row && ('keywords' in row || 'visibleText' in row));
-  const data={v:metadata?2:1,stickers:normalizeSharedStickers(stickers,metadata)};
-  const bytes=new TextEncoder().encode(JSON.stringify(data));
-  return (metadata?'STGIF2.':'STGIF1.')+btoa(Array.from(bytes,byte=>String.fromCharCode(byte)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const bytes = new TextEncoder().encode(JSON.stringify({v:3, stickers:normalizeSharedStickers(stickers)}));
+  return 'STGIF3.' + btoa(Array.from(bytes,byte=>String.fromCharCode(byte)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 function decodeStickerShare(text) {
-  if(typeof text!=='string' || text.length>2097152)throw Error('口令过长或无效，最多支持 100 个表情');
-  const code=text.trim(),match=/^STGIF([12])\.([A-Za-z0-9_-]+)$/.exec(code);
-  if(!match || match[1]==='1' && code.length>65536)throw Error('请粘贴完整的 STGIF1 或 STGIF2 分享口令');
-  try{
-    const raw=match[2].replace(/-/g,'+').replace(/_/g,'/'),bytes=Uint8Array.from(atob(raw),c=>c.charCodeAt(0));
-    const data=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
-    if(!data || data.v!==Number(match[1]) || Object.keys(data).some(key=>!['v','stickers'].includes(key)))throw Error();
-    return normalizeSharedStickers(data.stickers,data.v===2);
-  }catch(_){throw Error('分享口令损坏或内容无效，请重新复制');}
+  if (typeof text !== 'string' || text.length > 2097152) throw Error('口令过长或无效，最多支持 100 个表情');
+  const code = text.trim(), match = /^STGIF3\.([A-Za-z0-9_-]+)$/.exec(code);
+  if (!match) throw Error('请粘贴完整的 STGIF3 分享口令');
+  try {
+    const raw = match[1].replace(/-/g,'+').replace(/_/g,'/');
+    const bytes = Uint8Array.from(atob(raw),c=>c.charCodeAt(0));
+    const data = JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+    if (!data || data.v !== 3 || Object.keys(data).some(key=>!['v','stickers'].includes(key))) throw Error();
+    const stickers = normalizeSharedStickers(data.stickers);
+    if (!Object.hasOwn(stickers[0],'keywords') && code.length > 65536) throw Error();
+    return stickers;
+  } catch (_) { throw Error('分享口令损坏或内容无效，请重新复制'); }
 }
 
 /* Injectable mutation workflow: freeze selection and account, skip duplicates, stop on uncertainty. */
@@ -5399,7 +5653,7 @@ function getFavoritesAccountModuleUrl() {
 }
 
   const existing = document.getElementById('st-favorites-curator');
-  if (existing) { existing.__setLocale?.(initialLocale); existing.__open?.(); return { reopened: true }; }
+  if (existing) { existing.__setLocale?.(initialLocale); if (entry === 'quick') existing.__openQuick?.(); else existing.__open?.(); return { reopened: true }; }
   const pickerSelector = '.sealabs-stickers-panel .sealabs-sticker, .sealabs-stickers-panel .sticker-wrapper';
   function readSource(element, requireActions = true) {
     let fiber = element?.[Object.keys(element).find(key => key.startsWith('__reactFiber$') || key.startsWith('__reactInternalInstance$'))];
@@ -5429,7 +5683,11 @@ function getFavoritesAccountModuleUrl() {
     }
     throw Error(tr('请先打开 SeaTalk 爱心收藏面板，再重新操作。'));
   };
-  const source = liveSource(false).list;
+  let mountedAtOpen = null;
+  try { mountedAtOpen = liveSource(false).list; } catch (_) { /* The picker may be closed. */ }
+  const source = mountedAtOpen || [];
+  let favoritesRead = Boolean(mountedAtOpen);
+  let captureActive = false;
   function isFavoritePreviewUrl(url, id) {
     const path = '/download/' + id;
     // Native signed URLs may use a suffix; fileUrl(id) may return the exact ID path.
@@ -5454,9 +5712,11 @@ function getFavoritesAccountModuleUrl() {
   let workspaceAccountCheck = null, workspaceAccountState = 'pending';
   const assertWorkspaceAccount = () => { if (!workspaceAccountCheck) throw Error(tr('当前账号尚未核对，请稍后重新打开。')); return workspaceAccountCheck(); };
   let page = 0, pending = [], selectedView = null, geometryCustom = false;
+  let activeGroup = '', selectionAnchor = null, rubberBand = null, organizationDraft = null;
   const size = 48, activeRequests = new Set();
   const host = document.createElement('section'); host.id = 'st-favorites-curator';
-  host.dataset.open = host.dataset.managed = 'true';
+  host.dataset.open = host.dataset.managed = String(entry !== 'quick');
+  if (entry === 'quick') host.style.display = 'none';
   host.dataset.locale = language.locale; host.lang = language.locale;
   host.setAttribute('aria-label', tr('SeaTalk 表情助手 · 我的表情'));
   const miniId = 'st-favorites-minimized';
@@ -5488,33 +5748,122 @@ function getFavoritesAccountModuleUrl() {
     .workspace-tabs[hidden]{display:none}
     .helper-credit-row{display:flex;align-items:center;gap:8px;padding:4px 16px 8px;background:#fff;border-top:1px solid #edf2f7;font-size:11px;color:#7b8ba8;flex-wrap:wrap}.helper-version{border:1px solid #dce4f0;border-radius:999px;background:#f8fafc;padding:2px 6px;font-size:10px;white-space:nowrap}.helper-github{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-left:auto;color:#667085;border-radius:6px}.helper-github:hover,.helper-github:focus-visible{color:#0866c6;background:#edf2f7}.helper-github:focus-visible{outline:2px solid #0866c6;outline-offset:2px}
     .helper-credit{font:inherit;color:inherit;min-height:24px;padding:0;border:0;background:transparent}.helper-credit:hover{color:#0866c6;background:transparent}.helper-credit.spga-credit-celebrating{animation:helper-credit-bounce .72s ease both}@keyframes helper-credit-bounce{40%{transform:translateY(-4px)}70%{transform:translateY(1px)}}@media(prefers-reduced-motion:reduce){.helper-credit.spga-credit-celebrating{animation:none}}
+    #groupTabs{display:flex;gap:5px;align-items:center;margin-top:7px}
+    #groupStrip{display:flex;gap:6px;min-width:0;overflow-x:auto;padding:4px;overscroll-behavior-x:contain}
+    #groupTabs button{border:1px solid #e1e7ee;border-radius:18px;background:#fff;color:#46556b;min-height:30px;padding:4px 10px;flex:none}
+    #groupStrip button{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+    #groupTabs #allGroups{display:inline-flex;align-items:center;gap:5px;background:#edf7f5;border-color:#acd6cf;color:#176258;font-weight:600}
+    #allGroups .st-icon{width:15px;height:15px}
+    #groupTabs #allGroups[aria-pressed=true]{background:#14695e;border-color:#14695e;color:white}
+    #groupTabs [aria-pressed=true],#toolsToggle[aria-expanded=true]{background:#eaf3ff;color:#0757a6;border-color:#a9c9ee}
+    #activeFilters{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+    #activeFilters button{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:2px 7px;background:#eef5ff;border-color:#c7dcf3;color:#18558d;font-size:12px}
+    #activeFilters .st-icon{width:13px;height:13px}
+    #toolsToggle:has(#toolsCount:not([hidden])){width:auto;padding:0 6px;gap:4px;color:#0757a6;background:#eaf3ff;border-color:#a9c9ee}
+    #toolsCount{border-radius:9px;min-width:17px;padding:1px 4px;background:#0866c6;color:#fff;font:600 11px/15px system-ui}
+    #toolsPanel{margin-top:8px;max-height:28dvh;overflow:auto;padding:0 2px}
+    #toolsPanel #summary{margin:4px 0 0}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(min(112px,100%),1fr));gap:8px}
+    main{position:relative;overscroll-behavior:contain}
+    .card{padding:6px;cursor:pointer;user-select:none}
+    .card.chosen,.card[aria-pressed=true]{background:#ecf4ff;border-color:#0866c6}
+    .card .preview{height:86px;background:#f5f7fa;border-radius:7px;pointer-events:none}
+    .card .card-name{display:block;text-align:center;margin:5px 0 0;font-weight:500}
+    #rubberBand{position:absolute;pointer-events:none;z-index:1;background:#4088db24;border:1px solid #4088db}
+    .selection-message #clear{margin-left:auto}
+    #organizeError{color:#b42318}
+    #personalFormatOptions{margin-bottom:12px}#personalFormatOptions summary{cursor:pointer;min-height:32px;color:#475467}
+    #personalFormatOptions select{max-width:100%}.metadata-form #personalReviewField{flex-direction:row;align-items:center}
+    #organizeImpact{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 16px;margin:8px 0;font-size:13px;line-height:1.5}
+    #organizeImpact:empty{display:none}
+    .impact-metric{display:inline-grid;align-items:baseline;grid-template-columns:1fr auto;gap:3px 6px;font-variant-numeric:tabular-nums}
+    .impact-metric:has(.impact-track){min-width:7em}
+    .impact-metric strong{color:#344054;font-weight:650}
+    .impact-track{display:block;grid-column:1/-1;height:3px;border-radius:2px;overflow:hidden;background:#dce4ee}
+    .impact-track>span{display:block;height:100%;background:#2872b8}
+    .impact-warning{width:100%;padding:6px 10px;color:#843d0a;background:#fff5e7;border-inline-start:3px solid #c67725;border-radius:4px}
+
+    .st-icon{display:block;flex:none;pointer-events:none}
+    button[data-icon]{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+    button[data-icon-only]{position:relative;flex:none;width:34px;min-height:34px;padding:0}
+    [data-icon-only] .control-label{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+    .search-field{display:flex;align-items:center;flex:1;min-width:0;position:relative}
+    .search-field>.st-icon{position:absolute;left:11px;color:#667085}
+    .toolbar .search-field input{width:100%;min-width:0;padding-left:36px}
+    #dragHandle{flex-wrap:nowrap}#dragHandle h1{flex:1}.window-controls{width:auto;flex-wrap:nowrap}
+    #viewSelected[aria-pressed=true]{color:#0757a6;border-color:#a9c9ee;background:#eaf3ff}
+    .selection-bar{gap:6px;padding:8px 12px}.selection-message{min-width:0;flex:1 1 auto;flex-wrap:wrap;gap:6px}
+    #selectionHint:empty{display:none}
+    .selection-message #clear{margin-left:0}.selection-bar [data-icon]{min-height:34px}
+    @container(max-width:650px){.selection-message{flex-basis:100%}.selection-message #clear{margin-left:auto}}
+    @container(max-width:450px){.grid{grid-template-columns:repeat(auto-fill,minmax(min(90px,100%),1fr))}.card .preview{height:68px}}
   </style>
   <button id="dockDivider" role="separator" aria-orientation="vertical" aria-label="调整侧栏宽度" hidden></button><section class="app">
-    <div id="dragHandle" title="拖动此栏移动窗口"><span class="grip" aria-hidden="true">⠿</span><h1>SeaTalk 表情助手</h1><div class="window-controls"><button id="guideOpen">使用指南</button><button id="settingsOpen">设置</button><button id="minimize" class="icon-button" aria-label="收起我的表情" title="收起，保留当前选择">−</button><button id="close" class="danger-fill" aria-label="关闭批量管理">✕ 关闭</button></div></div>
+    <div id="dragHandle" title="拖动此栏移动窗口"><span class="grip" aria-hidden="true">⠿</span><h1>SeaTalk 表情助手</h1><div class="window-controls"><button id="guideOpen" data-icon="help" data-icon-only>使用指南</button><button id="settingsOpen" data-icon="settings" data-icon-only>设置</button><button id="minimize" data-icon="minimize" data-icon-only class="icon-button" aria-label="收起我的表情" title="收起，保留当前选择">−</button><button id="close" data-icon="x" data-icon-only class="danger-fill" aria-label="关闭批量管理">关闭批量管理</button></div></div>
     <nav class="workspace-tabs" hidden aria-label="助手功能" role="tablist"><button id="backAvatar" role="tab" aria-selected="false">GIF 头像</button><button role="tab" aria-selected="true" aria-current="page">我的表情</button></nav>
-    <header><p id="summary"></p><div class="toolbar"><input id="search" type="search" placeholder="搜索名称、关键词或表情文字" aria-label="搜索收藏"><select id="filter" aria-label="显示范围"><option value="all">全部收藏</option><option value="selected">已选择</option></select><button id="syncFavorites">同步收藏</button><button id="scan">识别动图</button><button id="importOpen">导入口令</button></div><div class="filter-toolbar"><label>图片形式<select id="animation" aria-label="图片形式"><option value="all">全部形式</option><option value="animated">动图</option><option value="static">静态图</option><option value="unknown">未知</option></select></label><label>备注状态<select id="metadataFilter" aria-label="备注状态"><option value="all">全部备注</option><option value="annotated">已备注</option><option value="unannotated">未备注</option><option value="review">需复核</option></select></label><label>检测状态<select id="detectionFilter" aria-label="检测状态"><option value="all">全部检测状态</option><option value="unknown">未检测</option><option value="recognized">已识别</option><option value="failed">识别失败</option></select></label></div><div class="status-row"><span id="syncStatus" role="status">收藏自动同步；无需刷新网页。</span></div><div class="status-row"><span id="scanStatus" role="status">浏览和分享无需先识别动图。</span><button id="scanStop" hidden>停止识别</button></div><details id="hiddenTools" hidden><summary>开发工具</summary><button id="export">导出已选 JSON</button></details></header>
-    <main><div class="grid"></div><div id="emptyState" class="empty" hidden><h2 id="emptyTitle"></h2><p id="emptyMessage"></p><button id="emptyScan" hidden>识别动图</button><button id="emptyReset">查看全部收藏</button></div></main>
-    <footer><div class="pagination"><button id="first">首页</button><button id="prev">上一页</button><span id="page"></span><button id="next">下一页</button><button id="last">末页</button><label>跳至 <input id="jump" type="number" min="1" step="1" value="1" aria-label="跳转页码"> 页</label><button id="jumpGo">跳转</button></div><div class="selection-bar"><div class="selection-message"><span id="count">已选择 0 个</span><div id="selectionHint">先选择要分享或删除的表情。</div></div><button id="selectPage">全选本页</button><button id="viewSelected">查看已选</button><button id="clear">清空选择</button><span class="spacer"></span><button id="sendSelected" class="primary">发送所选表情</button><button id="shareOpen">生成分享口令</button><button id="remove" class="danger">删除所选表情</button></div><div class="helper-credit-row"><button id="helperCredit" class="helper-credit">Yixin.Zhong × Codex 制作</button><span class="helper-version" title="SeaTalk Sticker Helper">v${helperVersion}</span><a class="helper-github" href="https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper" target="_blank" rel="noopener noreferrer" title="查看 GitHub 项目" aria-label="查看 GitHub 项目"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a></div></footer><button id="resizeHandle" aria-label="调整窗口大小" title="拖动调整大小，也可用方向键调整"></button>
+    <header>
+      <div class="toolbar"><label class="search-field">${stickerIcon('search')}<input id="search" type="search" placeholder="搜索名称或关键字" aria-label="搜索收藏"></label><button id="toolsToggle" data-icon="sliders" data-icon-only aria-expanded="false" aria-controls="toolsPanel">工具<span id="toolsCount" aria-hidden="true" hidden></span></button></div>
+      <div id="groupTabs" role="group" aria-label="收藏分组"><button id="allGroups" type="button">${stickerIcon('groups')}<span></span></button><div id="groupStrip"></div></div>
+      <div id="activeFilters" role="group" aria-label="生效的筛选条件" hidden></div>
+      <div id="toolsPanel" hidden>
+        <div class="inline-actions"><select id="filter" aria-label="显示范围"><option value="all">全部收藏</option><option value="selected">已选择</option></select><button id="syncFavorites">同步收藏</button><button id="scan">识别动图</button><button id="importOpen">导入口令</button><button id="selectPage">全选本页</button></div>
+        <div class="filter-toolbar"><label>图片形式<select id="animation" aria-label="图片形式"><option value="all">全部形式</option><option value="animated">动图</option><option value="static">静态图</option><option value="unknown">未知</option></select></label><label>备注状态<select id="metadataFilter" aria-label="备注状态"><option value="all">全部备注</option><option value="annotated">已备注</option><option value="unannotated">未备注</option><option value="review">需复核</option></select></label><label>检测状态<select id="detectionFilter" aria-label="检测状态"><option value="all">全部检测状态</option><option value="unknown">未检测</option><option value="recognized">已识别</option><option value="failed">识别失败</option></select></label></div><div class="status-row"><span id="syncStatus" role="status">收藏自动同步；无需刷新网页。</span></div><div class="status-row"><span id="scanStatus" role="status">浏览和分享无需先识别动图。</span><button id="scanStop" hidden>停止识别</button></div><p id="summary"></p><p id="selectionDetails" hidden></p>
+      </div><details id="hiddenTools" hidden><summary>开发工具</summary><button id="export">导出已选 JSON</button></details>
+    </header>
+    <main><div class="grid" role="group" aria-label="收藏表情"></div><div id="rubberBand" hidden></div><div id="emptyState" class="empty" hidden><h2 id="emptyTitle"></h2><p id="emptyMessage"></p><button id="emptyScan" hidden>识别动图</button><button id="emptyReset">查看全部收藏</button></div></main>
+    <footer><div class="pagination"><button id="first" data-icon="first" data-icon-only>首页</button><button id="prev" data-icon="prev" data-icon-only>上一页</button><span id="page"></span><button id="next" data-icon="next" data-icon-only>下一页</button><button id="last" data-icon="last" data-icon-only>末页</button><input id="jump" type="number" min="1" step="1" value="1" aria-label="跳转页码" title="跳转页码"><button id="jumpGo" data-icon="enter" data-icon-only>跳转</button></div><div class="selection-bar" hidden><div class="selection-message"><span id="count" role="status">已选择 0 个</span><span id="selectionHint"></span><button id="clear" data-icon="clear" data-icon-only>清空选择</button></div><button id="organizeSelected" data-icon="organize">批量整理</button><button id="editSelected" data-icon="edit" data-icon-only>编辑表情</button><button id="previewSelected" data-icon="zoom" data-icon-only>放大预览</button><button id="sendSelected" data-icon="send" class="primary" aria-label="发送所选表情">发送</button><button id="viewSelected" data-icon="selected" data-icon-only>查看已选</button><button id="shareOpen" data-icon="share" data-icon-only>生成分享口令</button><button id="remove" data-icon="trash" data-icon-only class="danger">删除所选表情</button></div><div class="helper-credit-row"><button id="helperCredit" class="helper-credit">Yixin.Zhong × Codex 制作</button><span class="helper-version" title="SeaTalk Sticker Helper">v${helperVersion}</span><a class="helper-github" href="https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper" target="_blank" rel="noopener noreferrer" title="查看 GitHub 项目" aria-label="查看 GitHub 项目"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a></div></footer><button id="resizeHandle" aria-label="调整窗口大小" title="拖动调整大小，也可用方向键调整"></button>
   </section>
+  <dialog id="organizeDialog" aria-labelledby="organizeTitle"><div class="dialog-header"><h2 id="organizeTitle">整理所选表情</h2><button data-close="organizeDialog" aria-label="关闭整理">×</button></div><div class="dialog-body metadata-form">
+    <label>统一显示名称<input id="batchName" type="text" maxlength="80" placeholder="例如「奶龙」，留空保留原名称"></label>
+    <label>移到分组<select id="organizeGroup"></select></label><label id="newGroupLabel" hidden>新分组名称<input id="newGroupName" maxlength="60"></label>
+    <label>追加搜索关键字<input id="batchKeywords" maxlength="2000" placeholder="用逗号分隔，例如：工作，上班，打工人"></label><p id="organizeImpact" aria-live="polite" aria-atomic="true"></p><p id="organizeError" role="alert"></p></div>
+    <div class="dialog-actions"><button data-close="organizeDialog">取消</button><button id="organizeApply" class="primary" disabled>保存整理</button></div></dialog>
   <dialog id="guideDialog" aria-labelledby="guideTitle"><div class="dialog-header"><h2 id="guideTitle">我的表情使用指南</h2><button data-close="guideDialog" aria-label="关闭使用指南">×</button></div><div class="dialog-body guide"><p>整理、搜索和分享你的 SeaTalk 收藏表情。</p>
-    <section><h3>开始前</h3><p>在 SeaTalk 打开表情面板，切换到爱心「收藏」页签，再打开助手的「我的表情」。</p></section>
+    <section><h3>开始前</h3><p>点击聊天输入框工具栏的「表情快选」。点击表情可直接发送，点「管理表情」可整理收藏。若收藏尚未载入，先在 SeaTalk 原生表情面板打开一次爱心收藏。</p></section>
+    <section><h3>从聊天收藏</h3><p>打开「表情快选 → 从聊天收藏」，拖过消息选择表情。可选分组、追加搜索关键字，或直接确认收藏。按 Esc 可取消。</p></section>
     <section><h3>收藏同步</h3><p>助手打开时，每 1.5 秒读取 SeaTalk 当前账号的收藏状态，自动同步新增和移除；也可点击「同步收藏」。原生表情面板关闭后仍可同步。这只更新右侧列表，保留备注、筛选和仍在收藏中的勾选，不会刷新网页或重新请求服务器。发送、添加、删除、识别或弹窗打开期间暂停同步，结束后恢复。操作结果不确定时，仍需刷新网页核对服务器保存结果。</p></section>
-    <section><h3>选择和查看表情</h3><p>点击图片可放大，勾选复选框可选择。「全选本页」只选择当前页；翻页或切换筛选后，之前的选择仍会保留。点击「查看已选」可统一核对。</p><p>「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在备注编辑中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。</p></section>
-    <section><h3>分享给朋友</h3><p>选择表情 → 点击「生成分享口令」→ 复制完整口令发给朋友。</p><p>每次最多分享 100 个。表情越多，口令越长。点击名称旁的编辑按钮可保存备注、关键词和表情文字，用于搜索，不会修改 SeaTalk 原收藏。</p></section>
+    <section><h3>分组与批量整理</h3><p>管理页搜索当前分组。「全部」固定在最左侧，点击即可跨组搜索。聊天工具栏的「表情快选」会搜索全部收藏。</p><p>多选后点「批量整理」，可改名、选分组或追加搜索关键字。重复的关键字会合并。留空可保留原值，覆盖已有名称前会显示数量。</p></section>
+    <section><h3>选择和查看表情</h3><p>单击选一张，Ctrl 或 ⌘ 加单击可增减选择，Shift 加单击可连续选择。从网格空白处拖动可框选，按住 Shift 拖动可追加。选中一张后可放大预览或编辑名称、搜索关键字和分组。在「工具」内可全选本页或筛选。</p><p>「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在「编辑表情」中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。</p></section>
+    <section><h3>分享给朋友</h3><p>选择表情 → 点击「生成分享口令」→ 复制完整口令发给朋友。</p><p>每个口令最多分享 100 张表情。勾选「附带名称和搜索关键字」即可一起分享。</p></section>
     <section><h3>添加朋友分享的表情</h3><p>点击「导入口令」→ 粘贴完整口令 → 点击「解析并预览」→ 选择表情 → 确认添加。</p><p>已收藏的表情不会重复添加，但可以导入备注。已有备注默认保留，并合并去重关键词；也可逐条选择使用朋友的备注。预览失败的新表情暂时不能添加。</p></section>
     <section><h3>删除不需要的收藏</h3><p>选择表情 → 点击「删除所选表情」→ 核对图片和数量 → 确认删除。</p><p>删除只影响你的收藏，不会删除聊天消息。本助手无法撤销删除，分享口令也不保证能恢复。筛选之外的已选表情也会包括在确认清单中。</p></section>
-    <section><h3>收起、关闭和结果核对</h3><p>点击顶栏「−」可收起为小入口，保留页码、筛选、勾选和识别进度；点击入口可恢复。宽屏时自动分栏，SeaTalk 在左侧、助手在右侧；拖动分隔线调整宽度。在「设置 → 窗口布局」选择「浮窗」可切换为自由窗口，再拖动顶栏移动、拖动右下角调整大小。收起或关闭后恢复原页面布局。</p><p>操作结果不确定时，先刷新 SeaTalk 核对收藏，再决定是否重试。刷新会清空本次勾选。添加或删除进行中时，停止会等待当前表情的结果，再停止后续操作。</p></section>
-<section><h3>备注、备份与发送</h3><p>备注自动保存在当前账号的油猴本地存储。可在「设置」导出备份或预览导入标签文件。分享可附带备注，但不包含私人说明。含备注的分享口令需要 5.1 或更新版本；取消附带备注可生成兼容旧版的口令。预览或选择表情后，核对目标会话并确认发送；切换账号或会话后停止。</p></section></div><div class="dialog-actions"><span></span><button id="guideClose" class="primary">知道了，返回管理</button></div></dialog>
+    <section><h3>收起、关闭和结果核对</h3><p>点击顶栏「−」保留页码、筛选和选择。下次通过「表情快选 → 管理表情」可以继续整理。宽屏时助手与聊天并排，拖动分隔线可调整宽度；在「设置 → 窗口布局」可切换为浮窗。</p><p>操作结果不确定时，先刷新 SeaTalk 核对收藏，再决定是否重试。刷新会清空本次勾选。添加或删除进行中时，停止会等待当前表情的结果，再停止后续操作。</p></section>
+<section><h3>备注、备份与发送</h3><p>名称和搜索关键字保存在当前账号的油猴本地存储。个人备份还包含分组、图片形式和复核状态。到「设置」可以导出备份或预览导入。分享口令可按需附带名称和搜索关键字。发送前请核对目标会话。</p></section></div><div class="dialog-actions"><span></span><button id="guideClose" class="primary">知道了，返回管理</button></div></dialog>
   <dialog id="zoom" aria-labelledby="zoomTitle"><div class="dialog-header"><h2 id="zoomTitle">表情预览</h2><button data-close="zoom" aria-label="关闭预览">×</button></div><div class="dialog-body"><img class="zoom-image" alt="放大预览"><p></p></div><div class="dialog-actions"><span></span><button id="zoomClose">返回管理</button><button id="sendZoom" class="primary">发送到当前会话</button></div></dialog>
-  <dialog id="sharing" aria-labelledby="shareTitle"><div class="dialog-header"><h2 id="shareTitle">分享所选表情</h2><button data-close="sharing" aria-label="关闭分享">×</button></div><div class="dialog-body"><p>复制完整口令发给朋友，对方可在「导入口令」中预览并添加。</p><label class="metadata-choice"><input id="shareIncludeMetadata" type="checkbox" checked> 附带备注名称、关键词与表情文字（不含私人说明）</label><textarea id="shareCode" readonly aria-label="分享口令"></textarea><p id="shareStatus" role="status"></p></div><div class="dialog-actions"><button id="shareClose">返回管理</button><button id="shareCopy" class="primary">复制分享口令</button></div></dialog>
-  <dialog id="importing" aria-labelledby="importTitle"><div class="dialog-header"><h2 id="importTitle">导入口令</h2><button data-close="importing" aria-label="关闭导入">×</button></div><div class="dialog-body"><p>粘贴好友的完整口令，先预览并选择，再确认添加。</p><textarea id="importCode" aria-label="粘贴分享口令" maxlength="2097152" placeholder="STGIF1.…"></textarea><div class="inline-actions"><button id="importParse">解析并预览</button><button id="importSelect">全选可添加</button></div><label class="metadata-choice"><input id="shareImportMetadata" type="checkbox" checked> 同时导入备注，已有备注默认保留</label><div id="importPreview" class="import-grid"></div><p id="importStatus" role="status"></p></div><div class="dialog-actions"><button id="importCancel">取消</button><div class="right-actions"><button id="importStop" hidden>停止后续添加</button><button id="importConfirm" class="primary" disabled>确认添加所选表情</button></div></div></dialog>
+  <dialog id="sharing" aria-labelledby="shareTitle"><div class="dialog-header"><h2 id="shareTitle">分享所选表情</h2><button data-close="sharing" aria-label="关闭分享">×</button></div><div class="dialog-body"><p>复制完整口令发给朋友，对方可在「导入口令」中预览并添加。</p><label class="metadata-choice"><input id="shareIncludeMetadata" type="checkbox" checked> 附带名称和搜索关键字</label><textarea id="shareCode" readonly aria-label="分享口令"></textarea><p id="shareStatus" role="status"></p></div><div class="dialog-actions"><button id="shareClose">返回管理</button><button id="shareCopy" class="primary">复制分享口令</button></div></dialog>
+  <dialog id="importing" aria-labelledby="importTitle"><div class="dialog-header"><h2 id="importTitle">导入口令</h2><button data-close="importing" aria-label="关闭导入">×</button></div><div class="dialog-body"><p>粘贴好友的完整口令，先预览并选择，再确认添加。</p><textarea id="importCode" aria-label="粘贴分享口令" maxlength="2097152" placeholder="STGIF3.…"></textarea><div class="inline-actions"><button id="importParse">解析并预览</button><button id="importSelect">全选可添加</button></div><label class="metadata-choice"><input id="shareImportMetadata" type="checkbox" checked> 同时导入名称和搜索关键字，默认保留已有名称</label><div id="importPreview" class="import-grid"></div><p id="importStatus" role="status"></p></div><div class="dialog-actions"><button id="importCancel">取消</button><div class="right-actions"><button id="importStop" hidden>停止后续添加</button><button id="importConfirm" class="primary" disabled>确认添加所选表情</button></div></div></dialog>
   <dialog id="deletion" aria-labelledby="deleteTitle"><div class="dialog-header"><h2 id="deleteTitle">从我的表情中移除</h2><button data-close="deletion" aria-label="关闭删除确认">×</button></div><div class="dialog-body"><p id="deleteSummary"></p><p>删除后无法在本助手撤销。口令不保证能恢复，请核对以下表情。</p><div id="deletePreview" class="thumb-list"></div><p id="deleteProgress" role="status"></p></div><div class="dialog-actions"><button id="deleteCancel">取消</button><div class="right-actions"><button id="deleteStop" hidden>停止后续删除</button><button id="deleteConfirm" class="danger-fill">确认删除</button></div></div></dialog>
   <dialog id="output" aria-labelledby="exportTitle"><div class="dialog-header"><h2 id="exportTitle">开发者导出</h2><button data-close="output" aria-label="关闭导出">×</button></div><div class="dialog-body"><textarea readonly aria-label="导出 JSON"></textarea><p id="message"></p></div><div class="dialog-actions"><button id="outputClose">返回管理</button><div class="right-actions"><button id="download">下载 JSON</button><button id="copy" class="primary">复制 JSON</button></div></div></dialog>
 
-<dialog id="personalEditor" aria-labelledby="personalEditorTitle"><div class="dialog-header"><h2 id="personalEditorTitle">编辑备注与关键词</h2><button data-close="personalEditor" aria-label="关闭备注编辑">×</button></div><div class="dialog-body metadata-form"><label>备注名称<input id="personalName" maxlength="80" required></label><label>关键词<input id="personalKeywords" maxlength="2000" placeholder="用逗号分隔，例如：工作，上班，打工人"></label><label>图片形式<select id="personalAnimation"><option value="auto">自动识别</option><option value="animated">动图（手动）</option><option value="static">静态图（手动）</option><option value="unknown">未知（手动）</option></select></label><p id="personalDetectionStatus"></p><p>手动标注优先于检测结果；选择「自动识别」可撤销手动标注。未检测或识别失败也能编辑备注。保存备注后将解除「需复核」。</p><label>表情文字<textarea id="personalVisibleText" maxlength="500"></textarea></label><label>私人说明（默认不分享）<textarea id="personalNote" maxlength="1000"></textarea></label><p>保存在当前账号的油猴本地存储中，不会修改 SeaTalk 收藏原名称。</p><p id="personalEditorStatus" role="status"></p></div><div class="dialog-actions"><button data-close="personalEditor">取消</button><button id="personalSave" class="primary">保存到本机</button></div></dialog>
-<dialog id="personalSettings" aria-labelledby="personalSettingsTitle"><div class="dialog-header"><h2 id="personalSettingsTitle">设置</h2><button data-close="personalSettings" aria-label="关闭个人设置">×</button></div><div class="dialog-body"><section class="settings-section"><h3>语言</h3><div class="workspace-language" role="group" aria-label="语言"><button data-workspace-locale="zh" aria-pressed="false">中文</button><button data-workspace-locale="en" aria-pressed="false">EN</button></div></section><section class="settings-section"><h3>窗口布局</h3><div class="inline-actions"><button id="dockToggle" aria-label="切换分栏与浮窗" disabled>分栏</button><button id="resetPosition" aria-label="重置布局" title="恢复默认分栏、窗口位置和大小">重置布局</button></div><p>分栏让 SeaTalk 与助手并排显示；浮窗可自由拖动。重置布局恢复默认分栏、位置和大小，不会刷新收藏。</p></section><section class="settings-section"><h3>个人数据</h3><p>备份与恢复</p><p>备份包含全部备注、关键词、表情文字与私人说明，不含图片、账号或登录凭据。导入只恢复备注，不会添加、删除或发送表情。</p><div class="inline-actions"><button id="personalExport">导出个人备份</button><label class="file-label">选择备份或标签文件<input id="personalImportFile" type="file" accept=".json,application/json"></label></div><p id="personalSettingsStatus" role="status"></p><section id="personalImportPanel" hidden><p>已有备注默认保留；可逐条选择使用导入备注。AI 需复核项默认不勾选。</p><label><input id="personalMergeKeywords" type="checkbox" checked> 合并并去重关键词</label><div class="inline-actions"><button id="personalSelectAll">全选（含需复核项）</button><button id="personalSelectSafe">选择无需复核项</button><button id="personalClearImport">清空勾选</button></div><div id="personalImportRows" class="metadata-import-list"></div></section></section></div><div class="dialog-actions"><button data-close="personalSettings">返回管理</button><button id="personalImportConfirm" class="primary" disabled>确认导入备注</button></div></dialog>
+<dialog id="personalEditor" aria-labelledby="personalEditorTitle">
+  <div class="dialog-header"><h2 id="personalEditorTitle">编辑表情</h2><button data-close="personalEditor" aria-label="关闭表情编辑">×</button></div>
+  <div class="dialog-body metadata-form">
+    <label>表情包名称<input id="personalName" maxlength="80"></label>
+    <label>搜索关键字<input id="personalKeywords" maxlength="2000" placeholder="用逗号分隔，例如：工作，上班，打工人"></label>
+    <label>分组<select id="personalGroup"></select></label>
+    <label id="personalNewGroupField" hidden><span id="personalNewGroupLabel">新分组名称</span><input id="personalNewGroupName" maxlength="60"></label>
+    <details id="personalFormatOptions"><summary>图片形式</summary>
+      <select id="personalAnimation" aria-label="图片形式"><option value="auto">自动识别</option><option value="animated">动图（手动）</option><option value="static">静态图（手动）</option><option value="unknown">未知（手动）</option></select>
+      <p id="personalDetectionStatus"></p>
+    </details>
+    <label id="personalReviewField" class="metadata-choice" hidden><input type="checkbox" id="personalReviewAccept"><span>标记为已复核</span></label>
+    <p id="personalEditorStatus" role="status"></p>
+  </div>
+  <div class="dialog-actions"><button data-close="personalEditor">取消</button><button id="personalSave" class="primary">保存到本机</button></div>
+</dialog>
+<dialog id="personalSettings" aria-labelledby="personalSettingsTitle"><div class="dialog-header"><h2 id="personalSettingsTitle">设置</h2><button data-close="personalSettings" aria-label="关闭个人设置">×</button></div><div class="dialog-body"><section class="settings-section"><h3>语言</h3><div class="workspace-language" role="group" aria-label="语言"><button data-workspace-locale="zh" aria-pressed="false">中文</button><button data-workspace-locale="en" aria-pressed="false">EN</button></div></section><section class="settings-section"><h3>窗口布局</h3><div class="inline-actions"><button id="dockToggle" aria-label="切换分栏与浮窗" disabled>分栏</button><button id="resetPosition" aria-label="重置布局" title="恢复默认分栏、窗口位置和大小">重置布局</button></div><p>分栏让 SeaTalk 与助手并排显示；浮窗可自由拖动。重置布局恢复默认分栏、位置和大小，不会刷新收藏。</p></section><section class="settings-section"><h3>个人数据</h3><p>备份与恢复</p><p>备份包含表情包名称、搜索关键字、分组、图片形式及复核状态。导入只更新本机设置。</p><div class="inline-actions"><button id="personalExport">导出个人备份</button><label class="file-label">选择备份或标签文件<input id="personalImportFile" type="file" accept=".json,application/json"></label></div><p id="personalSettingsStatus" role="status"></p><section id="personalImportPanel" hidden><p>已有备注和分组优先保留，可逐条选择使用备份内容。需复核项默认不勾选。</p><label><input id="personalMergeKeywords" type="checkbox" checked> 合并并去重关键词</label><div class="inline-actions"><button id="personalSelectAll">全选（含需复核项）</button><button id="personalSelectSafe">选择无需复核项</button><button id="personalClearImport">清空勾选</button></div><div id="personalImportRows" class="metadata-import-list"></div></section></section></div><div class="dialog-actions"><button data-close="personalSettings">返回管理</button><button id="personalImportConfirm" class="primary" disabled>确认导入所选设置</button></div></dialog>
 <dialog id="sendConfirmation" aria-labelledby="sendTitle"><div class="dialog-header"><h2 id="sendTitle">确认发送表情</h2><button id="sendClose" aria-label="关闭发送确认">×</button></div><div class="dialog-body"><p id="sendTarget" class="notice"></p><p id="sendSummary"></p><div id="sendPreview" class="thumb-list"></div><p id="sendStatus" role="status"></p><p>只发送本次确认的表情；切换账号或会话后停止。结果未确认时不会自动重发。</p></div><div class="dialog-actions"><button id="sendCancel">取消</button><div class="right-actions"><button id="sendStop" hidden>停止后续发送</button><button id="sendConfirm" class="primary">确认发送</button></div></div></dialog>
 `;
+  for (const button of root.querySelectorAll('button[data-icon]')) {
+    const label = document.createElement('span');
+    label.className = 'control-label';
+    label.textContent = button.textContent;
+    const action = button.getAttribute('aria-label') || label.textContent;
+    button.setAttribute('aria-label', action);
+    if (!button.title) button.title = action;
+    button.firstChild.replaceWith(label);
+    button.insertAdjacentHTML('afterbegin', stickerIcon(button.dataset.icon));
+  }
   const applyStaticLocale = language.bindStatic(root);
   applyStaticLocale();
   root.querySelector('.app').lang = language.locale;
@@ -5538,14 +5887,14 @@ function getFavoritesAccountModuleUrl() {
     const close = document.createElement('button'); close.textContent = '×'; close.setAttribute('aria-label', ui('关闭提示','Dismiss notification'));
     close.style.cssText = 'min-height:24px;padding:0 5px;border:0;background:transparent;color:inherit;font-size:20px'; close.onclick = dismissActionNotice;
     notice.append(text,close);
-    (root.querySelector('dialog[open]') || $('.app')).append(notice); actionNotice = notice;
+    (host.dataset.open === 'true' ? root.querySelector('dialog[open]') || $('.app') : document.body).append(notice); actionNotice = notice;
     try { notice.showPopover(); } catch (_) { /* Keep the visible inline fallback. */ }
     noticeTimer = setTimeout(dismissActionNotice, tone === 'success' ? 5000 : 9000);
   }
   const activeItems = () => items.filter(item => !item.deleted);
   const selection = () => items.filter(item => item.selected && !item.deleted);
   const matches = item => {
-    if (item.deleted) return false;
+    if (item.deleted || (activeGroup !== null && personalGroupFor(item.gifId) !== activeGroup)) return false;
     const query = $('#search').value.trim().toLowerCase();
     return (!query || personalMetadataMatches({name:item.label,keywords:item.metadata?.keywords || [],visibleText:item.metadata?.visibleText || '',note:item.metadata?.note || ''},query)) &&
       ($('#filter').value !== 'selected' || item.selected) &&
@@ -5556,12 +5905,7 @@ function getFavoritesAccountModuleUrl() {
   const filtered = () => items.filter(matches);
   const effectiveAnimation = item => item.metadata?.animationOverride && item.metadata.animationOverride !== 'auto' ? item.metadata.animationOverride : ['animated','static'].includes(item.animation) ? item.animation : 'unknown';
   const detectionText = item => ({animated:tr('动图'),static:tr('静态图'),unknown:tr('未检测'),failed:tr('识别失败')})[item.animation];
-  const badgeText = item => {
-    const manual=item.metadata?.animationOverride && item.metadata.animationOverride !== 'auto';
-    const value=manual ? ({animated:tr('动图'),static:tr('静态图'),unknown:tr('未知')})[effectiveAnimation(item)]+ui(' · 手动',' · Manual') : detectionText(item);
-    return value+(item.metadata?.needsReview ? ui(' · 需复核',' · Needs review') : '');
-  };
-  const busy = () => deleting || importingBusy || sendingBusy || sendPreparing || metadataSaving;
+  const busy = () => captureActive || deleting || importingBusy || sendingBusy || sendPreparing || metadataSaving;
   const selectionOutside = () => selection().filter(item => !matches(item)).length;
   function updateSummary() {
     const list = activeItems(), classified = list.filter(item => ['animated', 'static'].includes(effectiveAnimation(item))).length;
@@ -5573,10 +5917,18 @@ function getFavoritesAccountModuleUrl() {
   function count() {
     const selected = selection(), outside = selectionOutside(), locked = busy();
     for (const button of root.querySelectorAll('[data-workspace-locale]')) button.setAttribute('aria-pressed',String(button.dataset.workspaceLocale === language.locale));
-    for (const check of root.querySelectorAll('.grid .card-bottom input[type=checkbox]')) check.disabled = locked;
-    for (const edit of root.querySelectorAll('.grid .edit-name')) edit.disabled = locked || !personalReady;
+    for (const card of root.querySelectorAll('.grid .card')) card.disabled = locked;
+    $('.selection-bar').hidden = !selected.length && !selectedView;
+    $('#editSelected').hidden = $('#previewSelected').hidden = selected.length !== 1;
+    $('#editSelected').disabled = locked || !personalReady;
+    $('#previewSelected').disabled = locked;
+    $('#organizeSelected').disabled = locked || !personalReady || !selected.length;
+    $('#toolsToggle').disabled = locked;
+    for (const chip of $('#activeFilters').children) chip.disabled = locked;
+    showSelectionDetails(selected);
+    for (const tab of $('#groupTabs').querySelectorAll('button')) tab.disabled = locked;
     $('#count').textContent = ui(`已选择 ${selected.length} 个`, `${selected.length} selected`);
-    $('#selectionHint').textContent = outside ? ui(`其中 ${outside} 个不在当前筛选中`, `${outside} outside the current filter`) : selected.length > 100 ? tr('每次最多分享 100 个，请分批选择。') : selected.length ? tr('翻页和筛选会保留选择。') : tr('先选择要分享或删除的表情。');
+    $('#selectionHint').textContent = outside ? ui(`其中 ${outside} 个不在当前筛选中`, `${outside} outside the current filter`) : selected.length > 100 ? tr('每次最多分享 100 个，请分批选择。') : '';
     $('#shareOpen').disabled = locked || !selected.length || selected.length > 100 || selected.some(item => !item.label.trim());
     $('#shareOpen').title = selected.length > 100 ? tr('每次最多分享 100 个') : !selected.length ? tr('先选择表情') : tr('生成分享口令');
     let accountReady = workspaceAccountState === 'ready';
@@ -5585,18 +5937,25 @@ function getFavoritesAccountModuleUrl() {
     $('#remove').title = deleteNeedsReview ? tr('请先刷新核对上次删除结果') : !selected.length ? tr('先选择表情') : tr('删除所有已选表情，下一步核对清单');
     $('#clear').disabled = locked || !selected.length;
     $('#viewSelected').disabled = locked || (!selected.length && !selectedView && $('#filter').value !== 'selected');
-    $('#viewSelected').textContent = selectedView ? tr('返回筛选') : tr('查看已选');
+    const review = $('#viewSelected'), reviewAction = selectedView ? tr('返回筛选') : tr('查看已选');
+    review.querySelector('.control-label').textContent = review.title = reviewAction;
+    review.setAttribute('aria-label', reviewAction);
+    review.setAttribute('aria-pressed', String(!!selectedView));
     $('#selectPage').disabled = locked || !filtered().length;
     $('#scan').disabled = locked || scanning;
     $('#syncFavorites').disabled = locked || scanning || workspaceAccountState !== 'ready';
     $('#importOpen').disabled = locked || scanning || !accountReady || !personalReady;
     for (const selector of ['#search', '#filter', '#animation', '#metadataFilter', '#detectionFilter']) $(selector).disabled = locked;
     $('#settingsOpen').disabled = locked;
+    for (const el of $('#organizeDialog').querySelectorAll('button,input,select,textarea')) {
+      if (el.id !== 'organizeApply') el.disabled = metadataSaving;
+    }
     $('#sendSelected').disabled = locked || scanning || sendUncertain || !selected.length || selected.length > 100 || !accountReady;
     $('#sendZoom').disabled = locked || sendUncertain || !zoomItem || !accountReady;
     $('#personalImportFile').disabled = $('#personalExport').disabled = metadataSaving || !personalReady || !accountReady;
-    for (const selector of ['#personalSelectAll','#personalSelectSafe','#personalClearImport','#personalMergeKeywords','#personalName','#personalKeywords','#personalVisibleText','#personalNote','#personalAnimation']) $(selector).disabled = metadataSaving;
-    for (const entry of personalDraft?.rows || []) { entry.check.disabled = metadataSaving; entry.mode.disabled = metadataSaving || !personalRecords().has(entry.row.gifId); }
+    for (const selector of ['#personalSelectAll','#personalSelectSafe','#personalClearImport','#personalMergeKeywords','#personalName','#personalKeywords','#personalGroup','#personalNewGroupName','#personalReviewAccept','#personalAnimation']) $(selector).disabled = metadataSaving;
+    for (const close of $('#personalEditor').querySelectorAll('[data-close]')) close.disabled = metadataSaving;
+    for (const entry of personalDraft?.rows || []) { entry.check.disabled = metadataSaving; entry.mode.disabled = metadataSaving || !entry.hasConflict; }
     const task = sendingBusy ? ui(' · 正在发送',' · Sending') : scanning ? tr(' · 正在识别') : importingBusy ? tr(' · 正在添加') : deleting ? tr(' · 正在删除') : '';
     mini.textContent = tr('SeaTalk 表情助手') + ui(` · 收藏 · 已选 ${selected.length} 个`, ` · Favorites · ${selected.length} selected`) + task;
     mini.setAttribute('aria-label', ui('恢复 SeaTalk 表情助手，已选择 ' + selected.length + ' 个', 'Restore SeaTalk Sticker Helper, ' + selected.length + ' selected') + task);
@@ -5605,10 +5964,26 @@ function getFavoritesAccountModuleUrl() {
     const empty = !filtered().length;
     $('#emptyState').hidden = !empty;
     if (!empty) return;
+    $('#emptyReset').hidden = false;
+    if (!favoritesRead && !items.length) {
+      const waiting = workspaceAccountState === 'pending';
+      $('#emptyTitle').textContent = waiting ? ui('正在读取收藏','Loading favorites') : ui('收藏尚未载入','Favorites have not loaded yet');
+      $('#emptyMessage').textContent = waiting ? '' : workspaceAccountState === 'failed'
+        ? ui('请刷新 SeaTalk，再打开表情助手核对当前账号。','Reload SeaTalk and reopen the helper to check the active account.')
+        : ui('打开 SeaTalk 表情面板的爱心收藏，助手会自动同步。','Open the Favorites heart in SeaTalk’s sticker picker. The helper will sync your stickers.');
+      $('#emptyScan').hidden = $('#emptyReset').hidden = true;
+      return;
+    }
+    if (activeGroup === '' && !$('#search').value.trim() && activeItems().length && activeItems().every(item=>personalGroupFor(item.gifId))) {
+      $('#emptyTitle').textContent = ui('所有收藏都已分组','All your favorites are grouped');
+      $('#emptyMessage').textContent = ui('选择上方分组，或查看全部收藏。','Choose a group above or view all favorites.');
+      $('#emptyScan').hidden = true;
+      return;
+    }
     const unknown = activeItems().some(item => effectiveAnimation(item) === 'unknown' && item.animation === 'unknown');
     const typeRequiresScan = ['animated', 'static'].includes($('#animation').value) && unknown;
     $('#emptyTitle').textContent = scanning ? tr('正在识别图片类型') : typeRequiresScan ? ui('先检测或手动标注图片形式','Inspect or manually label the image format') : $('#filter').value === 'selected' ? tr('当前没有符合条件的已选表情') : tr('没有找到符合条件的表情');
-    $('#emptyMessage').textContent = scanning ? tr('识别完成后，这里会显示符合筛选条件的表情。') : typeRequiresScan ? ui('可点击「识别动图」，或切换到「全部形式」，编辑备注中的图片形式。备注、搜索和分享不依赖检测。','Choose Inspect animation, or switch to All formats and set a format in the note editor. Notes, search and sharing do not require inspection.') : tr('可以调整搜索或筛选条件。之前在其他页选择的表情仍会保留。');
+    $('#emptyMessage').textContent = scanning ? tr('识别完成后，这里会显示符合筛选条件的表情。') : typeRequiresScan ? ui('可点击「识别动图」，或切换到「全部形式」，编辑备注中的图片形式。备注、搜索和分享不依赖检测。','Choose Inspect animation, or switch to All formats and set a format in Edit sticker. Notes, search and sharing do not require inspection.') : tr('可以调整搜索或筛选条件。之前在其他页选择的表情仍会保留。');
     $('#emptyScan').hidden = scanning || !typeRequiresScan;
   }
   const focusReturn = new WeakMap();
@@ -5624,45 +5999,40 @@ function getFavoritesAccountModuleUrl() {
   function closeDialog(dialog) { dialog.close(); }
   root.querySelectorAll('[data-close]').forEach(button => button.onclick = () => {
     const id = button.dataset.close;
+    if (id === 'organizeDialog' && metadataSaving) return;
     if (id === 'importing') return cancelImport();
     if (id === 'deletion' && deleting) { stop = true; $('#deleteProgress').textContent = tr('正在等待当前结果，随后停止。'); return; }
     closeDialog($('#' + id));
   });
   function render() {
+    renderGroupTabs();
+    renderActiveFilters();
     const list = filtered(); page = Math.max(0, Math.min(page, Math.ceil(list.length / size) - 1));
     $('.grid').replaceChildren();
     for (const item of list.slice(page * size, (page + 1) * size)) {
-      const card = document.createElement('article'); card.className = 'card' + (item.selected ? ' chosen' : '');
-      const preview = document.createElement('button'); preview.className = 'preview'; preview.title = tr('放大预览 ') + item.label;
-      const image = document.createElement('img'); image.src = item.url; image.alt = item.label; image.loading = 'lazy'; image.referrerPolicy = 'no-referrer';
+      const card = document.createElement('button'); card.type = 'button';
+      card.className = 'card'; card.dataset.id = item.gifId;
+      styleSelection(card, item.selected);
+      card.setAttribute('aria-label', item.label);
+      const preview = document.createElement('span'); preview.className = 'preview';
+      const image = document.createElement('img'); image.src = item.url; image.alt = ''; image.draggable = false;
+      image.loading = 'lazy'; image.referrerPolicy = 'no-referrer';
       image.onerror = () => { image.alt = tr('预览加载失败'); };
-      preview.append(image); preview.onclick = () => {
-        zoomItem = item; $('#zoom img').src = item.url; $('#zoom p').textContent = item.label; count(); openDialog($('#zoom'));
-      };
-      const title = document.createElement('div'); title.className = 'card-title';
-      const nameText = document.createElement('span'); nameText.className = 'card-name'; nameText.textContent = item.label; nameText.title = item.label;
-      const edit = document.createElement('button'); edit.className='edit-name'; edit.textContent='✎';
-      edit.setAttribute('aria-label',ui('编辑备注与关键词 ','Edit notes and keywords: ')+item.label);edit.title=tr('编辑备注与关键词');edit.disabled=busy() || !personalReady;
-      edit.onclick=()=>openPersonalEditor(item);title.append(nameText,edit);
-      const bottom = document.createElement('div'); bottom.className = 'card-bottom';
-      const badge = document.createElement('span'); badge.className = 'badge'; badge.dataset.id = item.gifId; badge.dataset.kind = effectiveAnimation(item); badge.title = ui('自动检测：','Automatic detection: ')+detectionText(item); badge.textContent = badgeText(item);
-      const label = document.createElement('label'), check = document.createElement('input'); check.type = 'checkbox'; check.checked = item.selected; check.disabled = busy(); check.setAttribute('aria-label', tr('选择此表情'));
-      check.onchange = () => {
-        if (busy()) { check.checked = item.selected; return; }
-        item.selected = check.checked;
-        if ($('#filter').value === 'selected') {
-          const scroll = $('main').scrollTop; render(); $('main').scrollTop = scroll;
-        } else { card.classList.toggle('chosen', item.selected); count(); }
-      };
-      label.append(check, tr('选择')); bottom.append(badge, label); card.append(preview, title, bottom); $('.grid').append(card);
+      const name = document.createElement('span'); name.className = 'card-name';
+      name.textContent = name.title = item.label;
+      card.title = item.label;
+      preview.append(image); card.append(preview, name);
+      card.addEventListener('click', event => chooseCard(item, event));
+      $('.grid').append(card);
     }
+    $('.pagination').hidden = list.length <= size;
     $('#page').textContent = ui(`${page + 1} / ${Math.max(1, Math.ceil(list.length / size))} 页 · ${list.length} 个`, `Page ${page + 1} / ${Math.max(1, Math.ceil(list.length / size))} · ${list.length} stickers`);
     $('#jump').max = Math.max(1, Math.ceil(list.length / size)); $('#jump').value = page + 1;
     $('#first').disabled = $('#prev').disabled = page === 0;
     $('#last').disabled = $('#next').disabled = (page + 1) * size >= list.length;
     $('main').scrollTop = 0; updateSummary(); count(); renderEmpty();
   }
-  $('#search').oninput = $('#filter').onchange = $('#animation').onchange = $('#metadataFilter').onchange = $('#detectionFilter').onchange = () => { page = 0; render(); };
+  $('#search').oninput = $('#filter').onchange = $('#animation').onchange = $('#metadataFilter').onchange = $('#detectionFilter').onchange = () => { selectionAnchor = null; page = 0; render(); };
   $('#first').onclick = () => { page = 0; render(); };
   $('#last').onclick = () => { page = Math.max(0, Math.ceil(filtered().length / size) - 1); render(); };
   $('#prev').onclick = () => { page--; render(); }; $('#next').onclick = () => { page++; render(); };
@@ -5674,18 +6044,19 @@ function getFavoritesAccountModuleUrl() {
   $('#jumpGo').onclick = jumpToPage;
   $('#jump').onkeydown = event => { if (event.key === 'Enter') jumpToPage(); };
   $('#selectPage').onclick = () => { if (busy()) return; filtered().slice(page * size, (page + 1) * size).forEach(item => item.selected = true); render(); };
-  $('#clear').onclick = () => { if (busy()) return; items.forEach(item => item.selected = false); render(); };
+  $('#clear').onclick = () => { if (busy()) return; selectionAnchor = null; items.forEach(item => item.selected = false); render(); };
   $('#viewSelected').onclick = () => {
     if (busy()) return;
     if (selectedView) {
-      $('#search').value = selectedView.search; $('#animation').value = selectedView.animation; $('#metadataFilter').value = selectedView.metadata; $('#detectionFilter').value = selectedView.detection; $('#filter').value = selectedView.filter; page = selectedView.page; selectedView = null;
+      $('#search').value = selectedView.search; $('#animation').value = selectedView.animation; $('#metadataFilter').value = selectedView.metadata; $('#detectionFilter').value = selectedView.detection; $('#filter').value = selectedView.filter; page = selectedView.page; activeGroup = selectedView.group; selectedView = null;
     } else {
-      selectedView = { search: $('#search').value, animation: $('#animation').value, metadata: $('#metadataFilter').value, detection: $('#detectionFilter').value, filter: $('#filter').value, page };
+      selectedView = { search: $('#search').value, animation: $('#animation').value, metadata: $('#metadataFilter').value, detection: $('#detectionFilter').value, filter: $('#filter').value, group: activeGroup, page };
+      activeGroup = null;
       $('#search').value = ''; $('#animation').value = $('#metadataFilter').value = $('#detectionFilter').value = 'all'; $('#filter').value = 'selected'; page = 0;
     }
     render();
   };
-  $('#emptyReset').onclick = () => { $('#search').value = ''; $('#animation').value = $('#metadataFilter').value = $('#detectionFilter').value = $('#filter').value = 'all'; selectedView = null; page = 0; render(); };
+  $('#emptyReset').onclick = () => { $('#search').value = ''; $('#animation').value = $('#metadataFilter').value = $('#detectionFilter').value = $('#filter').value = 'all'; selectedView = null; activeGroup = null; selectionAnchor = null; page = 0; render(); };
   $('#emptyScan').onclick = () => $('#scan').click();
   function revealWorkspace() {
     host.dataset.open = host.dataset.managed = 'true'; host.style.display = ''; mini.hidden = true;
@@ -5710,7 +6081,12 @@ function getFavoritesAccountModuleUrl() {
     }
     for (const node of root.querySelectorAll('.import-card p,.import-card select option,.metadata-import-row select option')) node.textContent = tr(node.textContent);
     personalDraft?.rows.forEach(entry=>entry.refreshCopy?.());
-    if (editorItem) $('#personalDetectionStatus').textContent=ui('自动检测：','Automatic detection: ')+detectionText(editorItem);
+    if (personalDraft) updatePersonalImportCount();
+    if (organizationDraft) { populateGroupChoices(true); refreshOrganizationImpact(); }
+    if (editorItem && $('#personalEditor').open) {
+      refreshPersonalGroupChoices();
+      $('#personalDetectionStatus').textContent=ui('自动检测：','Automatic detection: ')+detectionText(editorItem);
+    }
     const scroll = $('main').scrollTop; render(); $('main').scrollTop = scroll;
     window.dispatchEvent(new CustomEvent('spga:layout-change'));
   }
@@ -5727,7 +6103,9 @@ function getFavoritesAccountModuleUrl() {
   function minimizeWorkspace() {
     if (root.querySelector('dialog[open]')) return;
     dismissActionNotice(); stopFavoritesSync();
-    host.dataset.open = 'false'; host.style.display = 'none'; mini.hidden = false; count(); window.dispatchEvent(new CustomEvent('spga:layout-change')); mini.focus();
+    host.dataset.open = host.dataset.managed = 'false'; host.style.display = 'none'; mini.hidden = true; count();
+    window.dispatchEvent(new CustomEvent('spga:layout-change'));
+    document.getElementById('spga-quick-toggle')?.focus();
   }
   mini.onclick = () => { if (!host.isConnected) { mini.remove(); return; } revealWorkspace(); $('#minimize').focus(); };
   function hideWorkspace(back = false) {
@@ -5765,10 +6143,11 @@ function getFavoritesAccountModuleUrl() {
     } catch (_) { $('#message').textContent = ui('导出失败，请重试。','Export failed. Try again.'); notifyAction($('#message').textContent, 'error'); }
   };
 
-  let personalSnapshot = {schema:1,revision:0,items:[]}, personalReady = false, personalAccount = null;
-  let editorItem = null, personalDraft = null, personalImportGeneration = 0;
+  let personalSnapshot = {schema:2,revision:0,items:[],groups:[]}, personalReady = false, personalAccount = null;
+  let editorItem = null, editorRevision = 0, personalDraft = null, personalImportGeneration = 0;
   const metadataMessage = code => ({
     METADATA_ACCOUNT_CHANGED: ui('登录账号已变化，未读取或写入其他账号的备注。','The account changed. Notes for other accounts were not accessed.'),
+    METADATA_FAVORITE_UNAVAILABLE: ui('请返回收藏列表，核对这张表情是否仍在收藏中。','Return to favorites and check that this sticker is still saved.'),
     METADATA_INVALID: ui('备注文件或字段无效，请检查格式与长度。','The metadata file or fields are invalid. Check the format and length.'),
     METADATA_DUPLICATE: ui('文件包含重复的表情标识，未导入。','The file contains duplicate sticker IDs. Nothing was imported.'),
     METADATA_KEYWORDS_LIMIT: ui('合并后关键词超过 30 个，请取消合并或调整关键词。','Merged keywords exceed 30. Disable merging or edit the keywords.'),
@@ -5777,32 +6156,36 @@ function getFavoritesAccountModuleUrl() {
     METADATA_SAVE_FAILED: ui('备注未能保存，请检查油猴状态后重试。','Notes could not be saved. Check Tampermonkey before trying again.'),
   })[code] || ui('备注操作未完成，请刷新后核对。','The notes operation did not complete. Reload and check the result.');
   function personalRecords() { return new Map(personalSnapshot.items.map(row=>[row.gifId,row])); }
-  function settingsRequest(kind, rows) {
+  let personalMemberships = new Map();
+  function personalGroupNames() { return personalSnapshot.groups.map(group=>group.name); }
+  function personalGroupFor(id) { return personalMemberships.get(id) || ''; }
+  function previewPersonalOrganization(ids, changes) {
     assertWorkspaceAccount();
-    const account = personalAccount;
-    if (!account) return Promise.reject(Error('METADATA_SAVE_FAILED'));
-    if (globalThis.__SPGA_TEST_MODE__ === true && globalThis.__SPGA_PERSONAL_SETTINGS_FIXTURE__) return Promise.resolve(globalThis.__SPGA_PERSONAL_SETTINGS_FIXTURE__.request({kind,account,revision:personalSnapshot.revision,items:rows})).then(validateSettingsSnapshot);
-    return new Promise((resolve,reject)=>{
-      const id = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
-      const finish = (error,value) => { clearTimeout(timer); window.removeEventListener('spga:settings-response',receive); error?reject(error):resolve(value); };
-      const receive = event => {
-        if (typeof event.detail !== 'string') return;
-        let result; try { result=JSON.parse(event.detail); } catch (_) { return; }
-        if (result.id !== id) return;
-        if (!result.ok) { finish(Error(result.error)); return; }
-        try { finish(null,validateSettingsSnapshot(result.value)); } catch (error) { finish(error); }
-      };
-      const timer = setTimeout(()=>finish(Error('METADATA_SAVE_FAILED')),6000);
-      window.addEventListener('spga:settings-response',receive);
-      window.dispatchEvent(new CustomEvent('spga:settings-request',{detail:JSON.stringify({id,kind,account,revision:personalSnapshot.revision,items:rows})}));
-    });
+    if (!personalReady) throw Error('METADATA_SAVE_FAILED');
+    return planPersonalOrganization(personalSnapshot,ids,changes);
+  }
+  async function savePersonalOrganization(ids,changes,expectedRevision) {
+    const plan = previewPersonalOrganization(ids,changes);
+    if (plan.revision !== expectedRevision) throw Error('METADATA_CHANGED');
+    if (plan.movedCount || plan.nameChangedCount || plan.keywordChangedCount) await savePersonalRows(plan.items,plan.groups);
+    return plan;
+  }
+  function adoptPersonalSnapshot(snapshot) {
+    if (snapshot.revision < personalSnapshot.revision) return;
+    personalSnapshot = snapshot;
+    personalMemberships = groupMemberships(snapshot.groups);
+    refreshPersonalLabels();
+  }
+  function settingsRequest(kind,rows,groups) {
+    assertWorkspaceAccount();
+    return requestPersonalSettingsBridge(personalAccount,{kind,revision:personalSnapshot.revision,items:rows,groups});
   }
   function refreshPersonalLabels() {
     const rows = personalRecords();
     for (const item of items) {
       const record = rows.get(item.gifId); item.metadata = record || null;
       item.label = record?.name || item.originalLabel;
-      if (record) item.generatedName = null;
+      if (record?.name) item.generatedName = null;
     }
     const scroll=$('main').scrollTop; render(); $('main').scrollTop=scroll;
   }
@@ -5810,39 +6193,98 @@ function getFavoritesAccountModuleUrl() {
     personalAccount=nativeWorkspaceAccountId(services);
     try {
       const snapshot=await settingsRequest('load'); assertWorkspaceAccount();
-      personalSnapshot=snapshot;personalReady=true;refreshPersonalLabels();
+      personalReady=true;adoptPersonalSnapshot(snapshot);
     } catch(error) {personalReady=false;$('#scanStatus').textContent=metadataMessage(error.message);count();}
   }
-  async function savePersonalRows(rows) {
+  function onPersonalSettingsChanged(event) {
+    if (!host.isConnected) {
+      window.removeEventListener('spga:personal-settings-changed',onPersonalSettingsChanged);
+      return;
+    }
+    let change;
+    try { change=JSON.parse(event.detail); } catch (_) { return; }
+    if (!change || change.account !== personalAccount || !Number.isSafeInteger(change.revision)) return;
+    const revision = change.revision;
+    setTimeout(async()=>{
+      if (!host.isConnected || !personalReady || revision <= personalSnapshot.revision) return;
+      try {
+        const fresh=await settingsRequest('load'); assertWorkspaceAccount();
+        if (fresh.revision > personalSnapshot.revision) adoptPersonalSnapshot(fresh);
+      } catch (_) { /* Account and revision are checked again on every action. */ }
+    },0);
+  }
+  window.addEventListener('spga:personal-settings-changed',onPersonalSettingsChanged);
+  async function savePersonalRows(rows,groups = personalSnapshot.groups) {
     if (!personalReady || metadataSaving) throw Error('METADATA_SAVE_FAILED');
     assertWorkspaceAccount(); const normalized=normalizePersonalRows(rows);
     metadataSaving=true;count();
     try {
-      const snapshot=await settingsRequest('save',normalized);assertWorkspaceAccount();
-      personalSnapshot=snapshot;refreshPersonalLabels();return snapshot;
+      const snapshot=await settingsRequest('save',normalized,groups);assertWorkspaceAccount();
+      adoptPersonalSnapshot(snapshot);return snapshot;
     } finally {metadataSaving=false;count();}
   }
-  function openPersonalEditor(item) {
-    if (busy() || !personalReady) return;
-    try {assertWorkspaceAccount();}catch(_){$('#scanStatus').textContent=metadataMessage('METADATA_SAVE_FAILED');return;}
-    editorItem=item;const record=personalRecords().get(item.gifId);
-    $('#personalName').value=record?.name || item.label;
-    $('#personalKeywords').value=(record?.keywords || []).join(', ');
-    $('#personalVisibleText').value=record?.visibleText || '';
-    $('#personalAnimation').value=record?.animationOverride || 'auto';
-    $('#personalDetectionStatus').textContent=ui('自动检测：','Automatic detection: ')+detectionText(item);
-    $('#personalNote').value=record?.note || '';$('#personalEditorStatus').textContent='';
-    if(openDialog($('#personalEditor')))$('#personalName').focus();
+  function refreshPersonalGroupChoices(selectedValue = $('#personalGroup').value) {
+    populateOrganizationGroups($('#personalGroup'), personalGroupNames(), selectedValue, {includeKeep:false});
   }
-  $('#personalSave').onclick=async()=>{
-    if(!editorItem || metadataSaving)return;
-    try{
-      const row=normalizePersonalRecord({gifId:editorItem.gifId,name:$('#personalName').value,keywords:$('#personalKeywords').value.split(/[,，\n]/).map(v=>v.trim()).filter(Boolean),visibleText:$('#personalVisibleText').value,note:$('#personalNote').value,animationOverride:$('#personalAnimation').value,source:'manual',updatedAt:new Date().toISOString(),needsReview:false,confidence:'high',reviewReason:''});
-      const records=personalRecords();records.set(row.gifId,row);$('#personalSave').disabled=true;
-      await savePersonalRows([...records.values()]);closeDialog($('#personalEditor'));
-      $('#scanStatus').textContent=ui('备注已保存，可用名称、关键词或表情文字搜索。','Notes saved. Search by name, keywords or sticker text.');
-    }catch(error){$('#personalEditorStatus').textContent=metadataMessage(error.message);}
-    finally{$('#personalSave').disabled=false;}
+  function updatePersonalGroupField() {
+    const creating = $('#personalGroup').value === 'new';
+    const name = $('#personalNewGroupName');
+    $('#personalNewGroupField').hidden = !creating;
+    name.required = creating;
+    const missing = creating && !name.value.trim();
+    $('#personalEditorStatus').textContent = missing ? ui('输入新分组名称。','Enter a name for the new group.') : '';
+    $('#personalSave').disabled = metadataSaving || missing;
+  }
+  $('#personalGroup').onchange = () => {
+    updatePersonalGroupField();
+    if ($('#personalGroup').value === 'new') $('#personalNewGroupName').focus();
+  };
+  $('#personalNewGroupName').oninput = updatePersonalGroupField;
+  function openPersonalEditor(item) {
+    if (busy() || !personalReady || root.querySelector('dialog[open]')) return;
+    try { assertWorkspaceAccount(); } catch (_) { $('#scanStatus').textContent = metadataMessage('METADATA_ACCOUNT_CHANGED'); return; }
+    editorItem = item;
+    editorRevision = personalSnapshot.revision;
+    const record = personalRecords().get(item.gifId), group = personalGroupFor(item.gifId);
+    const name = $('#personalName'), keywords = $('#personalKeywords');
+    name.value = record?.name || '';
+    name.placeholder = item.originalLabel || item.label || '';
+    keywords.value = keywords.defaultValue = (record?.keywords || []).join(', ');
+    $('#personalNewGroupName').value = '';
+    refreshPersonalGroupChoices(group ? 'saved:' + group : 'ungrouped');
+    updatePersonalGroupField();
+    $('#personalFormatOptions').open = false;
+    $('#personalAnimation').value = record?.animationOverride || 'auto';
+    $('#personalDetectionStatus').textContent = ui('自动检测：','Automatic detection: ') + detectionText(item);
+    $('#personalReviewField').hidden = !record?.needsReview;
+    $('#personalReviewAccept').checked = false;
+    if (openDialog($('#personalEditor'))) name.focus();
+  }
+  $('#personalEditor').addEventListener('cancel', event => { if (metadataSaving) event.preventDefault(); });
+  $('#personalEditor').addEventListener('close', () => { if (!$('#personalEditor').open) editorItem = null; });
+  $('#personalSave').onclick = async () => {
+    if (!editorItem || !$('#personalEditor').open || $('#personalSave').disabled || metadataSaving) return;
+    try {
+      assertWorkspaceAccount();
+      if (editorRevision !== personalSnapshot.revision) throw Error('METADATA_CHANGED');
+      const id = editorItem.gifId;
+      const stored = favoritesSyncServices?.store?.getState?.()?.messages?.customStickers;
+      const favorites = Array.isArray(stored) ? stored : liveSource(false).list;
+      if (editorItem.deleted || !favorites.some(entry => entry?.id === id || entry?.url === id)) throw Error('METADATA_FAVORITE_UNAVAILABLE');
+      const select = $('#personalGroup'), group = readOrganizationGroup(select, $('#personalNewGroupName'));
+      if (select.value === 'new' && !group) { updatePersonalGroupField(); return; }
+      const plan = previewPersonalOrganization([id], {group});
+      const records = personalRecords(), field = $('#personalKeywords');
+      const keywords = field.value === field.defaultValue ? (records.get(id)?.keywords || []) : splitPersonalKeywords(field.value);
+      const edited = applyPersonalRecordEdit(records,id,{
+        name:$('#personalName').value, keywords, animationOverride:$('#personalAnimation').value, acceptReview:$('#personalReviewAccept').checked
+      });
+      if (edited || plan.movedCount) await savePersonalRows([...records.values()], plan.groups);
+      closeDialog($('#personalEditor'));
+      if (edited || plan.movedCount) notifyAction(ui('表情设置已保存。','Sticker settings saved.'));
+    } catch (error) {
+      $('#personalEditorStatus').textContent = metadataMessage(error.message);
+    }
   };
   function downloadMetadata(text,filename) {
     const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));
@@ -5850,14 +6292,14 @@ function getFavoritesAccountModuleUrl() {
   }
   $('#settingsOpen').onclick=()=>{
     if(busy())return;
-    $('#personalSettingsStatus').textContent=personalReady && workspaceAccountState === 'ready' ? ui(`当前账号已保存 ${personalSnapshot.items.length} 条个人备注。`,`This account has ${personalSnapshot.items.length} saved notes.`) : ui('个人数据暂不可用；语言与窗口布局仍可调整。','Personal data is unavailable. Language and window layout settings remain available.');
+    $('#personalSettingsStatus').textContent=personalReady && workspaceAccountState === 'ready' ? ui(`已为 ${personalSnapshot.items.length} 张表情保存设置，共有 ${personalSnapshot.groups.length} 个分组。`,`Settings saved for ${personalSnapshot.items.length} stickers. Groups: ${personalSnapshot.groups.length}.`) : ui('个人数据暂不可用。你仍可调整语言和窗口布局。','Personal data is unavailable. You can still adjust the language and window layout.');
     openDialog($('#personalSettings'));
   };
   $('#personalExport').onclick=()=>{
     try{assertWorkspaceAccount();
       const filename='seatalk-personal-settings-'+new Date().toISOString().slice(0,10)+'.json';
-      downloadMetadata(exportPersonalSettings(personalSnapshot.items),filename);
-      $('#personalSettingsStatus').textContent=ui(`已发起导出 ${personalSnapshot.items.length} 条备注及图片形式设置：${filename}。请查看浏览器下载。`,`Download requested for ${personalSnapshot.items.length} notes and image-format settings: ${filename}. Check browser downloads.`);
+      downloadMetadata(exportPersonalSettings(personalSnapshot.items,new Date().toISOString(),personalSnapshot.groups),filename);
+      $('#personalSettingsStatus').textContent=ui(`已请求下载备份。请在浏览器下载记录中查看 ${filename}。`,`Backup download requested. Look for ${filename} in your browser downloads.`);
       notifyAction($('#personalSettingsStatus').textContent);
     }
     catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);notifyAction($('#personalSettingsStatus').textContent,'error');}
@@ -5866,26 +6308,47 @@ function getFavoritesAccountModuleUrl() {
   function updatePersonalImportCount() {
     const count=personalDraft?.rows.filter(row=>row.check.checked).length || 0;
     $('#personalImportConfirm').disabled=!count || metadataSaving;
-    if(personalDraft)$('#personalSettingsStatus').textContent=ui(`文件 ${personalDraft.rows.length} 条，已选 ${count} 条；${personalDraft.reviewCount} 条 AI 候选需复核。`,`File: ${personalDraft.rows.length} notes; ${count} selected; ${personalDraft.reviewCount} AI candidates need review.`);
+    if(personalDraft)$('#personalSettingsStatus').textContent=ui(`文件共 ${personalDraft.rows.length} 项，已选 ${count} 项；${personalDraft.reviewCount} 项需复核。`,`File: ${personalDraft.rows.length} entries; ${count} selected; ${personalDraft.reviewCount} need review.`);
   }
   $('#personalImportFile').onchange=async()=>{
     if(metadataSaving)return;const generation=++personalImportGeneration;
     const file=$('#personalImportFile').files?.[0];personalDraft=null;$('#personalImportRows').replaceChildren();$('#personalImportPanel').hidden=true;$('#personalImportConfirm').disabled=true;
     if(!file)return;
     try{
-      assertWorkspaceAccount();if(file.size>10*1024*1024)throw Error('METADATA_INVALID');
-      const parsed=parsePersonalImport(await file.text());assertWorkspaceAccount();if(generation!==personalImportGeneration)return;
-      const current=personalRecords(),rows=[];let reviewCount=0;
-      for(const row of parsed.items){
-        const existing=current.get(row.gifId),line=document.createElement('div');line.className='metadata-import-row';
-        const check=document.createElement('input');check.type='checkbox';check.checked=!row.needsReview;check.setAttribute('aria-label',ui('导入备注 ','Import note: ')+row.name);
-        const label=document.createElement('label');label.append(check,row.name);
-        const detail=document.createElement('p');detail.textContent=ui('本机：','Local: ')+(existing?.name || ui('无备注','No note'))+' → '+ui('导入：','Import: ')+row.name+' · '+row.keywords.join(', ')+(row.animationOverride && row.animationOverride!=='auto'?' · '+ui('图片形式：','Image format: ')+importedFormatText(row.animationOverride):'')+(row.needsReview?' · '+ui('需复核：','Needs review: ')+row.reviewReason:'');
-        const mode=document.createElement('select');mode.setAttribute('aria-label',ui('冲突处理 ','Conflict policy: ')+row.name);
-        for(const [value,zh,en] of [['keep','保留我的备注','Keep my note'],['replace','使用导入备注','Use imported note']]){const option=document.createElement('option');option.value=value;option.textContent=ui(zh,en);mode.append(option);}
-        mode.disabled=!existing;mode.value=existing?'keep':'replace';check.onchange=updatePersonalImportCount;
-        line.append(label,detail,mode);$('#personalImportRows').append(line);rows.push({row,check,mode,refreshCopy:()=>{detail.textContent=ui('本机：','Local: ')+(existing?.name || ui('无备注','No note'))+' → '+ui('导入：','Import: ')+row.name+' · '+row.keywords.join(', ')+(row.animationOverride && row.animationOverride!=='auto'?' · '+ui('图片形式：','Image format: ')+importedFormatText(row.animationOverride):'')+(row.needsReview?' · '+ui('需复核：','Needs review: ')+row.reviewReason:'');}});if(row.needsReview)reviewCount++;
+      assertWorkspaceAccount();
+      const parsed=await readPersonalImportFile(file);assertWorkspaceAccount();if(generation!==personalImportGeneration)return;
+      const rows = [], localLabels = new Map(items.map(item=>[item.gifId,item.label]));
+      let reviewCount = 0;
+      const fragment = document.createDocumentFragment();
+      for (const entry of personalBackupEntries(parsed,personalSnapshot)) {
+        const {record,group,localRecord,localGroup,gifId} = entry;
+        const line=document.createElement('div');line.className='metadata-import-row';
+        const check=document.createElement('input');check.type='checkbox';check.checked=!entry.needsReview;
+        const label=document.createElement('label'),name=document.createElement('span');label.append(check,name);
+        const detail=document.createElement('p'),mode=document.createElement('select');
+        const keep=document.createElement('option'),replace=document.createElement('option');
+        keep.value='keep';replace.value='replace';mode.append(keep,replace);
+        mode.disabled=!entry.hasConflict;mode.value=entry.hasConflict?'keep':'replace';check.onchange=updatePersonalImportCount;
+        const refreshCopy=()=>{
+          const title=record?.name || localLabels.get(gifId) || localRecord?.name || (gifId ? ui('表情 ','Sticker ')+gifId.slice(-8) : group);
+          name.textContent=title;
+          check.setAttribute('aria-label',ui('导入 ','Import ')+title);mode.setAttribute('aria-label',ui('冲突处理 ','Conflict policy for ')+title);
+          keep.textContent=ui('保留本机设置','Keep local settings');replace.textContent=ui('使用导入设置','Use imported settings');
+          const fields=[];
+          if(record) {
+            if(record.name) fields.push(ui('本机：','Local: ')+(localRecord?.name || ui('无名称','No name'))+' → '+record.name);
+            if(record.keywords.length) fields.push(record.keywords.join(', '));
+            if(record.animationOverride) fields.push(ui('图片形式：','Image format: ')+importedFormatText(record.animationOverride));
+            if(record.needsReview) fields.push(tr('需复核'));
+          }
+          if(group) fields.push(gifId ? ui('分组：','Group: ')+(localGroup || ui('未分组','Ungrouped'))+' → '+group : ui('空分组','Empty group'));
+          detail.textContent=fields.join(' · ');
+        };
+        refreshCopy();line.append(label,detail,mode);fragment.append(line);
+        rows.push({...entry,row:{gifId,needsReview:entry.needsReview},check,mode,refreshCopy});
+        if(entry.needsReview)reviewCount++;
       }
+      $('#personalImportRows').append(fragment);
       personalDraft={rows,reviewCount,revision:personalSnapshot.revision};$('#personalImportPanel').hidden=false;updatePersonalImportCount();
     }catch(error){if(generation===personalImportGeneration)$('#personalSettingsStatus').textContent=metadataMessage(error.message);}
   };
@@ -5896,12 +6359,357 @@ function getFavoritesAccountModuleUrl() {
     if(!personalDraft || metadataSaving)return;
     try{
       assertWorkspaceAccount();if(personalDraft.revision!==personalSnapshot.revision)throw Error('METADATA_CHANGED');
-      const rows=personalRecords();let count=0;
-      for(const entry of personalDraft.rows){if(!entry.check.checked)continue;rows.set(entry.row.gifId,mergePersonalRecord(rows.get(entry.row.gifId),entry.row,entry.mode.value==='replace',$('#personalMergeKeywords').checked));count++;}
-      $('#personalImportConfirm').disabled=true;await savePersonalRows([...rows.values()]);personalDraft=null;$('#personalImportPanel').hidden=true;$('#personalImportRows').replaceChildren();
-      $('#personalSettingsStatus').textContent=ui(`已保存 ${count} 条备注；没有更改 SeaTalk 收藏。`,`Saved ${count} notes. SeaTalk favorites were not changed.`);notifyAction($('#personalSettingsStatus').textContent);
+      const selected=personalDraft.rows.filter(entry=>entry.check.checked).map(entry=>({...entry,replace:entry.mode.value==='replace'}));
+      if(!selected.length)return;
+      const merged=mergePersonalBackup(personalSnapshot,selected,$('#personalMergeKeywords').checked);
+      const count=selected.length;
+      $('#personalImportConfirm').disabled=true;await savePersonalRows(merged.items,merged.groups);personalDraft=null;$('#personalImportPanel').hidden=true;$('#personalImportRows').replaceChildren();
+      $('#personalSettingsStatus').textContent=ui(`已恢复 ${count} 项个人设置。`,`Restored ${count} personal settings entries.`);notifyAction($('#personalSettingsStatus').textContent);
     }catch(error){$('#personalSettingsStatus').textContent=metadataMessage(error.message);notifyAction($('#personalSettingsStatus').textContent,'error');}
     finally{updatePersonalImportCount();}
+  };
+
+  function showSelectionDetails(selected) {
+    const details = $('#selectionDetails');
+    details.hidden = selected.length !== 1;
+    if (details.hidden) return;
+    const item = selected[0];
+    const form = ({animated:tr('动图'),static:tr('静态图'),unknown:tr('未知')})[effectiveAnimation(item)];
+    const noteState = item.metadata?.needsReview ? tr('需复核') : item.metadata ? tr('已备注') : tr('未备注');
+    details.textContent = ui('图片形式：'+form+' · 备注状态：'+noteState+' · 检测：'+detectionText(item),
+      'Format: '+form+' · Notes: '+noteState+' · Inspection: '+detectionText(item));
+  }
+  function renderGroupTabs() {
+    const counts = new Map(), active = activeItems();
+    for (const item of active) {
+      const group = personalGroupFor(item.gifId);
+      counts.set(group, (counts.get(group) || 0) + 1);
+    }
+    const all = $('#allGroups'), strip = $('#groupStrip');
+    const names = personalGroupNames();
+    if (activeGroup && !names.includes(activeGroup)) activeGroup = '';
+    const search = $('#search');
+    const groupLabel = activeGroup || tr('未分组');
+    let scope = activeGroup === null ? ui('搜索全部收藏','Search all favorites')
+      : ui('在「' + groupLabel + '」中搜索','Search in ' + groupLabel);
+    if ($('#filter').value === 'selected') {
+      scope = activeGroup === null ? ui('搜索已选表情','Search selected stickers')
+        : ui('搜索「' + groupLabel + '」中的已选表情','Search selected stickers in ' + groupLabel);
+    }
+    search.placeholder = scope;
+    search.setAttribute('aria-label', scope);
+    all.querySelector('span').textContent = tr('全部') + ' (' + active.length + ')';
+    all.setAttribute('aria-pressed', String(activeGroup === null));
+    const focused = strip.contains(root.activeElement) ? root.activeElement.value : null;
+    const scrollLeft = strip.scrollLeft;
+    const fragment = document.createDocumentFragment();
+    for (const group of ['', ...names]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.value = group;
+      const label = group || tr('未分组'), total = counts.get(group) || 0;
+      button.textContent = label + ' (' + total + ')';
+      button.title = button.textContent;
+      button.setAttribute('aria-pressed', String(group === activeGroup));
+      button.onclick = () => chooseGroup(group);
+      fragment.append(button);
+    }
+    strip.replaceChildren(fragment);
+    strip.scrollLeft = scrollLeft;
+    if (focused !== null) [...strip.children].find(button=>button.value === focused)?.focus({preventScroll:true});
+  }
+  function chooseGroup(group) {
+    if (busy()) return;
+    activeGroup = group; selectionAnchor = null;
+    if (selectedView) { selectedView = null; $('#filter').value = 'all'; }
+    page = 0; render();
+    $('#groupTabs [aria-pressed=true]')?.focus({preventScroll:true});
+  }
+  $('#allGroups').onclick = () => chooseGroup(null);
+  $('#groupStrip').addEventListener('focusin', event => {
+    const strip = event.currentTarget, button = event.target;
+    if (!button.matches('button:focus-visible')) return;
+    const bounds = strip.getBoundingClientRect(), tab = button.getBoundingClientRect();
+    const inset = 4; // Keep the keyboard focus ring within the scrollable strip.
+    if (tab.left < bounds.left + inset) strip.scrollLeft += tab.left - bounds.left - inset;
+    else if (tab.right > bounds.right - inset) strip.scrollLeft += tab.right - bounds.right + inset;
+  });
+  const activeFilters = $('#activeFilters');
+  const filterIndicators = ['animation', 'metadataFilter', 'detectionFilter', 'filter'].map(id => {
+    const control = $('#' + id), chip = document.createElement('button'), label = document.createElement('span');
+    chip.type = 'button';
+    chip.dataset.filterId = id;
+    chip.innerHTML = stickerIcon('x');
+    chip.prepend(label);
+    chip.onclick = () => {
+      if (busy()) return;
+      if (id === 'filter' && selectedView) $('#viewSelected').click();
+      else {
+        control.value = 'all';
+        control.dispatchEvent(new Event('change'));
+      }
+      (activeFilters.firstElementChild || $('#toolsToggle')).focus({preventScroll:true});
+    };
+    return {control, chip, label};
+  });
+  function renderActiveFilters() {
+    for (const {control, chip, label} of filterIndicators) {
+      if (control.value === 'all') { chip.remove(); continue; }
+      const value = control.selectedOptions[0].label;
+      label.textContent = value;
+      const category = control.getAttribute('aria-label');
+      const action = control.id === 'filter' && selectedView ? tr('返回筛选') :
+        ui('移除' + category + '筛选「' + value + '」', 'Remove filter (' + category + ' · ' + value + ')');
+      chip.title = action;
+      chip.setAttribute('aria-label', action);
+      if (!chip.isConnected) activeFilters.append(chip);
+    }
+    const total = activeFilters.childElementCount, badge = $('#toolsCount'), toggle = $('#toolsToggle');
+    activeFilters.hidden = badge.hidden = total === 0;
+    badge.textContent = total ? String(total) : '';
+    const description = total ? ui('工具，' + total + ' 项筛选生效', 'Tools · ' + total + (total === 1 ? ' active filter' : ' active filters')) : tr('工具');
+    toggle.title = description;
+    toggle.setAttribute('aria-label', description);
+  }
+  function styleSelection(card, selected) {
+    card.classList.toggle('chosen', selected);
+    card.setAttribute('aria-pressed', String(selected));
+  }
+  function commitSelection(ids) {
+    for (const item of items) item.selected = !item.deleted && ids.has(item.gifId);
+    if ($('#filter').value === 'selected') {
+      const scroll = $('main').scrollTop; render(); $('main').scrollTop = scroll;
+    } else {
+      for (const card of $('.grid').children) styleSelection(card, ids.has(card.dataset.id));
+      count();
+    }
+  }
+  function chooseCard(item, event) {
+    if (busy()) return;
+    const toggle = event.ctrlKey || event.metaKey;
+    const ids = toggle ? new Set(selection().map(sticker => sticker.gifId)) : new Set();
+    if (event.shiftKey && selectionAnchor) {
+      const order = filtered().map(sticker => sticker.gifId);
+      const start = order.indexOf(selectionAnchor), end = order.indexOf(item.gifId);
+      if (start >= 0 && end >= 0) {
+        for (const id of order.slice(Math.min(start,end), Math.max(start,end) + 1)) ids.add(id);
+        commitSelection(ids); return;
+      }
+    }
+    if (toggle && ids.has(item.gifId)) ids.delete(item.gifId);
+    else ids.add(item.gifId);
+    selectionAnchor = item.gifId;
+    commitSelection(ids);
+  }
+  const scroller = $('main');
+  function updateBand() {
+    const band = rubberBand;
+    if (!band) return;
+    const rect = scroller.getBoundingClientRect();
+    const x = Math.min(rect.width, Math.max(0, band.clientX - rect.left)) + scroller.scrollLeft;
+    const y = Math.min(rect.height, Math.max(0, band.clientY - rect.top)) + scroller.scrollTop;
+    if (!band.started && Math.hypot(x - band.x, y - band.y) < 4) return;
+    band.started = true;
+    const left = Math.min(x, band.x), right = Math.max(x, band.x);
+    const top = Math.min(y, band.y), bottom = Math.max(y, band.y);
+    const overlay = $('#rubberBand'); overlay.hidden = false;
+    Object.assign(overlay.style, {left:left+'px',top:top+'px',width:(right-left)+'px',height:(bottom-top)+'px'});
+    const ids = new Set(band.base);
+    for (const row of band.cards) {
+      if (row.right > left && row.left < right && row.bottom > top && row.top < bottom) ids.add(row.card.dataset.id);
+      styleSelection(row.card, ids.has(row.card.dataset.id));
+    }
+    band.ids = ids;
+  }
+  function updateEdgeScroll() {
+    const band = rubberBand;
+    if (!band || band.frame || !band.started) return;
+    const rect = scroller.getBoundingClientRect();
+    const speed = band.clientY > rect.bottom - 20 ? 12 : band.clientY < rect.top + 20 ? -12 : 0;
+    if (!speed || (speed > 0 ? scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight : scroller.scrollTop <= 0)) return;
+    band.frame = requestAnimationFrame(() => {
+      band.frame = 0; scroller.scrollTop += speed; updateBand(); updateEdgeScroll();
+    });
+  }
+  scroller.addEventListener('pointerdown', event => {
+    if (busy() || rubberBand || event.button !== 0 || event.pointerType === 'touch' ||
+        (event.target !== scroller && event.target !== $('.grid'))) return;
+    const rect = scroller.getBoundingClientRect();
+    if (event.clientX >= rect.left + scroller.clientWidth || event.clientY >= rect.top + scroller.clientHeight) return;
+    const offsetX = scroller.scrollLeft - rect.left, offsetY = scroller.scrollTop - rect.top;
+    const base = event.shiftKey ? new Set(selection().map(item => item.gifId)) : new Set();
+    const cards = Array.from($('.grid').children, card => {
+      const bounds = card.getBoundingClientRect();
+      return {card,left:bounds.left+offsetX,right:bounds.right+offsetX,top:bounds.top+offsetY,bottom:bounds.bottom+offsetY};
+    });
+    rubberBand = {pointerId:event.pointerId,x:event.clientX+offsetX,y:event.clientY+offsetY,
+      clientX:event.clientX,clientY:event.clientY,cards,base,ids:base,frame:0,started:false};
+    scroller.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+  scroller.addEventListener('pointermove', event => {
+    if (!rubberBand || rubberBand.pointerId !== event.pointerId) return;
+    rubberBand.clientX = event.clientX; rubberBand.clientY = event.clientY;
+    updateBand(); updateEdgeScroll();
+  });
+  scroller.addEventListener('scroll', updateBand, {passive:true});
+  function finishBand(commit) {
+    const band = rubberBand;
+    if (!band) return;
+    rubberBand = null;
+    cancelAnimationFrame(band.frame); $('#rubberBand').hidden = true;
+    if (scroller.hasPointerCapture(band.pointerId)) scroller.releasePointerCapture(band.pointerId);
+    if (commit && !busy()) {
+      selectionAnchor = null; commitSelection(band.ids);
+    } else {
+      const ids = new Set(selection().map(item => item.gifId));
+      for (const card of $('.grid').children) styleSelection(card, ids.has(card.dataset.id));
+    }
+  }
+  scroller.addEventListener('pointerup', event => {
+    if (!rubberBand || rubberBand.pointerId !== event.pointerId) return;
+    rubberBand.clientX = event.clientX; rubberBand.clientY = event.clientY;
+    updateBand(); finishBand(true);
+  });
+  for (const type of ['pointercancel','lostpointercapture']) scroller.addEventListener(type, event => {
+    if (rubberBand?.pointerId === event.pointerId) finishBand(false);
+  });
+  host.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && rubberBand) { event.stopImmediatePropagation(); finishBand(false); }
+  }, {capture:true});
+
+  $('#toolsToggle').onclick = () => {
+    const panel = $('#toolsPanel'); panel.hidden = !panel.hidden;
+    $('#toolsToggle').setAttribute('aria-expanded', String(!panel.hidden));
+  };
+  $('#previewSelected').onclick = () => {
+    const selected = selection();
+    if (busy() || selected.length !== 1) return;
+    zoomItem = selected[0]; $('#zoom img').src = zoomItem.url; $('#zoom p').textContent = zoomItem.label;
+    count(); openDialog($('#zoom'));
+  };
+  $('#editSelected').onclick = () => {
+    const selected = selection();
+    if (selected.length === 1) openPersonalEditor(selected[0]);
+  };
+  function populateOrganizationGroups(select, groupNames, selectedValue = '', {includeKeep = true} = {}) {
+    select.replaceChildren(new Option(tr('未分组'), 'ungrouped'));
+    if (includeKeep) select.prepend(new Option(ui('保持当前分组','Keep current group'), ''));
+    if (groupNames.length) {
+      const existing = document.createElement('optgroup');
+      existing.label = ui('已有分组','Existing groups');
+      for (const name of groupNames) existing.append(new Option(name, 'saved:' + name));
+      select.append(existing);
+    }
+    select.append(new Option(ui('新建分组…','Create group…'), 'new'));
+    select.value = selectedValue;
+    if (select.selectedIndex < 0) select.selectedIndex = 0;
+  }
+  function readOrganizationGroup(select, newNameInput) {
+    if (select.value === 'new') return newNameInput.value.trim();
+    if (select.value === 'ungrouped') return '';
+    if (select.value.startsWith('saved:')) return select.value.slice(6);
+    return undefined;
+  }
+  function populateGroupChoices(keep = false) {
+    const select = $('#organizeGroup');
+    populateOrganizationGroups(select, personalGroupNames(), keep ? select.value : '');
+    $('#newGroupLabel').hidden = select.value !== 'new';
+  }
+  function organizationChanges() {
+    const changes = {name:$('#batchName').value.trim(), keywords:splitPersonalKeywords($('#batchKeywords').value)};
+    const group = readOrganizationGroup($('#organizeGroup'), $('#newGroupName'));
+    if (group !== undefined) changes.group = group;
+    return changes;
+  }
+  function organizationImpactMetric(label, value, total) {
+    const metric = document.createElement('span'), number = document.createElement('strong');
+    metric.className = 'impact-metric';
+    number.textContent = String(value);
+    metric.append(label + ' ', number);
+    if (total) {
+      const track = document.createElement('span'), fill = document.createElement('span');
+      track.className = 'impact-track';
+      track.setAttribute('aria-hidden', 'true');
+      fill.style.width = (100 * value / total) + '%';
+      track.append(fill);
+      metric.append(track);
+    }
+    return metric;
+  }
+  function refreshOrganizationImpact() {
+    const apply = $('#organizeApply'); apply.disabled = true;
+    const impact = $('#organizeImpact');
+    impact.dataset.overwrite = 'false';
+    apply.textContent = tr('保存整理');
+    if (!organizationDraft) return;
+    $('#newGroupLabel').hidden = $('#organizeGroup').value !== 'new';
+    $('#organizeError').textContent = '';
+    try {
+      const changes = organizationChanges();
+      if ($('#organizeGroup').value === 'new' && !changes.group) {
+        impact.textContent = ui('输入新分组名称。','Enter a name for the new group.');
+        return;
+      }
+      const preview = previewPersonalOrganization(organizationDraft.ids, changes);
+      if (preview.revision !== organizationDraft.revision) throw Error('METADATA_CHANGED');
+      const {selectedCount,movedCount,nameChangedCount,nameOverwriteCount,keywordChangedCount} = preview;
+      impact.dataset.overwrite = String(nameOverwriteCount > 0);
+      const metrics = [organizationImpactMetric(ui('已选','Selected'), selectedCount)];
+      if (changes.name) metrics.push(organizationImpactMetric(ui('改名','Rename'), nameChangedCount, selectedCount));
+      if ('group' in changes) metrics.push(organizationImpactMetric(ui('移组','Move'), movedCount, selectedCount));
+      if (changes.keywords.length) metrics.push(organizationImpactMetric(ui('加关键字','Add keywords'), keywordChangedCount, selectedCount));
+      if (nameOverwriteCount) {
+        const warning = document.createElement('span');
+        warning.className = 'impact-warning';
+        warning.textContent = ui('将覆盖 ' + nameOverwriteCount + ' 个自定义名称',
+          'Will replace ' + nameOverwriteCount + (nameOverwriteCount === 1 ? ' custom name' : ' custom names'));
+        metrics.push(warning);
+        apply.textContent = ui('确认覆盖并保存','Confirm replacement and save');
+      } else if (!(nameChangedCount || movedCount || keywordChangedCount)) {
+        apply.textContent = ui('完成','Done');
+      }
+      impact.replaceChildren(...metrics);
+      apply.disabled = busy() || !selectedCount;
+    } catch (error) {
+      impact.replaceChildren();
+      $('#organizeError').textContent = metadataMessage(error.message);
+    }
+  }
+  $('#organizeSelected').onclick = () => {
+    if (busy() || !personalReady || !selection().length || root.querySelector('dialog[open]')) return;
+    try { assertWorkspaceAccount(); } catch (error) { notifyAction(metadataMessage(error.message),'error'); return; }
+    const ids = selection().map(item => item.gifId);
+    organizationDraft = {ids, revision:personalSnapshot.revision};
+    $('#batchName').value = $('#batchKeywords').value = $('#newGroupName').value = '';
+    populateGroupChoices(); refreshOrganizationImpact();
+    if (openDialog($('#organizeDialog'))) $('#batchName').focus();
+  };
+  $('#organizeGroup').onchange = () => {
+    refreshOrganizationImpact();
+    if ($('#organizeGroup').value === 'new') $('#newGroupName').focus();
+  };
+  $('#newGroupName').oninput = $('#batchName').oninput = $('#batchKeywords').oninput = refreshOrganizationImpact;
+  $('#organizeDialog').addEventListener('cancel', event => { if (metadataSaving) event.preventDefault(); });
+  $('#organizeDialog').addEventListener('close', () => { if (!$('#organizeDialog').open) organizationDraft = null; });
+  $('#organizeApply').onclick = async () => {
+    if (busy() || !organizationDraft || !$('#organizeDialog').open || $('#organizeApply').disabled) return;
+    refreshOrganizationImpact();
+    if ($('#organizeApply').disabled) return;
+    $('#organizeApply').disabled = true;
+    try {
+      const result = await savePersonalOrganization(organizationDraft.ids,organizationChanges(),organizationDraft.revision);
+      closeDialog($('#organizeDialog'));
+      const summary = [];
+      if (result.nameChangedCount) summary.push(ui(result.nameChangedCount + ' 张已改名', result.nameChangedCount + ' renamed'));
+      if (result.movedCount) summary.push(ui(result.movedCount + ' 张已移动', result.movedCount + ' moved'));
+      if (result.keywordChangedCount) summary.push(ui(result.keywordChangedCount + ' 张已添加关键字', 'Keywords added to ' + result.keywordChangedCount));
+      if (summary.length) notifyAction(summary.join(ui('，', ', ')) + ui('。', '.'));
+      else notifyAction(ui('已保留所选表情的原设置。','Kept settings for the selected stickers.'));
+    } catch (error) {
+      $('#organizeError').textContent = metadataMessage(error.message);
+      $('#organizeApply').disabled = error.message === 'METADATA_CHANGED';
+    }
   };
 
 
@@ -5922,7 +6730,9 @@ function getFavoritesAccountModuleUrl() {
     try{
       assertWorkspaceAccount();
       if(nativeWorkspaceAccountId(draft.services)!==draft.account || !sameStickerSendTarget(draft.target,currentStickerSendTarget(draft.services,visibleSendEditor())))throw Error();
-      for(const item of draft.items)if(!liveSource().list.some(row=>row.id===item.gifId || row.url===item.gifId))throw Error();
+      const stored=draft.services.store.getState()?.messages?.customStickers;
+      const list=Array.isArray(stored)?stored:liveSource(false).list;
+      if(!draft.items.every(item=>list.some(row=>row.id===item.gifId || row.url===item.gifId)))throw Error();
     }catch(_){draft.invalid=true;throw Error('SEND_TARGET_CHANGED');}
   }
   async function openStickerSend(selected){
@@ -5954,14 +6764,11 @@ function getFavoritesAccountModuleUrl() {
   $('#sendStop').onclick=()=>{sendStopped=true;$('#sendStatus').textContent=ui('等待当前发送结果后停止。','Waiting for the current send result before stopping.');};
   $('#sendConfirmation').addEventListener('cancel',event=>{if(sendingBusy){event.preventDefault();closeSend();}});
   $('#sendConfirmation').addEventListener('close',()=>{if(!$('#sendConfirmation').open)stopSendMonitor();});
-  $('#sendConfirm').onclick=async()=>{
-    if(busy() || sendUncertain || !sendDraft || sendDraft.invalid)return;
-    const draft=sendDraft;try{guardSend(draft);}catch(error){$('#sendStatus').textContent=sendMessage(error.message);return;}
-    sendingBusy=true;sendStopped=false;$('#sendConfirm').disabled=true;$('#sendStop').hidden=false;render();
-    let issued=0,completed=0,sendFailed=false;
-    try{
-      const result=await sendSelectedStickers(draft.items,{
-        guard:()=>guardSend(draft),stopped:()=>sendStopped,pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
+  async function transmitStickerDraft(draft, {stopped, beforeIssue = () => {}, progress}) {
+    let issued = 0, completed = 0;
+    try {
+      return await sendSelectedStickers(draft.items,{
+        guard:()=>guardSend(draft),stopped,pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
         preview:async item=>{
           if(globalThis.__SPGA_TEST_MODE__===true && draft.services.previewDimensions)return draft.services.previewDimensions(item);
           const img=new Image();img.referrerPolicy='no-referrer';img.src=validPreviewUrl(draft.services.fileUrl,item.gifId);
@@ -5969,7 +6776,7 @@ function getFavoritesAccountModuleUrl() {
           catch(_){throw Error('SEND_PREVIEW_FAILED');}finally{clearTimeout(timer);}
         },
         send:(item,dimensions)=>{
-          guardSend(draft);const ticket={before:new Set(Object.values(draft.services.store.getState().messages.messages||{}).map(message=>String(message.cid))),cid:null,rejected:false};
+          guardSend(draft);beforeIssue();const ticket={before:new Set(Object.values(draft.services.store.getState().messages.messages||{}).map(message=>String(message.cid))),cid:null,rejected:false};
           issued++;
           Promise.resolve(draft.services.sendSticker({session:{id:draft.target.id,type:draft.target.type},customSticker:{n:'',url:item.gifId,w:dimensions.width,h:dimensions.height}})).catch(()=>ticket.rejected=true);
           return ticket;
@@ -5986,15 +6793,603 @@ function getFavoritesAccountModuleUrl() {
           }
           return 'pending';
         },
-        report:(done,total)=>{
-          completed=done;const item=items.find(item=>item.gifId===draft.items[done-1].gifId);if(item)item.selected=false;
-          $('#sendStatus').textContent=ui(`已观察到 SeaTalk 确认 ${done} / ${total} 张表情。`,`SeaTalk confirmation observed for ${done} / ${total} stickers.`);render();
-        },
+        report:(done,total)=>{ completed=done; progress(done,total); },
       });
-      $('#sendStatus').textContent=ui(`SeaTalk 已确认 ${result.sent} 张表情${result.stopped?'，已停止后续发送':''}。`,`SeaTalk confirmed ${result.sent} stickers.${result.stopped?' Later sends stopped.':''}`);
-    }catch(error){sendFailed=true;sendUncertain=issued>completed && error.message!=='SEND_FAILED';$('#sendStatus').textContent=sendMessage(error.message)+(sendUncertain && error.message!=='SEND_UNCONFIRMED'?' '+sendMessage('SEND_UNCONFIRMED'):'');}
-    finally{notifyAction($('#sendStatus').textContent,sendFailed || sendUncertain || issued>completed?'error':sendStopped?'info':'success');sendingBusy=false;$('#sendStop').hidden=true;$('#sendConfirm').disabled=true;stopSendMonitor();render();}
+    } catch(error) {
+      if (issued > completed && error.message !== 'SEND_FAILED') sendUncertain = true;
+      throw error;
+    }
+  }
+  $('#sendConfirm').onclick=async()=>{
+    const dialog = $('#sendConfirmation');
+    if(!dialog.open || $('#sendConfirm').disabled || busy() || sendUncertain || !sendDraft || sendDraft.invalid)return;
+    const draft=sendDraft;try{guardSend(draft);}catch(error){$('#sendStatus').textContent=sendMessage(error.message);return;}
+    sendingBusy=true;sendStopped=false;$('#sendConfirm').disabled=true;$('#sendStop').hidden=false;render();
+    let confirmed = 0, allConfirmed = false, tone = 'info', message;
+    try{
+      const result=await transmitStickerDraft(draft,{stopped:()=>sendStopped,progress:(done,total)=>{
+        confirmed = done;
+        const item=items.find(item=>item.gifId===draft.items[done-1].gifId);if(item)item.selected=false;
+        $('#sendStatus').textContent=ui(`已观察到 SeaTalk 确认 ${done} / ${total} 张表情。`,`SeaTalk confirmation observed for ${done} / ${total} stickers.`);render();
+      }});
+      allConfirmed = result.sent === draft.items.length && !result.stopped && !sendStopped;
+      if (allConfirmed) {
+        message = ui('已发送 ' + result.sent + ' 张表情。', 'Sent ' + result.sent + (result.sent === 1 ? ' sticker.' : ' stickers.'));
+        tone = 'success';
+      } else {
+        message = ui(`已停止，已确认 ${result.sent} / ${draft.items.length} 张。`, `Stopped. Confirmed ${result.sent} of ${draft.items.length}.`);
+      }
+    } catch (error) {
+      tone = 'error';
+      message = ui(`已确认 ${confirmed} / ${draft.items.length} 张。`, `Confirmed ${confirmed} of ${draft.items.length}. `) +
+        sendMessage(error.message) + (sendUncertain && error.message !== 'SEND_UNCONFIRMED' ? ' ' + sendMessage('SEND_UNCONFIRMED') : '');
+    } finally {
+      sendingBusy = false;
+      if (sendDraft === draft) {
+        stopSendMonitor();
+        $('#sendStop').hidden = true;
+        $('#sendConfirm').disabled = true;
+        $('#sendStatus').textContent = message;
+        render();
+        if (dialog.open) {
+          if (allConfirmed) {
+            // The send action may disappear with the cleared selection. Return to its sticker or the search field.
+            const nextFocus = root.querySelector('.grid [data-id="' + draft.items[0].gifId + '"]') || $('#search');
+            focusReturn.set(dialog, nextFocus);
+            closeDialog(dialog);
+            nextFocus.focus({preventScroll:true});
+            sendDraft = null;
+          }
+          notifyAction(message, tone);
+        }
+      }
+    }
   };
+
+  function quickFavoriteRows(source, records, presetNames, fallbackName) {
+    const seenIds = new Set(), rows = [];
+    for (const entry of source) {
+      const gifId = [entry?.id, entry?.url].find(validMetadataId);
+      if (!gifId || seenIds.has(gifId)) continue;
+      seenIds.add(gifId);
+      const record = records.get(gifId);
+      const label = record?.name || presetNames.get(gifId) || entry.name || fallbackName(rows.length + 1);
+      rows.push({gifId, label, metadata:record ? {...record,name:label} : {name:label}});
+    }
+    return rows;
+  }
+  function filterQuickFavorites(rows, query, newestFirst) {
+    const matches = rows.filter(row => !query || personalMetadataMatches(row.metadata,query));
+    return newestFirst ? matches : matches.reverse();
+  }
+
+  let quickView = null, quickOldestFirst = false;
+  function closeQuickPicker(returnFocus = false) {
+    if (!quickView) return;
+    const view = quickView;
+    quickView = null;
+    view.unsubscribe?.();
+    view.cleanup();
+    view.panel.remove();
+    view.anchor.setAttribute('aria-expanded','false');
+    if (returnFocus && view.anchor.isConnected) view.anchor.focus();
+  }
+  function currentQuickList(services) {
+    const stored = services.store.getState()?.messages?.customStickers;
+    if (Array.isArray(stored) && stored.length) return {rows:stored, verified:true};
+    try { return {rows:liveSource(false).list, verified:true}; }
+    catch (_) { return {rows:[], verified:false}; }
+  }
+  function acceptQuickStickerClick(event, button, previous) {
+    if (!event.isTrusted || event.detail > 1 || !button || button.disabled) return false;
+    // A native list refresh can replace the clicked cell between two mouse clicks.
+    // Chrome may start a new click count for the replacement under the pointer.
+    if (event.detail === 1 && previous && !previous.button.isConnected &&
+        event.timeStamp - previous.time < 700 &&
+        Math.abs(event.clientX - previous.x) <= 4 && Math.abs(event.clientY - previous.y) <= 4) return false;
+    return true;
+  }
+  function quickTargetMatches(view) {
+    try {
+      return !!view.services && nativeWorkspaceAccountId(view.services) === view.account &&
+        sameStickerSendTarget(view.target,currentStickerSendTarget(view.services,visibleSendEditor()));
+    } catch (_) { return false; }
+  }
+  async function sendQuickSticker(view, item) {
+    if (view !== quickView || busy() || sendUncertain || !view.target) return;
+    if (!quickTargetMatches(view)) { closeQuickPicker(); return; }
+    const draft = {services:view.services, target:view.target, account:view.account, items:[item], invalid:false};
+    // Latch even a transient switch away and back, including after the popup closes.
+    const watch = () => { if (!quickTargetMatches(view)) draft.invalid = true; };
+    const unsubscribe = draft.services.store.subscribe(watch);
+    sendingBusy = true;
+    count();
+    view.status.textContent = ui('正在发送…','Sending…');
+    view.grid.setAttribute('aria-busy','true');
+    try {
+      const result = await transmitStickerDraft(draft, {
+        stopped:() => quickView !== view,
+        beforeIssue:() => { if (quickView !== view || !quickTargetMatches(view)) throw Error('SEND_TARGET_CHANGED'); },
+        progress:() => {},
+      });
+      if (result.sent && quickView === view) view.status.textContent = ui('已发送','Sent');
+    } catch (error) {
+      const message = sendMessage(sendUncertain ? 'SEND_UNCONFIRMED' : error.message);
+      if (quickView === view) view.status.textContent = message;
+      else if (sendUncertain || error.message === 'SEND_FAILED') notifyAction(message,'error');
+    } finally {
+      unsubscribe();
+      sendingBusy = false;
+      view.grid.removeAttribute('aria-busy');
+      count();
+    }
+  }
+  function openQuickPicker() {
+    if (quickView) { closeQuickPicker(true); return; }
+    if (busy() || root.querySelector('dialog[open]')) return;
+    const anchor = document.getElementById('spga-quick-toggle');
+    if (!anchor?.isConnected || !anchor.getClientRects().length) return;
+    if (host.dataset.open === 'true' && !hideWorkspace()) return;
+    if (!mini.hidden) mini.hidden = true;
+    const panel = document.createElement('section');
+    panel.id = 'st-quick-stickers';
+    panel.lang = language.locale;
+    panel.setAttribute('role','dialog');
+    panel.setAttribute('aria-label', ui('表情快选','Quick stickers'));
+    const quickRoot = panel.attachShadow({mode:'open'});
+    quickRoot.innerHTML = `<style>
+      :host{display:block;position:fixed;z-index:2147483646;width:min(378px,calc(100vw - 16px));font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#263447}
+      *{box-sizing:border-box}.picker{display:flex;flex-direction:column;max-height:inherit;border:1px solid #d7e0ea;border-radius:12px;background:#fff;box-shadow:0 9px 32px #24364d2e;overflow:hidden}
+      header,.searchbar,footer{display:flex;align-items:center;gap:8px;padding:8px 12px}header{background:#f3f6fa}header strong{font-size:15px}#target{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#667085;font-size:12px}
+      button,input{font:inherit;color:inherit}button{background:transparent;border:0;border-radius:6px;padding:5px;cursor:pointer}button:hover,button:focus-visible{background:#edf4fd;color:#0866c6}button:focus-visible,input:focus-visible{outline:2px solid #3783cc;outline-offset:1px}
+      .icon-action,#collect{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:34px;min-height:34px}.st-icon{flex:none;pointer-events:none}
+      .search-field{position:relative;flex:1;min-width:0}.search-field>.st-icon{position:absolute;inset-inline-start:9px;top:50%;transform:translateY(-50%);color:#667085}
+      .search-field input{width:100%;height:34px;border:1px solid #ccd6e2;border-radius:7px;padding:6px 8px;padding-inline-start:35px;background:#fff}#sort{border:1px solid #ccd6e2}
+      main{min-height:0;overflow:auto;overscroll-behavior:contain;padding:3px 10px;scrollbar-gutter:stable}#stickers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.sticker{min-width:0;aspect-ratio:1;display:grid;place-items:center;touch-action:manipulation}.sticker img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+      #status{flex:1;min-width:0;margin:0;color:#53657a;font-size:12px;overflow-wrap:anywhere}footer{flex-wrap:wrap;border-top:1px solid #e8edf2}footer button{color:#0866c6;font-weight:550}#collect{gap:5px}#collect:disabled{opacity:.5;cursor:default}
+    </style><div class="picker"><header><strong></strong><span id="target"></span><button id="manage" class="icon-action" type="button">${stickerIcon('grid')}</button><button id="close" class="icon-action" type="button">${stickerIcon('x')}</button></header>
+    <div class="searchbar"><label class="search-field">${stickerIcon('search')}<input type="search"></label><button id="sort" class="icon-action" type="button"></button></div><main><div id="stickers"></div></main><footer><p id="status" role="status" aria-live="polite"></p><button id="collect" type="button">${stickerIcon('collect')}<span></span></button></footer></div>`;
+    const el = selector => quickRoot.querySelector(selector);
+    const search = el('input'), sort = el('#sort'), grid = el('#stickers'), scroller = el('main'), status = el('#status');
+    function labelAction(button, label) {
+      button.title = label;
+      button.setAttribute('aria-label', label);
+    }
+    function renderSort() {
+      const label = quickOldestFirst
+        ? ui('最早在前，点击切换为最新在前','Oldest first. Switch to newest first')
+        : ui('最新在前，点击切换为最早在前','Newest first. Switch to oldest first');
+      sort.innerHTML = stickerIcon(quickOldestFirst ? 'sort-asc' : 'sort-desc');
+      labelAction(sort, label);
+    }
+    el('strong').textContent = ui('表情快选','Quick stickers');
+    search.placeholder = ui('搜索全部收藏','Search all favorites');
+    search.setAttribute('aria-label',search.placeholder);
+    renderSort();
+    labelAction(el('#close'),ui('关闭','Close'));
+    labelAction(el('#manage'),ui('管理表情','Manage stickers'));
+    el('#collect span').textContent = ui('从聊天收藏','Collect from chat');
+    status.textContent = ui('正在读取收藏…','Loading favorites…');
+    const titles = [...document.querySelectorAll('.messages-message-detail-view-header .title-wrap > .title')].filter(node=>node.getClientRects().length);
+    const openingTitle = titles.length === 1 ? titles[0] : null;
+    const openingText = openingTitle?.textContent.trim() || '';
+    const openingServices = favoritesSyncServices;
+    let openingTarget = null, openingAccount = 0;
+    if (openingServices) {
+      try {
+        openingTarget = currentStickerSendTarget(openingServices,visibleSendEditor());
+        openingAccount = nativeWorkspaceAccountId(openingServices);
+      } catch (_) { /* Management remains available without a sendable chat. */ }
+    }
+    const view = {panel,anchor,toolbar:anchor.parentElement,grid,status,services:null,account:0,target:null,unsubscribe:null,cleanup:()=>{}};
+    quickView = view;
+    anchor.setAttribute('aria-expanded','true');
+    document.body.append(panel);
+
+    function position() {
+      if (!anchor.isConnected || !anchor.getClientRects().length) { closeQuickPicker(); return; }
+      const rect = anchor.getBoundingClientRect();
+      const below = innerHeight - rect.bottom, above = rect.top;
+      const placeAbove = above >= below;
+      panel.style.maxHeight = Math.max(100, Math.min(440, (placeAbove ? above : below) - 12)) + 'px';
+      panel.style.left = Math.max(8,Math.min(innerWidth - panel.offsetWidth - 8,rect.left)) + 'px';
+      if (placeAbove) { panel.style.bottom = (innerHeight - rect.top + 5) + 'px'; panel.style.top = 'auto'; }
+      else { panel.style.top = (rect.bottom + 5) + 'px'; panel.style.bottom = 'auto'; }
+    }
+    function outside(event) {
+      const path = event.composedPath();
+      if (!path.includes(panel) && !path.includes(anchor)) closeQuickPicker();
+    }
+    function escape(event) {
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeQuickPicker(true); }
+    }
+    document.addEventListener('pointerdown',outside,true);
+    document.addEventListener('keydown',escape,true);
+    window.addEventListener('resize',position);
+    window.addEventListener('scroll',position,true);
+    function openingChatChanged() {
+      return !anchor.isConnected || anchor.parentElement !== view.toolbar ||
+        (openingTitle && (!openingTitle.isConnected || openingTitle.textContent.trim() !== openingText));
+    }
+    const titleWatch = new MutationObserver(() => { if (!view.target && quickView === view) closeQuickPicker(); });
+    if (openingTitle) titleWatch.observe(openingTitle,{characterData:true,childList:true,subtree:true});
+    const remount = new MutationObserver(() => { if (!host.isConnected || openingChatChanged()) closeQuickPicker(); });
+    remount.observe(document.body,{childList:true,subtree:true});
+    view.cleanup = () => {
+      document.removeEventListener('pointerdown',outside,true); document.removeEventListener('keydown',escape,true);
+      window.removeEventListener('resize',position); window.removeEventListener('scroll',position,true); remount.disconnect(); titleWatch.disconnect();
+    };
+    el('#close').onclick = () => closeQuickPicker(true);
+    el('#manage').onclick = () => { if (!busy()) { closeQuickPicker(); revealWorkspace(); } };
+    el('#collect').onclick = () => {
+      if (busy() || !quickTargetMatches(view)) return;
+      closeQuickPicker(); startChatStickerCapture();
+    };
+    el('#collect').disabled = true;
+    position(); search.focus({preventScroll:true});
+
+    let all = [], matches = [], loaded = 0, verified = false, lastSource = null;
+    const byId = new Map();
+    function appendPage() {
+      const end = Math.min(matches.length, loaded + 50);
+      const fragment = document.createDocumentFragment();
+      for (; loaded < end; loaded++) {
+        const item = matches[loaded], button = document.createElement('button'), image = document.createElement('img');
+        button.type = 'button'; button.className = 'sticker'; button.dataset.id = item.gifId;
+        button.title = item.label; button.setAttribute('aria-label',item.label);
+        image.alt = ''; image.loading = 'lazy'; image.referrerPolicy = 'no-referrer'; image.draggable = false;
+        try { image.src = validPreviewUrl(view.services.fileUrl,item.gifId); }
+        catch (_) { button.disabled = true; }
+        button.append(image); fragment.append(button);
+      }
+      grid.append(fragment);
+    }
+    function showMatches() {
+      matches = filterQuickFavorites(all,search.value,!quickOldestFirst);
+      loaded = 0; scroller.scrollTop = 0; grid.replaceChildren(); appendPage();
+      if (sendUncertain) status.textContent = sendMessage('SEND_UNCONFIRMED');
+      else if (!verified) status.textContent = ui('请在原生表情面板打开一次爱心「收藏」，然后重新打开快选。','Open the Favorites heart in SeaTalk’s sticker picker once, then reopen Quick stickers.');
+      else if (!matches.length) status.textContent = search.value ? ui('没有匹配的表情','No matching stickers') : ui('还没有收藏的表情','No favorites yet');
+      else status.textContent = ui('点表情即可发送','Click a sticker to send');
+    }
+    function refresh(list) {
+      const next = quickFavoriteRows(list.rows,personalRecords(),known,n => ui('收藏 ' + n,'Favorite ' + n));
+      const unchanged = lastSource && verified === list.verified && next.length === all.length &&
+        next.every((row,index) => row.gifId === all[index].gifId && row.label === all[index].label);
+      lastSource = list.rows;
+      if (unchanged) return;
+      verified = list.verified; all = next;
+      byId.clear(); for (const row of all) byId.set(row.gifId,row);
+      showMatches();
+    }
+    search.oninput = showMatches;
+    sort.onclick = () => { quickOldestFirst = !quickOldestFirst; renderSort(); showMatches(); };
+    scroller.onscroll = () => { if (loaded < matches.length && scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 90) appendPage(); };
+    grid.addEventListener('keydown', event => {
+      if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+    });
+    let previousClick = null;
+    grid.addEventListener('click', event => {
+      const button = event.target.closest('button[data-id]');
+      if (!acceptQuickStickerClick(event,button,previousClick)) return;
+      previousClick = {button,time:event.timeStamp,x:event.clientX,y:event.clientY};
+      event.stopPropagation();
+      const item = byId.get(button.dataset.id);
+      if (item) void sendQuickSticker(view,item);
+    });
+    Promise.resolve(workspaceReady).then(() => {
+      if (view !== quickView) return;
+      if (openingChatChanged()) { closeQuickPicker(); return; }
+      assertWorkspaceAccount();
+      const services = favoritesSyncServices;
+      if (!services || typeof services.sendSticker !== 'function' || typeof services.store.subscribe !== 'function') throw Error('SEND_SERVICE_UNAVAILABLE');
+      view.services = services; view.account = nativeWorkspaceAccountId(services);
+      view.target = currentStickerSendTarget(services,visibleSendEditor());
+      if (openingServices && (!sameStickerSendTarget(openingTarget,view.target) || openingAccount !== view.account)) { closeQuickPicker(); return; }
+      if (!openingServices && !openingText) {
+        view.target = null;
+        status.textContent = ui('请重新打开快选，核对当前会话。','Reopen Quick stickers to verify the current chat.');
+        return;
+      }
+      titleWatch.disconnect();
+      el('#target').textContent = ui('发给 ','To ') + view.target.name;
+      el('#target').title = view.target.name; el('#collect').disabled = false;
+      refresh(currentQuickList(services));
+      view.unsubscribe = services.store.subscribe(() => {
+        if (!quickTargetMatches(view)) { closeQuickPicker(); return; }
+        const stored = services.store.getState()?.messages?.customStickers;
+        if (Array.isArray(stored) && stored !== lastSource && (stored.length || verified)) refresh(currentQuickList(services));
+      });
+    }).catch(error => {
+      if (view === quickView) status.textContent = sendMessage(error.message);
+    });
+  }
+  host.__openQuick = openQuickPicker;
+
+  function stickerFromChatRow(row) {
+    // An ordinary image, emoji reaction or quoted message is never a sticker selection.
+    const selector = row.matches('.messages-message-list-item.sticker_c') ? '.messages-message-list-item-sticker-content img'
+      : row.matches('.messages-message-list-item.image_c') ? '.messages-message-list-item-image-content img' : null;
+    if (!selector) return null;
+    const image = row.querySelector(selector);
+    if (!image) return null;
+    let url;
+    try { url = new URL(image.currentSrc || image.src); } catch (_) { return null; }
+    const id = url.pathname.match(/^\/download\/([a-zA-Z0-9]{64})(?:_|$)/)?.[1];
+    if (!validMetadataId(id) || !isFavoritePreviewUrl(url,id)) return null;
+    const width = image.naturalWidth, height = image.naturalHeight;
+    if (!width || !height || width > 20000 || height > 20000) return null;
+    return {gifId:id, width, height, url:url.href};
+  }
+
+  function captureRowsBetween(rows, first, last, bounds) {
+    const top = Math.max(bounds.top, Math.min(first, last));
+    const bottom = Math.min(bounds.bottom, Math.max(first, last));
+    return rows.filter(row => {
+      const rect = row.getBoundingClientRect();
+      return rect.width && rect.height && rect.bottom >= top && rect.top <= bottom;
+    });
+  }
+
+  async function startChatStickerCapture() {
+    if (busy() || scanning || root.querySelector('dialog[open]')) return;
+    await workspaceReady;
+    if (busy() || !favoritesSyncServices || !personalReady || importNeedsReview) {
+      notifyAction(ui('请先载入收藏和个人设置。若上一次添加未确认，请刷新后核对。','Load favorites and personal settings first. After an unconfirmed addition, refresh and check favorites.'),'info');
+      return;
+    }
+    const services = favoritesSyncServices;
+    const lists = [...document.querySelectorAll('.messages-message-detail-view .messages-message-list')].filter(list=>list.getClientRects().length);
+    const list = lists.length === 1 && lists[0];
+    let account, target;
+    try {
+      account = assertWorkspaceAccount();
+      target = currentStickerSendTarget(services, visibleSendEditor());
+      if (!list || !Array.isArray(services.store.getState()?.messages?.customStickers)) throw Error();
+      if (!services.store.getState().messages.customStickers.length) liveSource(false);
+    } catch (_) {
+      notifyAction(ui('请打开普通聊天及原生爱心收藏页，再试一次。','Open a direct or group chat and its Favorites tab, then try again.'),'info');
+      return;
+    }
+
+    captureActive = true;
+    host.dataset.open = host.dataset.managed = 'false';
+    host.style.display = 'none'; mini.hidden = true;
+    window.dispatchEvent(new CustomEvent('spga:layout-change'));
+    const panel = document.createElement('aside');
+    panel.id = 'spga-chat-capture';
+    panel.style.cssText = 'position:fixed;z-index:2147483646;max-width:calc(100vw - 24px);';
+    const box = panel.attachShadow({mode:'open'});
+    box.innerHTML = `<style>
+      :host{font:14px/1.45 system-ui;color:#17243b}*{box-sizing:border-box}
+      section{padding:12px;background:white;border:1px solid #bdd3ec;border-radius:12px;box-shadow:0 5px 26px #19315030;min-width:min(330px,90vw);max-width:min(430px,90vw)}
+      section{overflow-y:auto;overscroll-behavior:contain}
+      .bar,.buttons{display:flex;gap:8px;align-items:center}.bar strong{flex:1}
+      button,input,textarea,select{font:inherit}button{border:1px solid #cbd5e1;background:white;border-radius:6px;padding:5px 10px;cursor:pointer}
+      button.primary{background:#1263b1;color:white;border-color:#1263b1}button:disabled{opacity:.5;cursor:default}
+      p{margin:7px 0;color:#45566a}label,input,textarea,select{display:block;width:100%}label{margin:8px 0}
+      input,textarea,select{border:1px solid #cbd5e1;border-radius:5px;padding:5px;background:white;color:inherit}textarea{resize:vertical}
+      .images{display:flex;gap:4px;overflow:auto;max-height:58px}.images img{width:44px;height:44px;object-fit:contain}
+      [hidden]{display:none!important}.buttons{justify-content:flex-end;margin-top:8px}
+    </style><section role="region"><div class="bar"><strong></strong><button id="cancel" type="button"></button></div>
+    <p id="help"></p><p id="stats" role="status"></p><div id="review" hidden><div class="images"></div>
+    <label><span id="groupLabel"></span><select id="group"></select></label>
+    <label id="newGroupField" hidden><span id="newGroupLabel"></span><input id="newGroupName" maxlength="60"></label>
+    <label><span id="keywordsLabel"></span><input id="keywords" maxlength="2000"></label><p id="impact"></p></div>
+    <div class="buttons"><button id="back" type="button" hidden></button><button class="primary" type="button" id="primary"></button></div></section>`;
+    document.body.append(panel);
+    const el = selector => box.querySelector(selector);
+    el('strong').textContent = ui('从聊天收藏','Collect from chat');
+    el('#cancel').textContent = ui('退出','Close');
+    el('#help').textContent = ui('拖过消息选取表情（最多 100 张），单击已选表情可取消。','Drag across messages to select up to 100 stickers. Click a selected sticker to deselect it.');
+    el('#groupLabel').textContent = tr('移到分组');
+    el('#newGroupLabel').textContent = tr('新分组名称');
+    el('#keywordsLabel').textContent = tr('追加搜索关键字');
+    el('#keywords').placeholder = tr('用逗号分隔，例如：工作，上班，打工人');
+    el('#back').textContent = ui('继续选择','Keep selecting');
+    const chosen = new Map(), marks = new Map(), listeners = new AbortController();
+    const signal = listeners.signal;
+    let drag = null, mode = 'select', revision = null, reviewedFresh = new Set();
+    let saving = false, stopRequested = false, issued = false, ended = false, unsubscribe;
+    function validContext() {
+      try { return !ended && list.isConnected && assertWorkspaceAccount() === account &&
+        sameStickerSendTarget(target,currentStickerSendTarget(services,visibleSendEditor())); } catch (_) { return false; }
+    }
+    function position() {
+      const rect = list.getBoundingClientRect();
+      const form = el('section'), edge = 8;
+      const top = Math.max(edge, Math.min(rect.top + edge, innerHeight - edge - form.offsetHeight));
+      panel.style.top = top + 'px';
+      form.style.maxHeight = Math.max(0, innerHeight - top - edge) + 'px';
+      panel.style.right = Math.max(8,window.innerWidth-rect.right+8)+'px';
+    }
+    function finish() {
+      if (ended) return;
+      ended = true;
+      listeners.abort(); unsubscribe?.(); observer.disconnect();
+      if (drag && list.hasPointerCapture?.(drag.id)) list.releasePointerCapture(drag.id);
+      selectionStyle.remove(); list.classList.remove('spga-capturing');
+      for (const row of marks.keys()) row.classList.remove('spga-capture-picked');
+      captureActive = false; panel.remove(); count();
+      if (validReturnFocus()) document.getElementById('spga-quick-toggle')?.focus();
+    }
+    function validReturnFocus() { return host.isConnected && list.isConnected; }
+    function changed() {
+      if (!validContext()) {
+        if (issued) importNeedsReview=true;
+        finish();
+        notifyAction(issued ? ui('聊天或账号已切换。已提交的表情可能已收藏，请刷新核对。','The chat or account changed. Submitted stickers may already be saved. Reload and check favorites.')
+          : ui('聊天或账号已切换，已退出拖选。','The chat or account changed. Selection closed.'),'info');
+      } else if (mode === 'select') paint();
+    }
+    const selectionStyle = document.createElement('style');
+    selectionStyle.textContent = '.spga-capturing{cursor:crosshair!important;user-select:none!important}.spga-capturing .spga-capture-picked :is(.messages-message-list-item-sticker-content,.messages-message-list-item-image-content){outline:3px solid #1675c9;outline-offset:1px;border-radius:6px}';
+    document.head.append(selectionStyle); list.classList.add('spga-capturing');
+    const rows = () => [...list.querySelectorAll('.messages-message-list-item')];
+    function paint() {
+      for (const row of rows()) {
+        const record = stickerFromChatRow(row), picked = !!record && chosen.has(record.gifId);
+        row.classList.toggle('spga-capture-picked',picked);
+        if (picked) marks.set(row,true); else marks.delete(row);
+      }
+      for (const row of marks.keys()) if (!list.contains(row)) { row.classList.remove('spga-capture-picked'); marks.delete(row); }
+    }
+    function saved(id) {
+      const stored = services.store.getState().messages.customStickers;
+      if (!Array.isArray(stored)) throw Error('CAPTURE_NO_FAVORITES');
+      const alias = importedResourceIds.get(id);
+      const match = stored.find(row=>row.id===id || row.url===id || (alias && (row.id===alias || row.url===alias)));
+      return match && [match.id,match.url].find(validMetadataId) || null;
+    }
+    function idsForPlan() { return [...new Set([...chosen.keys()].map(id=>saved(id)||id))]; }
+    function changes() {
+      const group = readOrganizationGroup(el('#group'), el('#newGroupName')), keywords = splitPersonalKeywords(el('#keywords').value);
+      if (el('#group').value === 'new' && !group) throw Error('GROUP_NAME_REQUIRED');
+      return group === undefined ? {keywords} : {group,keywords};
+    }
+    function update() {
+      const total = chosen.size, freshIds = [...chosen.keys()].filter(id=>!saved(id)), fresh = freshIds.length;
+      el('#stats').textContent = ui(`已选 ${total} 张 · 待新增 ${fresh} 张 · 已收藏 ${total-fresh} 张`,`${total} selected · ${fresh} new · ${total-fresh} already saved`);
+      if (mode === 'select') {
+        el('#primary').textContent = ui('预览所选','Review selection'); el('#primary').disabled = !total;
+        return;
+      }
+      reviewedFresh = new Set(freshIds);
+      el('#newGroupField').hidden = el('#group').value !== 'new';
+      try {
+        const options = changes(), ids = idsForPlan(), plan = planPersonalOrganization(personalSnapshot,ids,options);
+        el('#impact').textContent = options.keywords.length ? ui('将为 ' + plan.keywordChangedCount + ' 张添加关键字。', 'Add keywords to ' + plan.keywordChangedCount + ' stickers.') : '';
+        let action = ui('完成','Done');
+        if (plan.movedCount || plan.keywordChangedCount) action = fresh ? ui('确认收藏与整理','Add and organize') : tr('保存整理');
+        else if (fresh) action = ui('确认收藏','Add to favorites');
+        el('#primary').textContent = action;
+        el('#primary').disabled = saving || !total;
+      } catch (error) {
+        el('#impact').textContent = error.message === 'GROUP_NAME_REQUIRED' ? ui('输入新分组名称。','Enter a name for the new group.') : metadataMessage(error.message);
+        el('#primary').disabled = true;
+      }
+    }
+    function selectRow(row, removing) {
+      const item = stickerFromChatRow(row);
+      if (!item) return;
+      if (removing) chosen.delete(item.gifId);
+      else if (chosen.size < 100) chosen.set(item.gifId,item);
+    }
+    list.addEventListener('pointerdown',event=>{
+      if (mode !== 'select' || event.button !== 0 || !event.isPrimary || !validContext()) return;
+      const row = event.target.closest('.messages-message-list-item');
+      if (!row || !list.contains(row)) return;
+      const item = stickerFromChatRow(row);
+      drag = {id:event.pointerId, originY:event.clientY, lastY:event.clientY, moved:false, removing:!!item && chosen.has(item.gifId)};
+      list.setPointerCapture(event.pointerId);
+      event.preventDefault(); event.stopPropagation();
+      // Use the actual event target for a click. Virtualized chat rows can overlap while scrolling.
+      selectRow(row,drag.removing);
+      paint(); update();
+    },{capture:true,signal});
+    list.addEventListener('pointermove',event=>{
+      if (!drag || drag.id!==event.pointerId || !validContext()) return;
+      if (!(event.buttons & 1)) { drag=null; return; }
+      if (!drag.moved && Math.abs(event.clientY-drag.originY)<5) return;
+      if (drag.lastY===event.clientY) return;
+      drag.moved=true;
+      for (const row of captureRowsBetween(rows(),drag.lastY,event.clientY,list.getBoundingClientRect())) selectRow(row,drag.removing);
+      drag.lastY=event.clientY;
+      paint(); update();
+    },{capture:true,signal});
+    function lift(e) { if(drag?.id===e.pointerId) drag=null; }
+    for (const event of ['pointerup','pointercancel','lostpointercapture']) list.addEventListener(event,lift,{signal});
+    list.addEventListener('click',e=>{if(mode==='select'){e.preventDefault();e.stopImmediatePropagation();}},{capture:true,signal});
+    function review(on) {
+      if (!validContext()) { changed(); return; }
+      mode = on?'review':'select'; revision = on?personalSnapshot.revision:null;
+      el('#review').hidden = el('#back').hidden = on===false;
+      el('#help').hidden = on;
+      el('.images').replaceChildren();
+      if (on) {
+        const select = el('#group');
+        populateOrganizationGroups(select, personalGroupNames(), select.value);
+        for (const item of chosen.values()) { const img=document.createElement('img');img.alt='';img.referrerPolicy='no-referrer';img.src=item.url;el('.images').append(img); }
+      }
+      update(); if (on) el('#group').focus();
+    }
+    async function confirm() {
+      if (saving || !validContext() || !chosen.size || mode!=='review' || el('#primary').disabled) return;
+      let stopObserving=()=>{};
+      try {
+        const options=changes(), before=personalSnapshot;
+        if (before.revision!==revision) throw Error('METADATA_CHANGED');
+        const pending=[...chosen.values()].filter(item=>!saved(item.gifId)).map((item,i)=>({...item,label:'Sticker '+(i+1)}));
+        if (pending.some(item=>!reviewedFresh.has(item.gifId))) { update(); return; }
+        saving=true; el('#primary').disabled=true;el('#back').disabled=true;
+        el('#cancel').textContent=ui('停止后续收藏','Stop remaining');
+        el('#group').disabled=el('#newGroupName').disabled=el('#keywords').disabled=true;
+        const requireContext = () => { if (!validContext()) throw Error('CAPTURE_CHANGED'); };
+        requireContext();
+        const result=pending.length ? await addSharedStickers(pending,{
+          accountId:()=>nativeWorkspaceAccountId(services), active:validContext,
+          stopped:()=>stopRequested, has:id=>!!saved(id), pause:pauseImport,
+          report:text=>{el('#stats').textContent=language.locale==='zh'?text:ui('', 'Adding selected stickers…');},
+          add:item=>{
+            requireContext(); stopObserving();
+            stopObserving=observeImportRefresh(item,{services,active:validContext});
+            issued=true;
+            return services.actions.actionAddCustomStickerFromMessage({tag:services.tag,content:{fileId:item.gifId,width:item.width,height:item.height}});
+          }
+        }):{added:0};
+        requireContext();
+        const exact=[...chosen.keys()].map(saved);
+        const canonical=[...new Set(result.stopped ? exact.filter(Boolean) : exact)];
+        if (canonical.some(id=>!id)) throw Error('CAPTURE_UNCONFIRMED');
+        let metadataUpdated = false;
+        if (canonical.length && ('group' in options || options.keywords.length)) {
+          const mapped=planPersonalOrganization(before,canonical,options);
+          if (mapped.movedCount || mapped.keywordChangedCount) {
+            requireContext();
+            await savePersonalOrganization(canonical,options,revision);
+            requireContext();
+            metadataUpdated = true;
+          }
+        }
+        finish();
+        if (result.stopped) {
+          notifyAction(ui(`已停止后续收藏。已新增 ${result.added} 张，已核对 ${canonical.length} 张。`,`Stopped. Added ${result.added} and verified ${canonical.length} favorites.`),'info');
+          return;
+        }
+        const summary = [];
+        if (result.added) summary.push(ui(`已新增 ${result.added} 张`,`Added ${result.added}`));
+        if (metadataUpdated) summary.push(ui('已保存整理','Changes saved'));
+        if (!summary.length) summary.push(ui('所选表情均已收藏','All selected stickers are already saved'));
+        notifyAction(summary.join(ui('，',', ')) + ui('。','.'),'success');
+      } catch(error) {
+        if (issued) importNeedsReview=true;
+        if (ended) return;
+        const message=error.message.startsWith('METADATA_')?metadataMessage(error.message):
+          ui('结果未确认，请刷新并核对收藏。','Result unconfirmed. Reload and check favorites.');
+        finish(); notifyAction(message,'error');
+      } finally { stopObserving(); }
+    }
+    el('#primary').onclick=()=>{if(mode==='select')review(true);else void confirm();};
+    el('#back').onclick=()=>review(false);
+    const cancel=()=>{
+      if (!saving) {finish();return;}
+      stopRequested=true; el('#cancel').disabled=true;
+      el('#stats').textContent=ui('正在等待当前收藏结果…','Waiting for the current sticker…');
+    };
+    el('#cancel').onclick=cancel;
+    el('#group').onchange = () => {
+      update();
+      if (el('#group').value === 'new') el('#newGroupName').focus();
+    };
+    el('#keywords').oninput=el('#newGroupName').oninput=update;
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();cancel();}},{capture:true,signal});
+    window.addEventListener('resize',position,{signal});
+    const observer=new MutationObserver(changed);
+    observer.observe(list,{childList:true,subtree:true});
+    const detail=list.closest('.messages-message-detail-view'); if(detail?.parentElement) observer.observe(detail.parentElement,{childList:true,subtree:false});
+    if(typeof services.store.subscribe==='function') unsubscribe=services.store.subscribe(changed);
+    position(); update(); el('#cancel').focus();
+  }
 
   async function detect(item) {
     const controller = new AbortController(); activeRequests.add(controller);
@@ -6039,8 +7434,7 @@ function getFavoritesAccountModuleUrl() {
     const worker = async () => {
       while (!scanCancelled && next < queue.length && host.isConnected) {
         const item = queue[next++]; await detect(item); done++; status();
-        const badge = [...root.querySelectorAll('.badge')].find(element => element.dataset.id === item.gifId);
-        if (badge) { badge.textContent = badgeText(item); badge.dataset.kind = effectiveAnimation(item); badge.title = ui('自动检测：','Automatic detection: ')+detectionText(item); }
+        if (item.selected) showSelectionDetails(selection());
       }
     };
     try { await Promise.all([worker(), worker(), worker()]); }
@@ -6223,10 +7617,13 @@ function getFavoritesAccountModuleUrl() {
   const alreadySaved = id => savedStickerId(id) !== null;
   // Observe only the exact resource refresh performed by this confirmed native add.
   // Requests and responses pass through unchanged; no credentials or response bodies are stored.
-  function observeImportRefresh(item) {
+  function observeImportRefresh(item, capture = null) {
     if (globalThis.__SPGA_TEST_MODE__ === true) return () => {};
-    const originalFetch=window.fetch, account=importAccountId, generation=importGeneration;
-    const allowedHost=new URL(validPreviewUrl(importServices.fileUrl,item.gifId)).hostname;
+    const services=capture?.services || importServices;
+    const account=nativeWorkspaceAccountId(services), generation=importGeneration;
+    const contextActive=capture?.active || (()=>generation===importGeneration && account===importAccountId);
+    const originalFetch=window.fetch;
+    const allowedHost=new URL(validPreviewUrl(services.fileUrl,item.gifId)).hostname;
     let active=true;
     const wrapped=function(input,init) {
       let matching=false;
@@ -6245,8 +7642,8 @@ function getFavoritesAccountModuleUrl() {
             const text=await result.clone().text();
             if(text.length<=65536) {
               const payload=JSON.parse(text);
-              if(active && generation===importGeneration && account===importAccountId &&
-                nativeWorkspaceAccountId(importServices)===account && host.isConnected &&
+              if(active && contextActive() &&
+                nativeWorkspaceAccountId(services)===account && host.isConnected &&
                 (!payload.ErrorCode || Number(payload.ErrorCode)===0) && validMetadataId(payload.FileName)) {
                 assertWorkspaceAccount(); importedResourceIds.set(item.gifId,payload.FileName);
               }
@@ -6310,7 +7707,7 @@ function getFavoritesAccountModuleUrl() {
     const selected = items.filter(item => item.selected && !item.deleted);
     try {
       $('#shareCode').value = encodeStickerShare(selected.map((item,index) => $('#shareIncludeMetadata').checked ?
-        {gifId:item.gifId,label:item.label,keywords:item.metadata?.keywords || [],visibleText:item.metadata?.visibleText || ''} : {gifId:item.gifId,label:'Sticker '+(index+1)}));
+        {gifId:item.gifId,label:item.label,keywords:item.metadata?.keywords || []} : {gifId:item.gifId,label:'Sticker '+(index+1)}));
       $('#shareStatus').textContent = ui(`共 ${selected.length} 个表情${selectionOutside() ? `，其中 ${selectionOutside()} 个不在当前筛选中` : ''}。请复制完整口令；表情越多，口令越长。`, `${selected.length} stickers${selectionOutside() ? `, including ${selectionOutside()} outside the current filter` : ''}. Copy the complete code; more stickers make it longer.`);
       if (openDialog($('#sharing'))) $('#shareCopy').focus();
     } catch (error) { $('#scanStatus').textContent = tr(error.message); }
@@ -6321,12 +7718,18 @@ function getFavoritesAccountModuleUrl() {
     catch (_) { $('#shareCode').focus(); $('#shareCode').select(); $('#shareStatus').textContent = tr('请按 ⌘C / Ctrl+C 复制完整口令。'); notifyAction($('#shareStatus').textContent, 'info'); }
   };
   $('#shareClose').onclick = () => closeDialog($('#sharing'));
+  const hasSharedDetails = item => Array.isArray(item.keywords);
+  const importDetails = item => hasSharedDetails(item) && $('#shareImportMetadata').checked;
+  const canSelectImport = item => item.saved ? importDetails(item) : item.ready;
   const updateImportButton = () => {
-    $('#importConfirm').disabled = importingBusy || importNeedsReview || !imported.some(item => item.selected && (item.ready && !item.saved || item.saved && $('#shareImportMetadata').checked));
+    $('#shareImportMetadata').closest('label').hidden = !imported.some(hasSharedDetails);
+    $('#shareImportMetadata').disabled = importingBusy;
+    $('#importConfirm').disabled = importingBusy || importNeedsReview || !imported.some(item => item.selected && canSelectImport(item));
   };
   $('#importOpen').onclick = () => {
     if (deleting || importingBusy || scanning) return;
     try { assertWorkspaceAccount(); } catch (error) { $('#scanStatus').textContent = tr(error.message); count(); return; }
+    updateImportButton();
     if (openDialog($('#importing'))) $('#importCode').focus();
   };
   function cancelImport() {
@@ -6363,32 +7766,40 @@ function getFavoritesAccountModuleUrl() {
       ownList();
       imported = stickers.map(item => ({ ...item, ready: false, selected: false, saved: alreadySaved(item.gifId), metadataPolicy:'keep',
         url: validPreviewUrl(importServices.fileUrl, item.gifId) }));
+      updateImportButton();
       for (const item of imported) {
         const card = document.createElement('div'); card.className = 'import-card';
         const image = document.createElement('img'); image.alt = item.label; image.referrerPolicy = 'no-referrer';
         const label = document.createElement('label');
-        const check = document.createElement('input'); check.type = 'checkbox'; check.disabled = !(item.saved && $('#shareImportMetadata').checked);
+        const check = document.createElement('input'); check.type = 'checkbox'; check.disabled = !canSelectImport(item);
         check.setAttribute('aria-label', tr('添加 ') + item.label); item.check = check;
         const status = document.createElement('p'); status.style.fontSize = '12px';
-        status.textContent = item.saved ? ui('已收藏 · 可选择导入备注','Already saved · Can import notes') : tr('等待预览'); item.status = status;
+        const savedStatus = hasSharedDetails(item) ? ui('已收藏 · 可导入名称和关键字','Already saved · Can import name and keywords') : tr('已收藏');
+        status.textContent = item.saved ? savedStatus : tr('等待预览'); item.status = status;
         check.onchange = () => { item.selected = check.checked; updateImportButton(); };
         image.onload = () => {
           if (generation !== importGeneration) return;
           item.width = image.naturalWidth; item.height = image.naturalHeight;
           item.ready = item.width > 0 && item.height > 0 && item.width <= 20000 && item.height <= 20000;
-          check.disabled = importingBusy || !(item.saved ? $('#shareImportMetadata').checked : item.ready);
-          status.textContent = item.saved ? ui('已收藏 · 可选择导入备注','Already saved · Can import notes') : item.ready ? tr('预览就绪 · 可添加') : tr('图片尺寸无效');
+          check.disabled = importingBusy || !canSelectImport(item);
+          status.textContent = item.saved ? savedStatus : item.ready ? tr('预览就绪 · 可添加') : tr('图片尺寸无效');
           updateImportButton();
         };
         image.onerror = () => {
           if (generation !== importGeneration) return;
-          item.ready = false; if (!item.saved) { item.selected = false; check.checked = false; } check.disabled = !(item.saved && $('#shareImportMetadata').checked);
-          status.textContent = item.saved ? ui('已有收藏，可导入备注；预览不可用','Already saved; notes can be imported. Preview unavailable.') : tr('预览不可用 · 不可添加'); updateImportButton();
+          item.ready = false; if (!item.saved) { item.selected = false; check.checked = false; } check.disabled = importingBusy || !canSelectImport(item);
+          status.textContent = item.saved ? savedStatus : tr('预览不可用 · 不可添加'); updateImportButton();
         };
-        const policy=document.createElement('select');policy.setAttribute('aria-label',ui('备注冲突处理 ','Note conflict policy: ')+item.label);
-        for(const [value,zh,en] of [['keep','保留我的备注，合并关键词','Keep my note, merge keywords'],['replace','使用分享备注，合并关键词','Use shared note, merge keywords']]){const option=document.createElement('option');option.value=value;option.textContent=ui(zh,en);policy.append(option);}
-        policy.disabled=!personalRecords().has(item.gifId);policy.onchange=()=>item.metadataPolicy=policy.value;
-        label.append(check, item.label); card.append(image, label, status, policy); $('#importPreview').append(card);
+        label.append(check, item.label); card.append(image, label, status);
+        if (hasSharedDetails(item) && personalRecords().has(savedStickerId(item.gifId) || item.gifId)) {
+          const policy = document.createElement('select'); policy.setAttribute('aria-label',ui('重名处理 ','Name conflict for ')+item.label);
+          policy.append(new Option(ui('保留我的名称，合并关键字','Keep my name and merge keywords'),'keep'),
+            new Option(ui('使用分享名称，合并关键字','Use shared name and merge keywords'),'replace'));
+          policy.disabled = !importDetails(item);
+          policy.onchange = () => item.metadataPolicy = policy.value;
+          item.policy = policy; card.append(policy);
+        }
+        $('#importPreview').append(card);
         image.src = item.url;
       }
       $('#importStatus').textContent = ui(`共 ${imported.length} 个表情，已收藏 ${imported.filter(item => item.saved).length} 个。请勾选预览成功的表情，确认后添加。`, `${imported.length} stickers; ${imported.filter(item => item.saved).length} already saved. Select stickers with ready previews, then confirm adding them.`);
@@ -6399,28 +7810,37 @@ function getFavoritesAccountModuleUrl() {
     }
   };
   $('#shareImportMetadata').onchange=()=>{
-    for(const item of imported){item.check.disabled=!(item.saved ? $('#shareImportMetadata').checked : item.ready);if(item.check.disabled){item.selected=false;item.check.checked=false;}}
+    for(const item of imported){
+      item.check.disabled=importingBusy || !canSelectImport(item);
+      if(item.check.disabled){item.selected=false;item.check.checked=false;}
+      if(item.policy)item.policy.disabled=importingBusy || !importDetails(item);
+    }
     updateImportButton();
   };
   $('#importConfirm').onclick = async () => {
     if (importingBusy || deleting || sendingBusy || metadataSaving || scanning || importNeedsReview) return;
     try { assertWorkspaceAccount(); } catch (error) { $('#importStatus').textContent = tr(error.message); return; }
-    const selected = imported.filter(item => item.selected && (item.ready && !item.saved || item.saved && $('#shareImportMetadata').checked));
+    const selected = imported.filter(item => item.selected && canSelectImport(item));
     if (!selected.length) return;
     const generation = importGeneration;
     const metadataRevision=personalSnapshot.revision,metadataPlan=new Map();
     try{
-      if($('#shareImportMetadata').checked){
-        for(const item of selected){
-          const incoming=normalizePersonalRecord({gifId:item.gifId,name:item.label,keywords:item.keywords || [],visibleText:item.visibleText || '',animationOverride:personalRecords().get(savedStickerId(item.gifId) || item.gifId)?.animationOverride || 'auto',source:'shared',updatedAt:new Date().toISOString()});
-          metadataPlan.set(item.gifId,mergePersonalRecord(personalRecords().get(savedStickerId(item.gifId) || item.gifId),incoming,item.metadataPolicy==='replace',true));
+      if(selected.some(importDetails)){
+        const current=personalRecords();
+        for(const item of selected.filter(importDetails)){
+          const savedId=savedStickerId(item.gifId) || item.gifId;
+          const shared={label:item.label,keywords:[...item.keywords]};
+          const replace=item.metadataPolicy==='replace', now=new Date().toISOString();
+          mergeSharedPersonalRecord(current.get(savedId),shared,savedId,replace,now);
+          metadataPlan.set(item.gifId,{shared,replace,now});
         }
       }
     }catch(error){$('#importStatus').textContent=metadataMessage(error.message);return;}
     importingBusy = true; importStopped = false;
     let stopObservingRefresh=()=>{};
     for (const id of ['importCode', 'importParse', 'importSelect', 'importConfirm', 'remove', 'scan']) $('#' + id).disabled = true;
-    imported.forEach(item => item.check.disabled = true);
+    imported.forEach(item => { item.check.disabled = true; if(item.policy)item.policy.disabled=true; });
+    $('#shareImportMetadata').disabled = true;
     $('#importStop').hidden = false; count();
     try {
       const newStickers=selected.filter(item=>!alreadySaved(item.gifId));
@@ -6440,10 +7860,16 @@ function getFavoritesAccountModuleUrl() {
       if(metadataPlan.size && !result.stopped){
         assertWorkspaceAccount();if(personalSnapshot.revision!==metadataRevision)throw Error('METADATA_CHANGED');
         const records=personalRecords();
-        for(const [id,row] of metadataPlan){const savedId=savedStickerId(id);if(savedId){const mapped=normalizePersonalRecord({...row,gifId:savedId});const choice=selected.find(item=>item.gifId===id);records.set(savedId,mergePersonalRecord(records.get(savedId),mapped,choice?.metadataPolicy==='replace',true));notes++;}}
+        for(const [id,plan] of metadataPlan){
+          const savedId=savedStickerId(id);
+          if(!savedId)continue;
+          records.set(savedId,mergeSharedPersonalRecord(records.get(savedId),plan.shared,savedId,plan.replace,plan.now));
+          notes++;
+        }
         if(notes)await savePersonalRows([...records.values()]);
       }
-      $('#importStatus').textContent = ui(`已保存 ${notes} 条备注。`, `Saved ${notes} notes. `) + ui(`页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`, `Addition observed for ${result.added} stickers; ${result.skipped} skipped.${result.stopped ? ' Later additions stopped.' : ''} Reload SeaTalk to check saved results.`); notifyAction($('#importStatus').textContent, result.stopped ? 'info' : 'success');
+      const details = notes ? ui('已导入 ' + notes + ' 张表情的名称和关键字。', 'Imported names and keywords for ' + notes + (notes === 1 ? ' sticker. ' : ' stickers. ')) : '';
+      $('#importStatus').textContent = details + ui(`页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`, `Addition observed for ${result.added} stickers; ${result.skipped} skipped.${result.stopped ? ' Later additions stopped.' : ''} Reload SeaTalk to check saved results.`); notifyAction($('#importStatus').textContent, result.stopped ? 'info' : 'success');
     } catch (error) { importNeedsReview = true; $('#importStatus').textContent = error.message.startsWith('METADATA_') ? metadataMessage(error.message) : tr(error.message); notifyAction($('#importStatus').textContent, 'error'); }
     finally {
       stopObservingRefresh();
@@ -6456,9 +7882,16 @@ function getFavoritesAccountModuleUrl() {
           const canonicalId=savedStickerId(item.gifId);
           const existing = items.find(old => old.gifId === canonicalId);
           if (existing) existing.deleted = false;
-          else items.push({gifId:canonicalId,label:item.label,originalLabel:item.label,url:validPreviewUrl(importServices.fileUrl,canonicalId),existing:known.has(canonicalId),selected:false,animation:'unknown'});
+          else {
+            const native = ownList().find(entry => entry.id === canonicalId || entry.url === canonicalId);
+            const number = items.length+1, providedName = known.get(canonicalId) || native?.name;
+            const generatedName = providedName ? null : ui('收藏 '+number,'Favorite '+number);
+            const originalLabel = String(providedName || generatedName).slice(0,80);
+            items.push({gifId:canonicalId,label:originalLabel,originalLabel,generatedName,number,url:validPreviewUrl(importServices.fileUrl,canonicalId),existing:known.has(canonicalId),selected:false,animation:'unknown'});
+          }
         }
-        item.check.disabled = !(item.saved ? $('#shareImportMetadata').checked : item.ready);
+        item.check.disabled = !canSelectImport(item);
+        if(item.policy)item.policy.disabled=!importDetails(item);
       }
       refreshPersonalLabels(); updateImportButton(); render();
     }
@@ -6483,7 +7916,7 @@ function getFavoritesAccountModuleUrl() {
   }
   function syncFavorites(manual = false) {
     if (!host.isConnected || host.dataset.open !== 'true' || document.hidden) return;
-    if (busy() || scanning || root.querySelector('dialog[open]') || workspaceAccountState !== 'ready') {
+    if (busy() || scanning || rubberBand || root.querySelector('dialog[open]') || workspaceAccountState !== 'ready') {
       if (manual) notifyAction(ui('暂不能同步：请等待当前操作完成、关闭弹窗，并确认账号已就绪。','Sync unavailable. Wait for the current operation, close dialogs and check account readiness.'), 'info');
       return;
     }
@@ -6491,13 +7924,14 @@ function getFavoritesAccountModuleUrl() {
     catch (_) {
       workspaceAccountState = 'failed'; stopFavoritesSync(); count();
       $('#syncStatus').textContent = ui('账号已变化，自动同步已停止。请刷新网页后重新打开。', 'Account changed. Sync stopped. Reload the page and reopen the helper.');
+      if (!favoritesRead) renderEmpty();
       if (manual) notifyAction($('#syncStatus').textContent, 'error');
       return;
     }
     let latest;
     try {
       const stored = favoritesSyncServices?.store.getState()?.messages?.customStickers;
-      if (Array.isArray(stored)) {
+      if (Array.isArray(stored) && (stored.length || favoritesRead)) {
         latest = stored.map(entry => {
           const id = [entry.id, entry.url].find(value => validMetadataId(value));
           if (!id) throw Error('UNREADABLE_FAVORITE');
@@ -6507,6 +7941,7 @@ function getFavoritesAccountModuleUrl() {
     }
     catch (_) {
       $('#syncStatus').textContent = ui('暂时无法读取收藏，已保留当前列表。可打开爱心收藏面板后点击同步收藏。', 'Favorites are temporarily unavailable. List kept; open SeaTalk’s Favorites tab and choose Sync favorites.');
+      if (!favoritesRead) renderEmpty();
       if (manual) notifyAction($('#syncStatus').textContent, 'error');
       return;
     }
@@ -6529,9 +7964,11 @@ function getFavoritesAccountModuleUrl() {
     // Never replace the workspace with a partially validated native collection.
     if (ids.size !== new Set(latest.map(entry => entry.id)).size) {
       $('#syncStatus').textContent = ui('部分收藏数据暂不可读，已保留当前列表。稍后重试同步。', 'Some favorites are unreadable. Current list kept; sync will retry.');
+      if (!favoritesRead) renderEmpty();
       if (manual) notifyAction($('#syncStatus').textContent, 'error');
       return;
     }
+    const firstRead = !favoritesRead; favoritesRead = true;
     const active = activeItems();
     const changed = active.length !== next.length || next.some((row,index) => active[index] !== row.item || row.item.url !== row.url);
     if (changed) {
@@ -6544,17 +7981,29 @@ function getFavoritesAccountModuleUrl() {
     } else if (manual || !$('#syncStatus').textContent.includes(ui('收藏已同步', 'Favorites synced'))) {
       $('#syncStatus').textContent = ui('收藏已同步，无新增或移除。', 'Favorites synced. No additions or removals.');
     }
+    if (firstRead && !changed) renderEmpty();
     if (manual) notifyAction($('#syncStatus').textContent);
   }
   $('#syncFavorites').onclick = () => syncFavorites(true);
-  discoverShareServices().then(async services => {
-    workspaceAccountCheck = createWorkspaceAccountGuard(services, source, () => liveSource().list);
+  const workspaceReady = discoverShareServices().then(async services => {
+    if (mountedAtOpen) {
+      workspaceAccountCheck = createWorkspaceAccountGuard(services, source, () => liveSource(false).list);
+    } else {
+      // No collection was read yet. Bind to the account before reading its native store.
+      const account = nativeWorkspaceAccountId(services);
+      if (!account) throw Error('METADATA_ACCOUNT_CHANGED');
+      workspaceAccountCheck = () => {
+        if (nativeWorkspaceAccountId(services) !== account) throw Error('METADATA_ACCOUNT_CHANGED');
+        return account;
+      };
+    }
     favoritesSyncServices = services; workspaceAccountState = 'ready'; await loadPersonalSettings(services); count(); startFavoritesSync(); syncFavorites();
   }).catch(() => {
     workspaceAccountState = 'failed';
-    $('#scanStatus').textContent = tr('无法核对当前账号，添加和删除已停用。请刷新 SeaTalk 后重新打开。'); count();
+    $('#scanStatus').textContent = tr('无法核对当前账号，添加和删除已停用。请刷新 SeaTalk 后重新打开。'); count(); renderEmpty();
   });
   render();
+  if (entry === 'quick') void openQuickPicker();
   window.dispatchEvent(new CustomEvent('spga:layout-change'));
   return { sourceCount: source.length, uniqueCount: items.length, existingCount: items.filter(item => item.existing).length };
 }
@@ -6637,33 +8086,191 @@ function planHelperSplit(viewportWidth, kind, preferredWidth, nativeAvailable = 
   window.__spgaHelperLayout = api; refresh(); return api;
 }
 
+/* Mount beside the native sticker control only while a conversation has a composer. */
+function installQuickPickerToolbar(onOpen, getLocale) {
+  const toolbarSelector = ':scope > .toolbar > .toolbar-left';
+  const buttonId = 'spga-quick-toggle';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = buttonId;
+  button.setAttribute('aria-haspopup', 'dialog');
+  button.setAttribute('aria-expanded', 'false');
+  button.style.cssText = 'display:inline-grid;place-items:center;flex:none;width:32px;height:32px;padding:0;margin:0 2px;border:0;border-radius:6px;color:#426182;background:transparent;cursor:pointer;vertical-align:middle';
+  button.innerHTML = '<svg aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M13.8 21H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v6.8L13.8 21Z"/><path d="M14 21v-4a3 3 0 0 1 3-3h4M7.8 12.2a4.4 4.4 0 0 0 6.9.5"/><circle cx="8.5" cy="8.2" r=".7"/><circle cx="14" cy="8.2" r=".7"/></svg>';
+  const title = () => getLocale() === 'en' ? 'Quick stickers' : '表情快选';
+  const homeCopy = () => getLocale() === 'en'
+    ? 'Sticker Helper loaded · Find this icon beside the chat input'
+    : '表情助手已加载 · 入口在聊天输入框旁';
+  const homeSelector = '#root .home-main-window';
+  const chatTitleSelector = '.messages-message-detail-view-header .title-wrap > .title';
+  const homeHintKey = 'spga:quick-picker:home-hint-seen';
+  function readHomeHintSeen() {
+    try { return GM_getValue(homeHintKey, false) === true; } catch (_) { return false; }
+  }
+  function updateLocale() {
+    button.title = title();
+    button.setAttribute('aria-label', title());
+    if (tip?.isConnected) tip.lastChild.textContent = tip.dataset.hint === 'home' ? homeCopy() : title();
+  }
+  let tip = null, tipTimer = 0, tipShown = false, pending = false;
+  let homeTimer = 0, homeHintSeen = readHomeHintSeen();
+  function removeTip() {
+    clearTimeout(tipTimer);
+    tip?.remove();
+    tip = null;
+  }
+  function showTip(kind, position, duration) {
+    removeTip();
+    tip = document.createElement('span');
+    tip.dataset.hint = kind;
+    tip.setAttribute('role', 'status');
+    if (kind === 'home') {
+      const icon = button.firstElementChild.cloneNode(true);
+      icon.style.flex = 'none';
+      tip.append(icon);
+    }
+    tip.append(document.createTextNode(kind === 'home' ? homeCopy() : title()));
+    tip.style.cssText = 'position:fixed;z-index:2147483645;pointer-events:none;padding:6px 10px;border-radius:7px;background:#24364d;color:white;font:13px/1.4 system-ui,sans-serif;box-shadow:0 3px 12px #17203322;' + position;
+    document.body.append(tip);
+    tipTimer = setTimeout(removeTip, duration);
+  }
+  function onScreen(node) {
+    if (!node || (node.checkVisibility && !node.checkVisibility({opacityProperty:true,visibilityProperty:true}))) return false;
+    const rect = node.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight && rect.right > 0 && rect.left < innerWidth;
+  }
+  function clearHomeTimer() { clearTimeout(homeTimer); homeTimer = 0; }
+  function isIdleHome(home) {
+    return !document.hidden && !tipShown && onScreen(home) &&
+      ![...home.querySelectorAll('.messages-message-editor,' + chatTitleSelector)].some(onScreen);
+  }
+  function updateHomeTip(home) {
+    if (!isIdleHome(home)) {
+      clearHomeTimer();
+      if (tip?.dataset.hint === 'home') removeTip();
+    } else if (!homeHintSeen && !homeTimer) {
+      // Give a conversation restored on startup time to mount before offering a home hint.
+      homeTimer = setTimeout(() => {
+        homeTimer = 0;
+        if (!isIdleHome(document.querySelector(homeSelector))) return;
+        homeHintSeen = true;
+        if (readHomeHintSeen()) return;
+        showTip('home','display:flex;align-items:center;gap:8px;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);width:max-content;max-width:calc(100vw - 28px);box-sizing:border-box;',4000);
+        try { GM_setValue(homeHintKey, true); } catch (_) { /* This document still shows the hint only once. */ }
+      }, 550);
+    }
+  }
+  const sizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(schedule) : null;
+  const observed = new Set();
+  function mount() {
+    pending = false;
+    const composers = [...document.querySelectorAll('.messages-message-editor')];
+    const toolbars = composers.map(editor => editor.querySelector(toolbarSelector)).filter(Boolean);
+    const home = !homeHintSeen || tip?.dataset.hint === 'home' ? document.querySelector(homeSelector) : null;
+    const sizeTargets = home ? [...toolbars, home] : toolbars;
+    for (const item of observed) if (!sizeTargets.includes(item)) { sizeObserver?.unobserve(item); observed.delete(item); }
+    for (const item of sizeTargets) if (!observed.has(item)) { sizeObserver?.observe(item); observed.add(item); }
+    const visible = toolbars.filter(item => item.getClientRects().length);
+    const toolbar = visible.length === 1 ? visible[0] : null;
+    if (!toolbar || !toolbar.getClientRects().length) {
+      if (button.isConnected) button.remove();
+      if (tip?.dataset.hint === 'toolbar') removeTip();
+      updateHomeTip(home);
+      return;
+    }
+    clearHomeTimer();
+    if (tip?.dataset.hint === 'home' || document.hidden) removeTip();
+    if (button.parentElement !== toolbar) {
+      const native = toolbar.querySelector(':scope > .icon-container');
+      if (native) native.after(button);
+      else toolbar.prepend(button);
+    }
+    if (tipShown || document.hidden || !onScreen(button)) return;
+    const rect = button.getBoundingClientRect();
+    tipShown = true;
+    const left = Math.max(4, Math.min(innerWidth - 108, rect.left)), top = Math.max(4, rect.top - 35);
+    showTip('toolbar','white-space:nowrap;left:' + left + 'px;top:' + top + 'px;',3000);
+  }
+  function schedule() { if (!pending) { pending = true; queueMicrotask(mount); } }
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    tipShown = true;
+    removeTip();
+    onOpen();
+  });
+  updateLocale();
+  window.addEventListener('spga:locale-change', updateLocale);
+  window.addEventListener('resize', schedule);
+  document.addEventListener('visibilitychange', schedule);
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && tip) removeTip(); });
+  // Reconcile native view mounts without polling or inspecting messages.
+  const editorParts = '.home-main-window,.messages-message-editor,.messages-message-detail-view-header,.toolbar,.toolbar-left';
+  const hasEditorPart = node => node === button || node.nodeType === 1 && (node.matches(editorParts) || !!node.querySelector(editorParts));
+  new MutationObserver(records => {
+    if (records.some(record => record.target === button.parentNode || [...record.addedNodes, ...record.removedNodes].some(hasEditorPart))) schedule();
+  }).observe(document.body, {childList:true, subtree:true});
+  // Also covers a mounted toolbar becoming visible without a child-list mutation.
+  if (typeof IntersectionObserver === 'function') {
+    const canTrackVisibility = typeof IntersectionObserverEntry !== 'undefined' && 'isVisible' in IntersectionObserverEntry.prototype;
+    const visibility = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) schedule();
+    }, canTrackVisibility ? {trackVisibility:true, delay:100} : {});
+    visibility.observe(button);
+  }
+  mount();
+}
+
 /* Metadata only. This module never stores preview URLs, credentials or account identifiers in exports. */
 function validMetadataId(id) { return typeof id === 'string' && /^[a-zA-Z0-9]{64}$/.test(id) && ['b0701','b0702','b0705'].includes(id.slice(33,38)); }
 function metadataText(value, max, multiline = false) {
   if (typeof value !== 'string' || value.length > max || (multiline ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/ : /[\u0000-\u001f\u007f]/).test(value)) throw Error('METADATA_INVALID');
   return value.trim();
 }
+function mergePersonalKeywords(...lists) {
+  const words = new Map();
+  for (const list of lists) {
+    if (!Array.isArray(list)) throw Error('METADATA_INVALID');
+    for (const word of list) {
+      const text = metadataText(word,60), key = text.normalize('NFKC').toLocaleLowerCase();
+      if (!text) throw Error('METADATA_INVALID');
+      if (!words.has(key)) words.set(key,text);
+      if (words.size > 30) throw Error('METADATA_KEYWORDS_LIMIT');
+    }
+  }
+  return [...words.values()];
+}
+function splitPersonalKeywords(text) {
+  return mergePersonalKeywords(text.split(/[,，\n]/).map(word => word.trim()).filter(Boolean));
+}
 function normalizePersonalRecord(row, candidate = false) {
   const allowed = ['gifId','name','keywords','visibleText','note','source','updatedAt','confidence','needsReview','reviewReason','animationOverride', ...(candidate ? ['index'] : [])];
   if (!row || typeof row !== 'object' || Array.isArray(row) || Object.keys(row).some(key => !allowed.includes(key)) || !validMetadataId(row.gifId)) throw Error('METADATA_INVALID');
   const name = metadataText(row.name,80), visibleText = metadataText(row.visibleText ?? '',500,true), note = metadataText(row.note ?? '',1000,true);
-  if (!name || !Array.isArray(row.keywords) || row.keywords.length > 30) throw Error('METADATA_INVALID');
-  const keywords = [], seen = new Set();
-  for (const keyword of row.keywords) {
-    const text = metadataText(keyword,60), key = text.normalize('NFKC').toLocaleLowerCase();
-    if (!text) throw Error('METADATA_INVALID');
-    if (!seen.has(key)) { keywords.push(text); seen.add(key); }
-  }
+  const keywords = mergePersonalKeywords(row.keywords);
   const source = candidate ? 'ai' : row.source ?? 'manual';
   if (!['manual','shared','ai'].includes(source) || row.needsReview !== undefined && typeof row.needsReview !== 'boolean') throw Error('METADATA_INVALID');
   const confidence = row.confidence ?? 'high';
   if (!['high','medium','low'].includes(confidence)) throw Error('METADATA_INVALID');
   const animationOverride = row.animationOverride ?? 'auto';
   if (!['auto','unknown','animated','static'].includes(animationOverride)) throw Error('METADATA_INVALID');
+  if (!name && (source !== 'manual' || !(keywords.length || visibleText || note || animationOverride !== 'auto'))) throw Error('METADATA_INVALID');
   const reviewReason = metadataText(row.reviewReason ?? '',500,true);
   const updatedAt = row.updatedAt ?? '';
   if (typeof updatedAt !== 'string' || updatedAt.length > 40 || updatedAt && !Number.isFinite(Date.parse(updatedAt))) throw Error('METADATA_INVALID');
   return {gifId:row.gifId,name,keywords,visibleText,note,source,updatedAt,confidence,needsReview:row.needsReview ?? false,reviewReason,...(animationOverride === 'auto' ? {} : {animationOverride})};
+}
+function applyPersonalRecordEdit(records, gifId, {name,keywords,animationOverride,acceptReview}, now = new Date().toISOString()) {
+  const previous = records.get(gifId), oldKeywords = previous?.keywords || [];
+  const nextName = metadataText(name,80);
+  const sameKeywords = keywords.length === oldKeywords.length && keywords.every((word,index) => word === oldKeywords[index]);
+  if (nextName === (previous?.name || '') && sameKeywords && animationOverride === (previous?.animationOverride || 'auto') && !(acceptReview && previous?.needsReview)) return false;
+  if (!nextName && !keywords.length && animationOverride === 'auto' && !previous?.visibleText && !previous?.note) {
+    return records.delete(gifId);
+  }
+  records.set(gifId,normalizePersonalRecord({
+    ...previous,gifId,name:nextName,keywords,animationOverride,source:'manual',updatedAt:now,needsReview:false,confidence:'high',reviewReason:''
+  }));
+  return true;
 }
 function normalizePersonalRows(rows, candidate = false) {
   if (!Array.isArray(rows) || rows.length > 10000) throw Error('METADATA_INVALID');
@@ -6675,44 +8282,211 @@ function normalizePersonalRows(rows, candidate = false) {
   }
   return result;
 }
-function parsePersonalImport(text) {
-  if (typeof text !== 'string' || text.length > 10 * 1024 * 1024) throw Error('METADATA_INVALID');
-  let doc; try { doc = JSON.parse(text); } catch (_) { throw Error('METADATA_INVALID'); }
-  if (Array.isArray(doc)) {
-    if(doc.length>10000 || doc.some(row=>!row || typeof row!=='object' || Object.keys(row).some(key=>!['gifId','label'].includes(key))))throw Error('METADATA_INVALID');
-    return {kind:'legacy',items:normalizePersonalRows(doc.map(row=>({gifId:row.gifId,name:row.label,keywords:[],source:'manual'})))};
-  }
-  if (!doc || typeof doc !== 'object') throw Error('METADATA_INVALID');
-  if (doc.kind === 'seatalk-personal-settings' && doc.schema === 1 && Object.keys(doc).every(k=>['kind','schema','exportedAt','items'].includes(k))) return {kind:'backup',items:normalizePersonalRows(doc.items)};
-  if (doc.metadata && Array.isArray(doc.items) && Object.keys(doc).every(k=>['metadata','items'].includes(k))) return {kind:'candidates',items:normalizePersonalRows(doc.items,true)};
-  throw Error('METADATA_INVALID');
+const maxPersonalImportChars = 10 * 1024 * 1024;
+async function readPersonalImportFile(file) {
+  // UTF-8 needs up to three bytes per UTF-16 code unit (two units for supplementary characters).
+  if (file.size > 3 * maxPersonalImportChars) throw Error('METADATA_INVALID');
+  return parsePersonalImport(await file.text());
 }
-function exportPersonalSettings(rows, now = new Date().toISOString()) {
-  return JSON.stringify({kind:'seatalk-personal-settings',schema:1,exportedAt:now,items:normalizePersonalRows(rows)},null,2);
+function parsePersonalImport(text) {
+  if (typeof text !== 'string' || text.length > maxPersonalImportChars) throw Error('METADATA_INVALID');
+  let doc; try { doc = JSON.parse(text); } catch (_) { throw Error('METADATA_INVALID'); }
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw Error('METADATA_INVALID');
+  const fields = ['gifId','name','keywords','source','confidence','needsReview','animationOverride'];
+  const backup = doc.kind === 'seatalk-personal-settings';
+  if (backup) {
+    if (doc.schema !== 3 || Object.keys(doc).some(key => !['kind','schema','exportedAt','items','groups'].includes(key))) throw Error('METADATA_INVALID');
+  } else {
+    if (!doc.metadata || typeof doc.metadata !== 'object' || Array.isArray(doc.metadata) || Object.keys(doc).some(key => !['metadata','items'].includes(key))) throw Error('METADATA_INVALID');
+    fields.push('index');
+  }
+  if (!Array.isArray(doc.items) || doc.items.length > 10000 || doc.items.some(row => !row || typeof row !== 'object' || Object.keys(row).some(key => !fields.includes(key)))) throw Error('METADATA_INVALID');
+  const items = normalizePersonalRows(doc.items,!backup);
+  return backup ? {kind:'backup',items,groups:normalizePersonalGroups(doc.groups)} : {kind:'candidates',items};
+}
+function exportPersonalSettings(rows, now = new Date().toISOString(), groups = []) {
+  const items = [];
+  for (const row of normalizePersonalRows(rows)) {
+    const {gifId,name,keywords,source,confidence,needsReview,animationOverride} = row;
+    if (name || keywords.length || animationOverride) {
+      items.push({gifId,name,keywords,source,confidence,needsReview,...(animationOverride ? {animationOverride} : {})});
+    }
+  }
+  const backup = {kind:'seatalk-personal-settings',schema:3,exportedAt:now,items,groups:normalizePersonalGroups(groups)};
+  const readable = JSON.stringify(backup,null,2);
+  // Indentation alone can push a valid account snapshot past the text limit for imports.
+  if (readable.length <= maxPersonalImportChars) return readable;
+  const compact = JSON.stringify(backup);
+  if (compact.length > maxPersonalImportChars) throw Error('METADATA_INVALID');
+  return compact;
 }
 function mergePersonalRecord(current, incoming, replace = false, mergeKeywords = true) {
   const next = normalizePersonalRecord(incoming);
   if (!current) return next;
   const previous = normalizePersonalRecord(current);
-  const result = replace ? {...next} : {...previous};
-  if (mergeKeywords) {
-    const seen = new Set(); result.keywords = [];
-    for (const keyword of [...previous.keywords,...next.keywords]) {
-      const key = keyword.normalize('NFKC').toLocaleLowerCase();
-      if (!seen.has(key)) { result.keywords.push(keyword); seen.add(key); }
-    }
-    if (result.keywords.length > 30) throw Error('METADATA_KEYWORDS_LIMIT');
-  }
+  const result = replace ? {...next,note:previous.note,visibleText:previous.visibleText} : {...previous};
+  if (mergeKeywords) result.keywords = mergePersonalKeywords(previous.keywords,next.keywords);
   return normalizePersonalRecord(result);
+}
+function mergeSharedPersonalRecord(current, shared, gifId, replace, now = new Date().toISOString()) {
+  const incoming = normalizePersonalRecord({
+    gifId, name:shared.label, keywords:shared.keywords || [], animationOverride:current?.animationOverride || 'auto',
+    source:'shared', updatedAt:now
+  });
+  const merged = mergePersonalRecord(current,incoming,replace,true);
+  if (!merged.name) merged.name = incoming.name;
+  return merged;
 }
 function personalMetadataMatches(row, query) {
   const terms = String(query).normalize('NFKC').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
   const searchable = [row.name,...(row.keywords || []),row.visibleText || '',row.note || ''].join(' ').normalize('NFKC').toLocaleLowerCase();
   return terms.every(term=>searchable.includes(term));
 }
+function personalGroupKey(name) { return name.normalize('NFKC').toLowerCase(); }
+
+function normalizePersonalGroups(groups) {
+  if (!Array.isArray(groups) || groups.length > 1000) throw Error('METADATA_INVALID');
+  const names = new Set(), ids = new Set();
+  return groups.map(group => {
+    if (!group || typeof group !== 'object' || Object.keys(group).some(key => !['name','gifIds'].includes(key)) || !Array.isArray(group.gifIds)) throw Error('METADATA_INVALID');
+    const name = metadataText(group.name, 60), key = personalGroupKey(name);
+    if (!name || names.has(key)) throw Error('METADATA_INVALID');
+    names.add(key);
+    for (const id of group.gifIds) {
+      if (!validMetadataId(id) || ids.has(id) || ids.size >= 10000) throw Error('METADATA_INVALID');
+      ids.add(id);
+    }
+    return {name, gifIds:[...group.gifIds]};
+  });
+}
+
 function validateSettingsSnapshot(value) {
-  if (!value || value.schema !== 1 || !Number.isSafeInteger(value.revision) || value.revision < 0 || Object.keys(value).some(k=>!['schema','revision','items'].includes(k))) throw Error('METADATA_STORAGE_INVALID');
-  return {schema:1,revision:value.revision,items:normalizePersonalRows(value.items)};
+  if (!value || ![1,2].includes(value.schema) || !Number.isSafeInteger(value.revision) || value.revision < 0) throw Error('METADATA_STORAGE_INVALID');
+  const fields = value.schema === 1 ? ['schema','revision','items'] : ['schema','revision','items','groups'];
+  if (Object.keys(value).some(key => !fields.includes(key))) throw Error('METADATA_STORAGE_INVALID');
+  return {schema:2, revision:value.revision, items:normalizePersonalRows(value.items), groups:value.schema === 1 ? [] : normalizePersonalGroups(value.groups)};
+}
+
+function groupMemberships(groups) {
+  const membership = new Map();
+  for (const group of groups) for (const id of group.gifIds) membership.set(id,group.name);
+  return membership;
+}
+
+// Preview and save all organization changes against the same settings revision.
+function planPersonalOrganization(snapshot, ids, changes, now = new Date().toISOString()) {
+  if (!Array.isArray(ids) || !changes || typeof changes !== 'object' ||
+      Object.keys(changes).some(key => !['group','name','keywords'].includes(key))) throw Error('METADATA_INVALID');
+  const selected = new Set(ids);
+  if (selected.size > 10000 || [...selected].some(id => !validMetadataId(id))) throw Error('METADATA_INVALID');
+  const {revision,items,groups} = validateSettingsSnapshot(snapshot);
+  const name = metadataText(changes.name ?? '',80);
+  const keywords = mergePersonalKeywords(changes.keywords === undefined ? [] : changes.keywords);
+  let group = changes.group === undefined ? undefined : metadataText(changes.group,60);
+  const records = new Map(items.map(row => [row.gifId,row]));
+  let movedCount = 0, nameChangedCount = 0, nameOverwriteCount = 0, keywordChangedCount = 0;
+  if (group !== undefined && selected.size) {
+    const previous = groupMemberships(groups);
+    let destination = groups.find(entry => personalGroupKey(entry.name) === personalGroupKey(group));
+    if (group && !destination) { destination = {name:group,gifIds:[]}; groups.push(destination); }
+    if (destination) group = destination.name;
+    const moved = new Set([...selected].filter(id => (previous.get(id) || '') !== group));
+    movedCount = moved.size;
+    if (movedCount) {
+      for (const entry of groups) entry.gifIds = entry.gifIds.filter(id => !moved.has(id));
+      if (destination) destination.gifIds.push(...moved);
+    }
+  }
+  if (name || keywords.length) {
+    for (const id of selected) {
+      const existing = records.get(id);
+      const changeName = name && name !== existing?.name;
+      const oldKeywords = existing?.keywords || [];
+      const combined = keywords.length ? mergePersonalKeywords(oldKeywords, keywords) : oldKeywords;
+      const changeKeywords = combined.length !== oldKeywords.length;
+      if (!changeName && !changeKeywords) continue;
+      const row = existing ? {...existing} : {gifId:id,name:'',keywords:[],source:'manual'};
+      if (changeName) {
+        if (row.name) nameOverwriteCount++;
+        nameChangedCount++;
+        row.name = name;
+      }
+      if (changeKeywords) {
+        keywordChangedCount++;
+        row.keywords = combined;
+      }
+      records.set(id,normalizePersonalRecord({...row,updatedAt:now}));
+    }
+  }
+  const result = validateSettingsSnapshot({schema:2,revision,items:[...records.values()],groups});
+  return {...result,group,selectedCount:selected.size,movedCount,nameChangedCount,nameOverwriteCount,keywordChangedCount};
+}
+
+function personalBackupEntries(parsed, snapshot) {
+  const localRecords = new Map(snapshot.items.map(row => [row.gifId,row]));
+  const localGroups = groupMemberships(snapshot.groups);
+  const incomingGroups = groupMemberships(parsed.groups || []);
+  const records = new Map(parsed.items.map(row => [row.gifId,row]));
+  const ids = new Set([...records.keys(),...incomingGroups.keys()]);
+  const entries = [...ids].map(gifId => {
+    const record = records.get(gifId), group = incomingGroups.get(gifId);
+    const localRecord = localRecords.get(gifId), localGroup = localGroups.get(gifId);
+    const hasConflict = Boolean(record && localRecord || group && localGroup && personalGroupKey(group) !== personalGroupKey(localGroup));
+    return {gifId,record,group,localRecord,localGroup,needsReview:!!record?.needsReview,hasConflict};
+  });
+  for (const group of parsed.groups || []) {
+    if (!group.gifIds.length) entries.push({group:group.name,hasConflict:false,needsReview:false});
+  }
+  return entries;
+}
+
+function mergePersonalBackup(snapshot, entries, mergeKeywords) {
+  const records = new Map(snapshot.items.map(row => [row.gifId,row]));
+  const groups = new Map(snapshot.groups.map(({name,gifIds}) => [personalGroupKey(name),{name,ids:new Set(gifIds)}]));
+  const memberships = groupMemberships(snapshot.groups);
+  for (const {gifId,record,group,replace} of entries) {
+    if (record) records.set(gifId,mergePersonalRecord(records.get(gifId),record,replace,mergeKeywords));
+    if (!group) continue;
+    const key = personalGroupKey(group), existing = memberships.get(gifId);
+    if (existing && personalGroupKey(existing) !== key && !replace) continue;
+    if (!groups.has(key)) groups.set(key,{name:group,ids:new Set()});
+    if (!gifId) continue;
+    if (existing) groups.get(personalGroupKey(existing)).ids.delete(gifId);
+    const destination = groups.get(key);
+    destination.ids.add(gifId);
+    memberships.set(gifId,destination.name);
+  }
+  return validateSettingsSnapshot({schema:2,revision:snapshot.revision,items:[...records.values()],
+    groups:[...groups.values()].map(({name,ids}) => ({name,gifIds:[...ids]}))});
+}
+
+async function requestPersonalSettingsBridge(account, request) {
+  if (!Number.isSafeInteger(account) || account <= 0) return Promise.reject(Error('METADATA_ACCOUNT_CHANGED'));
+  const completed = result => {
+    if (request.kind === 'save') window.dispatchEvent(new CustomEvent('spga:personal-settings-changed',{detail:JSON.stringify({account,revision:result.revision})}));
+    return result;
+  };
+  if (globalThis.__SPGA_TEST_MODE__ === true && globalThis.__SPGA_PERSONAL_SETTINGS_FIXTURE__) {
+    return completed(validateSettingsSnapshot(await globalThis.__SPGA_PERSONAL_SETTINGS_FIXTURE__.request({...request,account})));
+  }
+  return new Promise((resolve,reject) => {
+    const id = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+    const finish = (error,value) => {
+      clearTimeout(timer);
+      window.removeEventListener('spga:settings-response',receive);
+      if (error) reject(error); else resolve(value);
+    };
+    const receive = event => {
+      if (typeof event.detail !== 'string') return;
+      let result; try { result = JSON.parse(event.detail); } catch (_) { return; }
+      if (result.id !== id) return;
+      if (!result.ok) { finish(Error(result.error)); return; }
+      try { finish(null,validateSettingsSnapshot(result.value)); } catch (error) { finish(error); }
+    };
+    const timer = setTimeout(() => finish(Error('METADATA_SAVE_FAILED')),6000);
+    window.addEventListener('spga:settings-response',receive);
+    window.dispatchEvent(new CustomEvent('spga:settings-request',{detail:JSON.stringify({...request,id,account})}));
+  }).then(completed);
 }
 
 async function discoverPersonalSettingsAccount() {
@@ -6745,17 +8519,26 @@ function installPersonalSettingsBridge() {
       if (typeof event.detail !== 'string' || event.detail.length > 10 * 1024 * 1024) return;
       request = JSON.parse(event.detail);
       if (!request || !/^[a-z0-9-]{8,80}$/i.test(request.id) || !Number.isSafeInteger(request.account) || request.account <= 0 || !['load','save'].includes(request.kind)) return;
-      // Verify the live page account independently; a DOM event cannot choose another account's notes.
-      const currentAccount = await unsafeWindow.Function(`return (${discoverPersonalSettingsAccount.toString()})();`)();
-      if (currentAccount !== request.account) throw Error('METADATA_ACCOUNT_CHANGED');
       const key = 'seatalk-personal-sticker-settings-v1:' + request.account;
-      const current = validateSettingsSnapshot(GM_getValue(key,{schema:1,revision:0,items:[]}));
-      let result = current;
-      if (request.kind === 'save') {
+      const deadline = Date.now() + 5000;
+      const transact = async () => {
+        // Verify the live account inside the lock, immediately before reading the account's storage.
+        const currentAccount = await unsafeWindow.Function(`return (${discoverPersonalSettingsAccount.toString()})();`)();
+        if (currentAccount !== request.account) throw Error('METADATA_ACCOUNT_CHANGED');
+        if (Date.now() >= deadline) throw Error('METADATA_SAVE_FAILED');
+        const current = validateSettingsSnapshot(GM_getValue(key,{schema:1,revision:0,items:[]}));
+        if (request.kind === 'load') return current;
         if (current.revision !== request.revision) throw Error('METADATA_CHANGED');
-        result = validateSettingsSnapshot({schema:1,revision:current.revision+1,items:request.items});
-        GM_setValue(key,result);
-      }
+        const updated = validateSettingsSnapshot({schema:2,revision:current.revision+1,items:request.items,
+          groups:request.groups === undefined ? current.groups : request.groups});
+        GM_setValue(key,updated);
+        return updated;
+      };
+      const locks = globalThis.navigator?.locks;
+      const result = request.kind === 'save' && locks ? await locks.request(key,{ifAvailable:true},lock=>{
+        if (!lock) throw Error('METADATA_CHANGED');
+        return transact();
+      }) : await transact();
       window.dispatchEvent(new CustomEvent('spga:settings-response',{detail:JSON.stringify({id:request.id,ok:true,value:result})}));
     } catch (error) {
       if (request?.id) window.dispatchEvent(new CustomEvent('spga:settings-response',{detail:JSON.stringify({id:request.id,ok:false,error:['METADATA_ACCOUNT_CHANGED','METADATA_CHANGED','METADATA_STORAGE_INVALID','METADATA_INVALID','METADATA_DUPLICATE','METADATA_KEYWORDS_LIMIT'].includes(error.message)?error.message:'METADATA_SAVE_FAILED'})}));
@@ -6790,6 +8573,16 @@ function installPersonalSettingsBridge() {
     readSavedState();
     injectStyles();
     createPanel({ renderContents: false });
+    let activated = false;
+    installQuickPickerToolbar(() => {
+      if (!activated) {
+        installPersonalSettingsBridge();
+        startHelperLayout();
+        bindPanelEvents();
+        activated = true;
+      }
+      openCollectionsWorkspace('quick');
+    }, () => state.locale);
   }
 
   // 仅供本地自动测试读取纯解析函数。正常安装时没有这个标记，不会暴露任何接口。

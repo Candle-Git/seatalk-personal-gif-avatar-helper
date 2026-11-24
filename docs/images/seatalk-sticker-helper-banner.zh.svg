@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
     width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title note">
-    <title id="title">SeaTalk 表情助手</title><desc id="note">用备注找到表情，确认后再发送。</desc>
+    <title id="title">SeaTalk 表情助手</title><desc id="note">在聊天里搜收藏，点一下就发送。</desc>
     <defs>
       <linearGradient id="ink" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#090f2a"/><stop offset=".52" stop-color="#050b1d"/><stop offset="1" stop-color="#020717"/></linearGradient>
       <linearGradient id="feather"><stop stop-color="black"/><stop offset=".16" stop-color="white"/><stop offset=".87" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
@@ -13,7 +13,7 @@
     <g font-family="'Segoe UI','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
       <g transform="translate(58 46)" stroke="#4ce5d5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10l4 4h8v12H3z"/><path d="M7 0h9l4 4"/></g>
       <text x="100" y="65" font-size="17" font-weight="700" fill="#59e8d7" letter-spacing="2">我的表情</text>
-      <text x="54" y="154" font-size="63" font-weight="700" fill="#f6f8ff" >SeaTalk 表情助手</text><text x="58" y="205" font-size="25" font-weight="400" fill="#bccbe2" >用备注找到表情，确认后再发送。</text><g transform="translate(58 251)">
+      <text x="54" y="154" font-size="63" font-weight="700" fill="#f6f8ff" >SeaTalk 表情助手</text><text x="58" y="205" font-size="25" font-weight="400" fill="#bccbe2" >在聊天里搜收藏，点一下就发送。</text><g transform="translate(58 251)">
     <rect width="300" height="48" rx="14" fill="#09192c" stroke="#295267"/>
     <g fill="none" stroke="#54eddf" stroke-width="2.4" stroke-linecap="round"><circle cx="25" cy="22" r="6.8"/><path d="m30 27 5 5"/></g>
     <text x="47" y="31" font-size="20" font-weight="600" fill="#f1f7ff" >挥手</text>

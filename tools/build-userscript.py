@@ -7,7 +7,7 @@ import tempfile
 
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description='Build the SeaTalk Sticker Helper release from reviewed local sources.')
-parser.add_argument('--version', default='5.2.2')
+parser.add_argument('--version', default='5.3.0')
 parser.add_argument('--output', default='SeaTalk-Personal-GIF-Avatar-Helper.user.js')
 args = parser.parse_args()
 version = args.version
@@ -17,6 +17,14 @@ subprocess.run([sys.executable, str(root / 'tools/build-resource-avatar-beta.py'
     '--source', 'tools/base/collections-base.user.js',
     '--version', version, '--output', str(output)], check=True)
 source = output.read_text()
+# Tampermonkey uses the base name and namespace to identify an existing installation.
+# Localized titles can show the version without changing that identity.
+name_en = '// @name:en      SeaTalk Sticker Helper'
+assert source.count(name_en + '\n') == 1
+source = source.replace(name_en + '\n', (
+    f'// @name:zh-CN   SeaTalk 表情助手 · v{version}\n'
+    f'{name_en} · v{version}\n'
+), 1)
 replacements = {
     '收藏整合测试版：在 SeaTalk Web 内筛选表情，准备你的市场候选清单。': '5.0 预览版：适配新版个人 GIF 头像，新增收藏表情批量管理。',
     'Collections beta: curate stickers in SeaTalk Web for the next market experiment.': '5.0 preview: updated personal GIF avatars and batch management for favorite stickers.',
@@ -37,11 +45,16 @@ end = source.index('\n  function init()', start)
 workspace = (root / 'tools/favorites-workspace.js').read_text()
 # Both module badges use the same build version as the userscript metadata.
 workspace = workspace.replace('/* HELPER_BUILD_VERSION */ "dev"', __import__('json').dumps(version))
+workspace = workspace.replace('  /* STICKER_ICONS */', (root / 'tools/sticker-icons.js').read_text())
+workspace = workspace.replace('    /* FAVORITES_IMPACT_STYLE */', (root / 'tools/favorites-impact.css').read_text())
 workspace = workspace.replace('  /* FAVORITES_I18N */', (root / 'tools/favorites-i18n.js').read_text())
 workspace = workspace.replace('  /* PERSONAL_CORE */', (root / 'tools/personal-settings-core.js').read_text())
 workspace = workspace.replace('  /* SEND_CORE */', (root / 'tools/sticker-send-core.js').read_text())
 workspace = workspace.replace('  /* PERSONAL_MARKUP */', (root / 'tools/personal-settings-markup.html').read_text())
 workspace = workspace.replace('  /* PERSONAL_UI */', (root / 'tools/personal-settings-ui.js').read_text())
+workspace = workspace.replace('  /* FAVORITES_ORGANIZATION */', (root / 'tools/favorites-organization.js').read_text())
+workspace = workspace.replace('  /* QUICK_PICKER */', (root / 'tools/quick-picker-workspace.js').read_text())
+workspace = workspace.replace('  /* CHAT_CAPTURE */', (root / 'tools/chat-capture.js').read_text())
 workspace = workspace.replace('  /* SEND_UI */', (root / 'tools/sticker-send-ui.js').read_text())
 workspace = workspace.replace('  /* WORKSPACE_ACCOUNT */', (root / 'tools/workspace-account.js').read_text())
 workspace = workspace.replace('  /* SHARE_HELPERS */', (root / 'tools/sticker-share.js').read_text())
@@ -53,12 +66,12 @@ workspace = workspace.replace('  /* SHARE_UI */', (root / 'tools/sticker-share-u
 split_source = (root / 'tools/helper-split-layout.js').read_text()
 plan = split_source[:split_source.index('function installHelperLayout()')]
 installer = split_source[split_source.index('function installHelperLayout()'):].replace('  /* SPLIT_PLAN */', plan)
-source = source[:start] + workspace + '\n' + installer + source[end:]
+source = source[:start] + workspace + '\n' + installer + '\n' + (root / 'tools/quick-picker-toolbar.js').read_text() + source[end:]
 source = source.replace('  function init() {', (root / 'tools/personal-settings-core.js').read_text() + '\n' + (root / 'tools/personal-settings-bridge.js').read_text().replace('  /* FAVORITES_ACCOUNT_MODULE */', account_module) + '\n  function init() {', 1)
 source = source.replace('  function activateHelperPanel(panel) {', '  function activateHelperPanel(panel) {\n    installPersonalSettingsBridge();\n    startHelperLayout();', 1)
 source = source.replace(
     '${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))});',
-    '${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))}, ${JSON.stringify(state.locale)});')
+    '${JSON.stringify(LOCAL_GIF_PRESETS.map(({ label, gifId }) => ({ label, gifId })))}, ${JSON.stringify(state.locale)}, ${JSON.stringify(entry)});')
 locale_block = '          state.locale = locale;\n          saveState();\n          renderPanel();'
 assert source.count(locale_block) == 1
 source = source.replace(locale_block, '          setHelperLocale(locale);')
@@ -142,12 +155,12 @@ source = ''.join(product_lines)
 # Show the product upgrade once for this release using the existing versioned notice.
 import re
 release_copy = {
-    'updateTitle': ['打开助手，直达「我的表情」', 'Open the helper to My stickers'],
-    'updateSubtitle': ['在当前聊天中整理、搜索和分享收藏。', 'Find, organize and share your favorites from the current chat.'],
-    'updateHighlightOne': ['首次使用时，在聊天输入框旁打开表情面板，选择爱心收藏页', 'To get started, open the sticker picker beside the chat box and select the Favorites heart'],
-    'updateHighlightTwo': ['用名称、关键词或表情文字搜索收藏', 'Find a sticker by its name, keywords or text'],
-    'updateHighlightThree': ['发送前可以核对目标会话和所选图片', 'Review the chat and selected stickers before sending'],
-    'updateHighlightFour': ['修复 SeaTalk Web 3.72 中偶发的页面空白', 'Fixed a blank-page issue in SeaTalk Web 3.72'],
+    'updateTitle': ['从聊天工具栏打开表情快选', 'Open Quick stickers in the chat toolbar'],
+    'updateSubtitle': ['在聊天中发送表情，在管理页整理收藏。', 'Send from your chat and organize favorites in My stickers.'],
+    'updateHighlightOne': ['点一张直接发送到当前聊天', 'Click a sticker to send it to the current chat'],
+    'updateHighlightTwo': ['从聊天拖选多张表情，确认后收藏', 'Drag across chat stickers and confirm to save them'],
+    'updateHighlightThree': ['按组整理收藏，批量写备注', 'Organize favorites in groups and edit notes in batches'],
+    'updateHighlightFour': ['在管理页按住 Ctrl 或 ⌘ 多选，按住 Shift 连选', 'Use Ctrl or ⌘ to toggle items and Shift to select a range'],
 }
 for key, values in release_copy.items():
     pattern = re.compile(r'(^      ' + key + r': )"[^\n]*",', re.M)
