@@ -8,7 +8,7 @@ import tempfile
 
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description='Build the SeaTalk Sticker Helper release from reviewed local sources.')
-parser.add_argument('--version', default='5.3.0')
+parser.add_argument('--version', default='5.3.1')
 parser.add_argument('--output', default='SeaTalk-Personal-GIF-Avatar-Helper.user.js')
 args = parser.parse_args()
 version = args.version
@@ -157,7 +157,10 @@ for line in source.splitlines(keepends=True):
             line = line.replace(old, new)
     product_lines.append(line)
 source = ''.join(product_lines)
-# Show the product upgrade once for this release using the existing versioned notice.
+# Keep the 5.3 feature announcement read across patch updates.
+notice_version = 'const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;'
+assert source.count(notice_version) == 1
+source = source.replace(notice_version, 'const UPDATE_NOTICE_VERSION = "5.3.0";')
 import re
 release_copy = {
     'updateTitle': ['从聊天工具栏打开表情快选', 'Open Quick stickers in the chat toolbar'],

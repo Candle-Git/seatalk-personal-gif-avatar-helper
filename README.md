@@ -1,16 +1,16 @@
 **简体中文** | [English](README.en.md)
 
-# SeaTalk 表情助手 · v5.3.0
+# SeaTalk 表情助手 · v5.3.1
 
 ![在聊天里查找、发送和整理收藏表情](docs/images/seatalk-sticker-helper-banner.zh.svg)
 
 - **想回一句「大笑」？** 点聊天输入框旁戴薄荷绿围巾的小海豹，搜「大笑」。快选默认打开「全部」，按名称和关键字查找。也可以点「未分组」或自己的分组，只看这组的结果。核对顶部的会话名，点一张就发出。
-- **想收下群里刚发的几张表情？** 点「从聊天收藏」，拖过几条消息，预览后选同一个分组，再确认收藏。纯文字会跳过，重复的表情只算一张。
+- **想收下群里刚发的几张表情？** 点「从聊天收藏」，拖过消息选表情。输入框工具栏会显示已选数量。点「预览」核对表情，可选分组或加关键字，再确认收藏。
 
 ## 安装并找到入口
 
 1. 安装 [Tampermonkey](https://www.tampermonkey.net/)，在 Chrome 或 Edge 的扩展详情中开启「允许用户脚本」。若没有这个开关，可开启扩展管理页的「开发者模式」。
-2. 安装或原地更新 [SeaTalk 表情助手 · v5.3.0](https://greasyfork.org/zh-CN/scripts/588931)。从 5.2 升级且手头有旧备份要恢复，请先看[升级说明](#从-52-升级)。
+2. 安装或原地更新 [SeaTalk 表情助手 · v5.3.1](https://greasyfork.org/zh-CN/scripts/588931)。从 5.2 升级且手头有旧备份要恢复，请先看[升级说明](#从-52-升级)。
 3. 刷新 [SeaTalk Web](https://seatalkweb.com/) 并打开单聊或群聊。在输入框工具栏找「表情快选」。若提示收藏尚未载入，先打开一次 SeaTalk 自带表情面板里的爱心「收藏」，再打开快选。
 
 <details>
@@ -41,4 +41,4 @@
 
 旧的「表情文字」和「私人说明」仍可在原浏览器搜索。新备份和分享口令均省略这两项，需要存档时请保留原来的 5.2 备份。
 
-[5.3.0 发布说明](docs/release-notes-5.3.0.md) · [反馈问题](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues)
+[5.3.1 发布说明](docs/release-notes-5.3.1.md) · [反馈问题](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues)

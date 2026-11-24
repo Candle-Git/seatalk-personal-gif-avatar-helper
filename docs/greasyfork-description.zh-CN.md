@@ -1,12 +1,12 @@
 **简体中文** | [English](https://greasyfork.org/en/scripts/588931)
 
-# SeaTalk 表情助手 · v5.3.0
+# SeaTalk 表情助手 · v5.3.1
 
 ![在聊天里发送、收藏和分组](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.zh.png)
 
 想回一张「大笑」？打开输入框旁的 **表情快选**，默认在「全部」中按名称或关键字搜索。点「未分组」或自己的分组，就能在组内查找。核对面板顶部的会话名，点一张就发出。
 
-群里刚发了几张想留的表情？点 **从聊天收藏**，拖过消息，预览后选一个分组，再确认收藏。纯文字会跳过，重复的表情只收一次。
+群里刚发了几张想留的表情？点 **从聊天收藏**，拖过消息选表情。输入框工具栏会显示已选数量。点 **预览** 核对表情，可选分组或加关键字，再确认收藏。
 
 ## 安装后去哪里找
 
@@ -28,4 +28,4 @@
 
 ![查看浏览器权限开关位置](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.zh.png)
 
-[完整使用说明](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.md) · [5.3.0 发布说明](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/docs/release-notes-5.3.0.md)
+[完整使用说明](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.md) · [5.3.1 发布说明](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/docs/release-notes-5.3.1.md)

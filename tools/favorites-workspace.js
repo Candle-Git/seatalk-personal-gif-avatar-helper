@@ -170,7 +170,7 @@ function launchFavoritesGallery(presets = [], initialLocale = 'zh', entry = 'man
     <div class="dialog-actions"><button data-close="organizeDialog">取消</button><button id="organizeApply" class="primary" disabled>保存整理</button></div></dialog>
   <dialog id="guideDialog" aria-labelledby="guideTitle"><div class="dialog-header"><h2 id="guideTitle">我的表情使用指南</h2><button data-close="guideDialog" aria-label="关闭使用指南">×</button></div><div class="dialog-body guide"><p>整理、搜索和分享你的 SeaTalk 收藏表情。</p>
     <section><h3>开始前</h3><p>点击聊天输入框工具栏的「表情快选」。点击表情可直接发送，点「管理表情」可整理收藏。若收藏尚未载入，先在 SeaTalk 原生表情面板打开一次爱心收藏。</p></section>
-    <section><h3>从聊天收藏</h3><p>打开「表情快选 → 从聊天收藏」，拖过消息选择表情。可选分组、追加搜索关键字，或直接确认收藏。按 Esc 可取消。</p></section>
+    <section><h3>从聊天收藏</h3><p>打开「表情快选 → 从聊天收藏」，拖过消息选表情。点工具栏的「预览」核对，可选分组或加关键字，再确认收藏。按 Esc 退出。</p></section>
     <section><h3>收藏同步</h3><p>助手打开时，每 1.5 秒读取 SeaTalk 当前账号的收藏状态，自动同步新增和移除；也可点击「同步收藏」。原生表情面板关闭后仍可同步。这只更新右侧列表，保留备注、筛选和仍在收藏中的勾选，不会刷新网页或重新请求服务器。发送、添加、删除、识别或弹窗打开期间暂停同步，结束后恢复。操作结果不确定时，仍需刷新网页核对服务器保存结果。</p></section>
     <section><h3>分组与批量整理</h3><p>管理页搜索当前分组。聊天工具栏的「表情快选」默认搜索全部收藏，切换分组后只搜索该组。两处都可以点最左侧的「全部」跨组搜索。</p><p>多选后点「批量整理」，可改名、选分组或追加搜索关键字。重复的关键字会合并。留空可保留原值，覆盖已有名称前会显示数量。</p></section>
     <section><h3>选择和查看表情</h3><p>单击选一张，Ctrl 或 ⌘ 加单击可增减选择，Shift 加单击可连续选择。从网格空白处拖动可框选，按住 Shift 拖动可追加。选中一张后可放大预览或编辑名称、搜索关键字和分组。在「工具」内可全选本页或筛选。</p><p>「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在「编辑表情」中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。</p></section>

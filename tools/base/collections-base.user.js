@@ -35,7 +35,7 @@
   const DIAGNOSTIC_REPORT_ID = "seatalk-personal-gif-avatar-report";
   const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
   const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
-  // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
+  // 界面显示已安装的脚本版本，更新提示单独记录已读状态。
   const SCRIPT_VERSION = "4.1.0-beta.1";
   const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
 
@@ -2720,7 +2720,7 @@
       createElement("span", { className: "spga-update-badge", textContent: t("updateBadge") }),
       createElement("span", {
         className: "spga-update-version",
-        textContent: t("updateVersion", { version: UPDATE_NOTICE_VERSION }),
+        textContent: t("updateVersion", { version: SCRIPT_VERSION }),
       })
     );
 

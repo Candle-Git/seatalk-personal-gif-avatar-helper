@@ -3,7 +3,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
   let locale = initialLocale === 'en' ? 'en' : 'zh';
   const labels = {
     "从聊天收藏": "Collect from chat",
-    "打开「表情快选 → 从聊天收藏」，拖过消息选择表情。可选分组、追加搜索关键字，或直接确认收藏。按 Esc 可取消。": "Choose Quick stickers → Collect from chat and drag across messages. Pick a group or add search keywords if you like, then confirm. Press Esc to cancel.",
+    "打开「表情快选 → 从聊天收藏」，拖过消息选表情。点工具栏的「预览」核对，可选分组或加关键字，再确认收藏。按 Esc 退出。": "Choose Quick stickers → Collect from chat and drag across messages. Choose Preview in the chat toolbar, optionally pick a group or add keywords, then confirm. Press Esc to exit.",
     "工具": "Tools",
     "生效的筛选条件": "Active filters",
     "收藏分组": "Sticker groups",

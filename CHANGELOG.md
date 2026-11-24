@@ -1,5 +1,12 @@
 # 更新日志 / Changelog
 
+## 5.3.1
+
+- 「从聊天收藏」改用输入框工具栏。拖选时可以看清消息，点「预览」后再选分组或加关键字。
+- **Collect from chat** now uses the chat toolbar, keeping messages visible as you select. Choose **Preview** to add a group or keywords before saving.
+
+[发布说明 / Release notes](docs/release-notes-5.3.1.md)
+
 ## 5.3.0
 
 - 在聊天工具栏打开「表情快选」，默认显示「全部」，也可切到「未分组」或自己的分组，在组内搜索并单击表情发送。从聊天中拖选表情可一次收藏多张。

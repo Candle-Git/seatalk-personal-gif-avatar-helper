@@ -1,12 +1,12 @@
 [简体中文](https://greasyfork.org/zh-CN/scripts/588931) | **English**
 
-# SeaTalk Sticker Helper · v5.3.0
+# SeaTalk Sticker Helper · v5.3.1
 
 ![Send, collect and group favorite stickers in a chat](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.en.png)
 
 Looking for a laughing sticker? Open **Quick stickers** beside the chat input and search names and keywords for “laugh.” The picker opens on **All**. Choose **Ungrouped** or one of your groups to search within it. Check the chat name at the top, then click a sticker to send it.
 
-Found a few you like in a group chat? Choose **Collect from chat**, drag across the messages and review your selection. Pick a group and confirm to save them together. Text is skipped and repeated stickers count once.
+Found a few you like in a group chat? Choose **Collect from chat**, then drag across the messages. The chat toolbar shows how many stickers you selected. Choose **Preview** to review them, optionally pick a group or add keywords, then confirm.
 
 ## Where to find it after installing
 
@@ -28,4 +28,4 @@ Found a few you like in a group chat? Choose **Collect from chat**, drag across 
 
 ![Find the browser permission switch](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.en.png)
 
-[Full user guide](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.en.md) · [5.3.0 release notes](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/docs/release-notes-5.3.0.md)
+[Full user guide](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.en.md) · [5.3.1 release notes](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/docs/release-notes-5.3.1.md)
