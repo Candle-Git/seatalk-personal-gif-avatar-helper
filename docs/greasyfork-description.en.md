@@ -16,7 +16,7 @@
 
 ![Installation](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-sticker-helper.en.png)
 
-[Can’t find “Allow User Scripts”? See the illustrated permission guide](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.en.png)
+![Enable Allow User Scripts in the Chrome or Edge extension details](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.en.png)
 
 ## What you can do
 

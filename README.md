@@ -16,7 +16,7 @@
 
 ![安装三步](docs/images/install-sticker-helper.zh.png)
 
-[找不到「允许用户脚本」？查看授权图解](docs/images/allow-user-scripts.dark.zh.png)
+![在 Chrome 或 Edge 的扩展详情页开启「允许用户脚本」](docs/images/allow-user-scripts.dark.zh.png)
 
 ## 可以做什么
 

@@ -11,6 +11,7 @@
       body { margin: 0; }
       main { max-width: 1040px; margin: auto; padding: clamp(16px, 4vw, 48px); }
       img { display: block; width: 100%; height: auto; border-radius: 12px; }
+      img + img { margin-top: 1rem; }
       h1 { margin: 0 0 .65em; font-size: clamp(1.6rem, 4vw, 2.6rem); }
       details { margin: 1rem 0; padding: .8rem 1.1rem; background: #0a162a; border: 1px solid #285061; border-radius: 12px; }
       summary, a { color: #62e9dc; }
@@ -24,12 +25,13 @@
     <main>
       <h1>SeaTalk 表情助手 · 安装指南</h1>
       <img src="images/install-sticker-helper.zh.png" alt="安装分三步：安装 Tampermonkey、允许用户脚本、安装 SeaTalk 表情助手。">
+      <img src="images/allow-user-scripts.dark.zh.png" alt="在 Chrome 或 Edge 的扩展详情页开启「允许用户脚本」。">
       <!-- 图片中的操作也用可选取的文字提供，方便手机阅读和辅助工具朗读。 -->
       <details open>
         <summary>安装步骤与链接</summary>
         <ol>
           <li>从 <a href="https://www.tampermonkey.net/">Tampermonkey 官网</a>安装扩展，并确认它已启用。</li>
-          <li>在 Chrome 或 Edge 的扩展详情页开启「允许用户脚本」。找不到开关？请看<a href="images/allow-user-scripts.dark.zh.png">授权图解</a>；若浏览器没有这个选项，可在扩展管理页开启「开发者模式」。</li>
+          <li>在 Chrome 或 Edge 的扩展详情页开启「允许用户脚本」。若浏览器没有这个选项，可在扩展管理页开启「开发者模式」。</li>
           <li>打开 <a href="https://greasyfork.org/zh-CN/scripts/588931">Greasy Fork 脚本页</a>，点击「安装此脚本」，再刷新 <a href="https://seatalkweb.com/">SeaTalk 网页版</a>。</li>
         </ol>
       </details>

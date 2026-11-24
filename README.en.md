@@ -16,7 +16,7 @@
 
 ![Installation](docs/images/install-sticker-helper.en.png)
 
-[Can’t find “Allow User Scripts”? See the illustrated permission guide](docs/images/allow-user-scripts.dark.en.png)
+![Enable Allow User Scripts in the Chrome or Edge extension details](docs/images/allow-user-scripts.dark.en.png)
 
 ## What you can do
 
