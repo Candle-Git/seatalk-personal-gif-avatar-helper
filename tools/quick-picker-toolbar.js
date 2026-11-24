@@ -7,7 +7,7 @@ function installQuickPickerToolbar(onOpen, getLocale) {
   button.id = buttonId;
   button.setAttribute('aria-haspopup', 'dialog');
   button.setAttribute('aria-expanded', 'false');
-  button.style.cssText = 'display:inline-grid;place-items:center;flex:none;width:32px;height:32px;padding:0;margin:0 2px;border:0;border-radius:6px;color:#426182;background:transparent;cursor:pointer;vertical-align:middle';
+  button.className = 'icon-container';
   const mascot = document.createElement('img');
   mascot.src = 'data:image/png;base64,__QUICK_PICKER_SEAL__';
   mascot.alt = '';

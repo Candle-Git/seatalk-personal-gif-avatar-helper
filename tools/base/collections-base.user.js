@@ -1482,6 +1482,25 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
+      /* SeaTalk's toolbar owns button spacing and compact sizing. */
+      button:where(#spga-quick-toggle) {
+        appearance: none;
+        background: transparent;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        flex: none;
+        cursor: pointer;
+      }
+      #spga-quick-toggle > img {
+        width: 87.5%;
+        height: 87.5%;
+      }
       #${TOGGLE_ID} {
         position: fixed;
         right: 18px;

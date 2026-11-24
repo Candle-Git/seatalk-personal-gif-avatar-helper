@@ -2,9 +2,20 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src data:; style-src 'unsafe-inline';">
 <title>Quick stickers — offline browser fixture</title>
-<style>body{font:16px system-ui}.messages-message-editor{position:fixed;bottom:24px;left:22px}.toolbar-left{display:flex;align-items:center;gap:5px}.fixture-sticker{width:20px;height:20px}#result{white-space:pre-wrap}</style>
+<style>
+  body{font:16px system-ui}
+  .messages-message-editor{position:fixed;bottom:24px;left:22px}
+  .messages-message-editor .toolbar .toolbar-left{display:flex;align-items:center}
+  .messages-message-editor .toolbar .toolbar-left > * + *{margin-left:16px}
+  .messages-message-editor .toolbar.small-icon .toolbar-left > * + *{margin-left:12px}
+  .messages-message-editor .toolbar .icon-container{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+  .messages-message-editor .toolbar.small-icon .icon-container{width:28px;height:28px}
+  .icon-container svg{width:75%;height:75%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round}
+  .fixture-sticker{width:20px;height:20px}
+  #result{white-space:pre-wrap}
+</style>
 <div class="messages-message-detail-view-header"><div class="title-wrap"><span class="title">Self</span></div></div>
-<div class="messages-message-editor"><div class="toolbar"><div class="toolbar-left"><span class="icon-container">Native stickers</span></div></div><div class="seatalk-editor-content" contenteditable="true">Fixture draft</div></div>
+<div class="messages-message-editor"><div class="toolbar"><div class="toolbar-left"><div class="icon-container" aria-label="Native stickers"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14c2 3 6 3 8 0M8.6 9.3h.4m6 0h.4"/></svg></div><div class="icon-container" aria-label="Files"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h7l2 3h9v10H3z"/></svg></div><div class="icon-container" aria-label="Images"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.3"/><path d="m4 17 5-5 3 3 3-4 5 6"/></svg></div></div></div><div class="seatalk-editor-content" contenteditable="true">Fixture draft</div></div>
 <pre id="result">Loading…</pre>
 <script>
   window.__SPGA_TEST_MODE__=true; window.unsafeWindow=window;
@@ -58,10 +69,36 @@
     check(seal?.getAttribute('alt')==='' && seal.getAttribute('aria-hidden')==='true' && !seal.draggable,
       'the seal is decorative and cannot be dragged into a message');
     await seal.decode();
-    const target=button.getBoundingClientRect(), image=seal.getBoundingClientRect();
-    check(target.width===32 && target.height===32 && image.width>=24 && image.width===image.height &&
-      image.left>=target.left && image.right<=target.right && image.top>=target.top && image.bottom<=target.bottom,
-      'the square seal fits inside the original 32px toolbar target');
+    const toolbar=button.parentElement;
+    const centerX=rect=>(rect.left+rect.right)/2, centerY=rect=>(rect.top+rect.bottom)/2;
+    const near=(a,b)=>Math.abs(a-b)<0.1;
+    const controls=[...toolbar.children];
+    check(controls.length===4 && controls[1]===button,'the seal occupies one slot immediately after native stickers');
+    const toolbarRow=toolbar.parentElement;
+    for (const [compactMode, size, gap] of [[false,32,16],[true,28,12]]) {
+      toolbarRow.classList.toggle('small-icon',compactMode);
+      const mode=compactMode?'compact':'normal';
+      const slots=controls.map(control=>control.getBoundingClientRect());
+      const glyph=seal.getBoundingClientRect();
+      const nativePitch=centerX(slots[3])-centerX(slots[2]);
+      check(near(nativePitch,size+gap) && near(centerX(slots[1])-centerX(slots[0]),nativePitch) &&
+        near(centerX(slots[2])-centerX(slots[1]),nativePitch),
+        mode+': equal center spacing before and after the seal matches the native pair');
+      check(near(slots[1].width,size) && near(slots[1].height,size) && near(centerY(slots[1]),centerY(slots[0])),
+        mode+': the seal button matches the native button dimensions and vertical alignment');
+      check(glyph.width>=size*.7 && glyph.width<=size && near(glyph.height,glyph.width) &&
+        near(centerX(glyph),centerX(slots[1])) && near(centerY(glyph),centerY(slots[1])),
+        mode+': the visible mascot is square and centered in its slot');
+    }
+    toolbarRow.classList.remove('small-icon');
+    let nativeClick=false, nativeMenu=false;
+    const native=controls[0];
+    native.addEventListener('click',()=>{nativeClick=true;},{once:true});
+    native.addEventListener('contextmenu',event=>{nativeMenu=!event.defaultPrevented;},{once:true});
+    native.click();
+    native.dispatchEvent(new MouseEvent('contextmenu',{button:2,bubbles:true,cancelable:true}));
+    check(nativeClick && nativeMenu && button.getAttribute('aria-expanded')==='false',
+      'neighboring native clicks and context-menu events still reach their original control');
     button.click();
     await wait(()=>typeof loadSettings==='function');
     switchTo(8); await Promise.resolve();
