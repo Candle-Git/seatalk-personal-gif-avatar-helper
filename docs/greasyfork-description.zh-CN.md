@@ -1,47 +1,31 @@
 **简体中文** | [English](https://greasyfork.org/en/scripts/588931)
 
-![SeaTalk 表情助手，搜索、整理和分享收藏表情](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.zh.png)
+# SeaTalk 表情助手 · v5.3.0
 
-# SeaTalk 表情助手 · 5.3.0
+![在聊天里发送、收藏和分组](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.zh.png)
 
-在聊天输入框旁点 **表情快选**，搜到想用的表情，点一下就发给当前会话。要给一批表情改名、分组或核对后再发，点快选面板里的 **管理表情**。
+想回一张「大笑」？打开输入框旁的 **表情快选**，按名称或关键字搜索全部收藏。核对面板顶部的会话名，点一张就发出。
 
-## 安装与升级
+群里刚发了几张想留的表情？点 **从聊天收藏**，拖过消息，预览后选一个分组，再确认收藏。纯文字会跳过，重复的表情只收一次。
 
-1. 安装 [Tampermonkey](https://www.tampermonkey.net/)。在 Chrome 或 Edge 中，右键扩展图标，选择「管理扩展程序」，开启「允许用户脚本」。如果没有该选项，可在扩展管理页开启「开发者模式」。
-2. 从 [Greasy Fork 原脚本页面](https://greasyfork.org/zh-CN/scripts/588931) 安装或更新至 **5.3.0**。简体中文的 Tampermonkey 管理面板会显示「SeaTalk 表情助手 · v5.3.0」。原地升级会保留当前浏览器中按账号保存的设置。
-3. 刷新 [SeaTalk Web](https://seatalkweb.com/)，打开一个单聊或群聊。输入框工具栏会出现折角笑脸贴纸图标，旁边会短暂显示「表情快选」。若快选提示收藏尚未载入，先打开一次 SeaTalk 原生表情面板中的爱心「收藏」，再回到快选。
+## 安装后去哪里找
 
-**从 5.2 升级前**，如果需要从旧个人备份恢复数据，请先在 5.2 中导入，再原地升级。升级后请重新生成分享口令，并重新导出用于换机的备份。5.3 读取 `STGIF3` 口令和第 3 版个人备份（`schema: 3`）。5.2 的 `STGIF1`、`STGIF2` 口令和旧个人备份无法直接导入。以前在这台浏览器保存的「表情文字」和「私人说明」仍可在本机搜索。要保留这两项的独立副本，请留存 5.2 的原备份。新备份和口令会省略这两个字段。
+1. 安装 [Tampermonkey](https://www.tampermonkey.net/)，在 Chrome 或 Edge 的扩展详情页开启「允许用户脚本」。如果没有此项，可在扩展管理页开启「开发者模式」。
+2. 点本页上方 **安装此脚本**，在 Tampermonkey 中确认。若要恢复 5.2 的旧备份，请先在 5.2 中导入，再升级。
+3. 刷新 [SeaTalk Web](https://seatalkweb.com/) 并打开单聊或群聊。点击聊天工具栏里的折角笑脸即可。若收藏尚未载入，先打开一次 SeaTalk 自带表情面板的爱心「收藏」。
 
-![安装 Tampermonkey、开启权限并安装表情助手](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-sticker-helper.zh.png)
+## 在快选中点「管理表情」
 
-![在 Chrome 或 Edge 的扩展详情页开启「允许用户脚本」](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.zh.png)
+- **整理一批**。按住 Ctrl／⌘ 逐张点选，用 Shift 连选，或从空白处拖动框选。可一起改名、移组或追加关键字。管理页搜索当前组，最左侧的「全部」可跨组搜索。
+- **发送或分享**。在管理页点卡片只会选中。可核对接收人和图片后批量发送，或生成口令让朋友预览后添加。每次最多 100 张。分享可附带名称和关键字，同一张表情默认保留对方已有的名称。
+- **备份设置**。在「设置 → 个人数据」导出或恢复名称、关键字、分组、手动图片形式和复核状态。个人设置按账号保存在当前浏览器的 Tampermonkey 中。
 
-## 在聊天里发送和收藏
+**从 5.2 升级**。原地更新保留本机设置。升级后请重新生成分享口令、重新导出个人备份。5.3 只读取 `STGIF3` 和第 3 版个人备份。旧的「表情文字」和「私人说明」仍可在原浏览器搜索，新的分享和备份均省略这两项。需要存档时请保留 5.2 原备份。
 
-- **快选发送**。面板顶部显示接收人或群名。快选搜索全部收藏，可连续滚动，也能切换最新／最早在前。点一张立即发送，双击只发一次。切换账号或聊天后，请在目标会话重新打开快选。
-- **从聊天收藏**。在快选中点「从聊天收藏」，按住鼠标拖过消息，再点「预览所选」。一次最多可选 100 张，纯文字自动跳过，相同表情只计一次。核对待新增和已收藏的数量后，可以选分组、追加搜索关键字，再确认。已收藏的表情也能直接整理。
-- **批量发送**。在「管理表情」里点卡片只会选中。选好后点「发送」，核对会话、图片和数量，再确认逐张发送。每次最多 100 张，支持普通单聊和群聊。发送结果未确认时会停止，请先检查聊天记录。
+## 安装图解
 
-## 在管理页整理收藏
+![查看安装图解](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-sticker-helper.zh.png)
 
-| 想做什么 | 怎么操作 |
-| --- | --- |
-| 跨组搜索 | 管理页默认打开「未分组」，搜索范围跟随当前分组。点最左侧固定的「全部」即可搜索所有组。其余分组可横向滚动。 |
-| 选多张 | Ctrl／⌘ 加单击可逐张增减，Shift 加单击可连续选择。从卡片间的空白处拖动可框选，按住 Shift 拖动可追加。跨页保留选择，「查看已选」可核对全部。 |
-| 改名或改组 | 选一张后点「编辑表情」，可改表情包名称、搜索关键字和分组，或新建分组。选多张后点「批量整理」，可统一名称、移组或追加关键字。留空保留原值，关键字自动去重，覆盖旧名称前会显示影响张数。 |
-| 筛选和同步 | 展开「工具」，按图片形式、备注状态或检测状态筛选。收起工具后，生效的筛选仍显示在搜索框附近，可点选移除。同步收藏会重新读取当前页面的收藏状态。 |
-| 移除收藏 | 让 SeaTalk 的原生爱心收藏面板保持打开。选择表情，点「删除所选表情」，核对完整清单再确认。清单包含当前筛选之外的已选项。助手无法撤销移除。 |
+![查看浏览器权限开关位置](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.zh.png)
 
-管理页顶栏的「使用指南」随时可查操作。到「设置」可切换语言、分栏或浮窗。点「−」收起后，再从「表情快选 → 管理表情」回来，可继续上次的选择。
-
-## 分享与备份
-
-**给朋友分享表情**。在管理页选 1–100 张，点「生成分享口令」，自行复制完整口令。默认附带名称和搜索关键字，可在复制前取消。对方在 5.3 中打开「工具 → 导入口令」，粘贴、解析预览，选好后确认添加。相同表情跳过重复添加，已有名称默认保留，关键字合并去重。对方也可逐张选用分享的名称。口令内容可读取，复制前请核对勾选项。
-
-**换电脑或清理浏览器数据**。到「设置 → 个人数据 → 导出个人备份」下载 JSON，并在浏览器下载记录里确认文件已保存。备份包括名称、搜索关键字、分组、手动图片形式和复核状态。新电脑上登录相应账号，到相同位置选择备份文件，预览后点「确认导入所选设置」。已有设置默认保留，需复核项默认不勾选。备份保存的是个人设置，表情图片仍由 SeaTalk 提供。
-
-本工具由社区维护，仅在 SeaTalk Web 运行，使用 SeaTalk 自身的图片与聊天服务。个人设置按账号保存在当前浏览器的 Tampermonkey 存储中。
-
-[5.3.0 发布说明](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/docs/release-notes-5.3.0.md) · [反馈问题](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues) · [English](https://greasyfork.org/en/scripts/588931)
+[完整使用说明](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/README.md) · [5.3.0 发布说明](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/blob/main/docs/release-notes-5.3.0.md)

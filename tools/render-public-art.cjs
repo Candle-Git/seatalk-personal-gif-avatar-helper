@@ -7,12 +7,16 @@ const sharp = require("sharp");
 const images = fs.realpathSync(path.join(__dirname, "..", "docs", "images"));
 const stem = "seatalk-sticker-helper-banner.";
 const coverName = "seatalk-sticker-helper-social.png";
-const fonts = "'Segoe UI','Microsoft YaHei','Noto Sans CJK SC',sans-serif";
+const fonts = "'Inter','Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif";
+const colors = {
+  ink:"#0d1830", panel:"#050b21", border:"#34455c", cream:"#fff4e5",
+  body:"#d1dcec", muted:"#aabed4", mint:"#96edce", coral:"#ffb4a6", lilac:"#cbbaff",
+};
 
 // 文字与插画分开保存：中英文共用一张插画，翻译或发新版时不必重新画。
 const labels = {
-  zh: ["SeaTalk 表情助手", "我的表情", "在聊天里搜收藏，点一下就发送。", "挥手", "搜索收藏"],
-  en: ["SeaTalk Sticker Helper", "MY STICKERS", "Find a favorite in chat. Click to send.", "Wave", "Search favorites"],
+  zh: ["SeaTalk 表情助手", "聊天工具栏", "点一张发送，按分组整理收藏。", "挥手", "管理表情"],
+  en: ["SeaTalk Sticker Helper", "CHAT TOOLBAR", "Click to send. Organize favorites by group.", "Wave", "Manage stickers"],
 };
 
 function xml(s) { return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
@@ -20,134 +24,145 @@ function label(x, y, size, value, color, weight = 400, extra = "") {
   return `<text x="${x}" y="${y}" font-size="${size}" font-weight="${weight}" fill="${color}" ${extra}>${xml(value)}</text>`;
 }
 
-// 放大镜和标签是静态示意：不需要账号、网络或外部字体文件。
-function search(x, y, width, query, hint) {
+// 几何和图标固定，语言只影响文案和必要的字号。
+function quickControls(x, y, query, manage) {
   return `<g transform="translate(${x} ${y})">
-    <rect width="${width}" height="48" rx="14" fill="#09192c" stroke="#295267"/>
-    <g fill="none" stroke="#54eddf" stroke-width="2.4" stroke-linecap="round"><circle cx="25" cy="22" r="6.8"/><path d="m30 27 5 5"/></g>
-    ${label(47,31,20,query,"#f1f7ff",600)}
-    ${label(width-18,30,15,hint,"#9bafc6",500,'text-anchor="end"')}
+    <rect width="204" height="52" rx="14" fill="#182943" stroke="#476275"/>
+    <g fill="none" stroke="${colors.mint}" stroke-width="2.8" stroke-linecap="round">
+      <circle cx="28" cy="24" r="7"/><path d="m34 30 5 5"/>
+    </g>
+    ${label(52,34,22,query,colors.cream,600)}
+    <g transform="translate(220 0)">
+      <rect width="252" height="52" rx="14" fill="#241f3d" stroke="#574968"/>
+      <path d="M21 16h9l4 4h12v15H21z" fill="none" stroke="${colors.lilac}" stroke-width="2.4" stroke-linejoin="round"/>
+      ${label(56,34,21,manage,colors.cream,600)}
+    </g>
+  </g>`;
+}
+
+function stickerIcon(x, y) {
+  return `<g transform="translate(${x} ${y})" fill="none" stroke="${colors.mint}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 28H8a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5h15a5 5 0 0 1 5 5v10L18 28Z"/><path d="M18 28v-6a4 4 0 0 1 4-4h6M9 16q4 5 9 0"/>
+    <circle cx="10" cy="11" r=".8" fill="${colors.mint}"/><circle cx="18" cy="11" r=".8" fill="${colors.mint}"/>
   </g>`;
 }
 
 function drawing(art, lang, social = false) {
-  const [title, section, desc, query, hint] = labels[lang];
+  const [title, section, desc, query, manage] = labels[lang];
   const [w,h] = social ? [1280,640] : [1200,360];
-  const [ax,ay,aw] = social ? [563,61,812] : [630,-26,590];
+  const [ax,ay,aw] = social ? [552,57,778] : [621,-20,584];
   const ah = aw*2/3;
   const accessibleTitle = social ? "SeaTalk 表情助手 / SeaTalk Sticker Helper" : title;
-  // 插画直接嵌入 SVG，GitHub 作为图片显示它时不必再请求其他图片。
+  const accessibleDescription = social ? labels.zh[2]+" "+labels.en[2] : desc;
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
     width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-labelledby="title note">
-    <title id="title">${accessibleTitle}</title><desc id="note">${social ? "整理、搜索和分享收藏表情。 Organize, find and share favorite stickers." : desc}</desc>
+    <title id="title">${accessibleTitle}</title><desc id="note">${accessibleDescription}</desc>
     <defs>
-      <linearGradient id="ink" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#090f2a"/><stop offset=".52" stop-color="#050b1d"/><stop offset="1" stop-color="#020717"/></linearGradient>
-      <linearGradient id="feather"><stop stop-color="black"/><stop offset=".16" stop-color="white"/><stop offset=".87" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
-      <linearGradient id="ends" x2="0" y2="1"><stop stop-color="black"/><stop offset=".12" stop-color="white"/><stop offset=".91" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
+      <linearGradient id="ink" x2="1" y2=".12" gradientUnits="objectBoundingBox"><stop stop-color="#132441"/><stop offset=".47" stop-color="#081127"/><stop offset=".57" stop-color="#050b21"/><stop offset="1" stop-color="#050b21"/></linearGradient>
+      <linearGradient id="feather"><stop stop-color="black"/><stop offset=".04" stop-color="white"/><stop offset=".97" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
+      <linearGradient id="ends" x2="0" y2="1"><stop stop-color="black"/><stop offset=".04" stop-color="white"/><stop offset=".97" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
       <mask id="side"><rect x="${ax}" y="${ay}" width="${aw}" height="${ah}" fill="url(#feather)"/></mask>
       <mask id="end"><rect x="${ax}" y="${ay}" width="${aw}" height="${ah}" fill="url(#ends)"/></mask>
     </defs>
     <rect width="${w}" height="${h}" fill="url(#ink)"/>
     <g mask="url(#side)"><image mask="url(#end)" x="${ax}" y="${ay}" width="${aw}" height="${ah}" xlink:href="data:image/jpeg;base64,${art}"/></g>
     <g font-family="${fonts}">
-      <g transform="translate(${social?76:58} ${social?104:46})" stroke="#4ce5d5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10l4 4h8v12H3z"/><path d="M7 0h9l4 4"/></g>
-      ${label(social?118:100,social?123:65,social?23:17,social?"STICKER LIBRARY":section,"#59e8d7",700,'letter-spacing="2"')}
+      ${stickerIcon(social?65:55,social?78:42)}
+      ${label(social?111:101,social?103:66,21,social?"聊天工具栏  /  CHAT TOOLBAR":section,colors.mint,700,'letter-spacing="1"')}
       ${social ? [
-        label(70,248,70,labels.zh[0],"#f6f8ff",700),
-        label(73,314,45,labels.en[0],"#e1eaff",600),
-        label(76,404,27,"整理、搜索、分享你的收藏表情。","#b8c7de"),
-        label(77,444,23,"Organize, find and share your favorites.","#b8c7de"),
-        search(76,500,334,"挥手  /  Wave","搜索")
+        label(60,215,69,labels.zh[0],colors.cream,700),
+        label(62,282,48,labels.en[0],colors.cream,650),
+        label(65,380,31,labels.zh[2],colors.body,550),
+        label(65,426,25,labels.en[2],colors.body),
+        quickControls(65,500,"挥手 / Wave","管理 / Manage")
       ].join("") : [
-        label(54,154,lang==="zh"?63:58,title,"#f6f8ff",700),
-        label(58,205,lang==="zh"?25:23,desc,"#bccbe2"),
-        search(58,251,lang==="zh"?300:320,query,hint)
+        label(53,153,lang==="zh"?66:58,title,colors.cream,700),
+        label(56,215,lang==="zh"?32:30,desc,colors.body,500),
+        quickControls(56,258,query,manage)
       ].join("")}
     </g>
   </svg>`;
 }
 
-// 安装图和授权图共用以下翻译、画布和图标。左中右三张贴纸依次对应扩展、授权、安装完成。
+// 三步安装与浏览器权限说明共用插画、字号和卡片结构。
 const guides = {
   zh: {
-    product:"SeaTalk 表情助手", setup:["首次安装","三步装好表情助手","准备好浏览器扩展后，就可以打开自己的收藏。"],
-    steps:[["安装 Tampermonkey","从官网安装浏览器扩展，","并确认扩展已启用。"],["允许用户脚本","打开扩展详情，开启","「允许用户脚本」。"],["安装表情助手","在 Greasy Fork 点击","「安装此脚本」，再刷新 SeaTalk。"]],
-    ready:"打开一个聊天，点输入框工具栏的「表情快选」。",
-    perm:["浏览器授权","允许用户脚本","Chrome 或 Edge · 只需设置一次。下图为操作示意。"],
-    manage:"打开扩展设置", enable:"开启运行权限", menu:"管理扩展程序", toggle:"允许用户脚本", on:"已开启",
-    hints:["右键点击工具栏上的 Tampermonkey 图标，","选择「管理扩展程序」。","在 Tampermonkey 的详情页找到此开关，","开启后，刷新 SeaTalk 网页版。"],
-    fallback:"没有这个开关？可在浏览器的扩展管理页开启「开发者模式」。"
+    product:"SeaTalk 表情助手", setup:["安装指南","三步装好表情助手","适用于电脑上的 SeaTalk 网页版。"],
+    steps:[["安装 Tampermonkey","从官网安装扩展，","并确认扩展已启用。"],["开启运行权限","打开扩展详情，开启","「允许用户脚本」。"],["安装表情助手","在 Greasy Fork 安装，","然后刷新 SeaTalk。"]],
+    ready:"打开一个聊天，点输入框旁的「表情快选」。",
+    perm:["浏览器设置","允许用户脚本","在 Chrome 或 Edge 中，为 Tampermonkey 打开这项权限。"],
+    manage:"打开扩展详情", enable:"开启运行权限", menu:"管理扩展程序", toggle:"允许用户脚本", on:"已开启",
+    hints:["右键点击工具栏上的 Tampermonkey 图标，","选择「管理扩展程序」。","开启「允许用户脚本」，","然后刷新 SeaTalk。"],
+    fallback:"找不到开关？在浏览器扩展管理页开启「开发者模式」。"
   },
   en: {
-    product:"SeaTalk Sticker Helper", setup:["FIRST-TIME SETUP","Set up in three steps","Start with the browser extension, then open your sticker collection."],
-    steps:[["Install Tampermonkey","Get the browser extension from","its official site and enable it."],["Allow user scripts","Open the extension settings and","turn on “Allow User Scripts”."],["Install Sticker Helper","Select “Install this script” on","Greasy Fork, then reload SeaTalk."]],
+    product:"SeaTalk Sticker Helper", setup:["SETUP GUIDE","Install Sticker Helper","For SeaTalk Web on desktop."],
+    steps:[["Get Tampermonkey","Install the extension","from its official site."],["Allow user scripts","Open extension settings.","Enable Allow User Scripts."],["Install Sticker Helper","Install from Greasy Fork,","then reload SeaTalk."]],
     ready:"Open a chat and click Quick stickers beside the message box.",
-    perm:["BROWSER PERMISSIONS","Allow user scripts","Chrome or Edge · One-time setup. The controls below are illustrations."],
+    perm:["BROWSER SETTINGS","Allow user scripts","Give Tampermonkey permission in Chrome or Edge."],
     manage:"Open extension settings", enable:"Turn on the permission", menu:"Manage extension", toggle:"Allow User Scripts", on:"On",
-    hints:["Right-click the Tampermonkey icon in the","browser toolbar and choose “Manage extension”.","Find this switch in the Tampermonkey details","page. Turn it on, then reload SeaTalk Web."],
-    fallback:"No switch? Enable Developer mode on the browser’s extensions page instead."
+    hints:["Right-click the Tampermonkey toolbar icon.","Choose Manage extension.","Enable Allow User Scripts,","then reload SeaTalk."],
+    fallback:"No switch? Enable Developer mode on the browser’s extensions page."
   }
 };
 
-// 小图只取自专门绘制的贴纸，不会引用浏览器截图或本机个人资料。
 function badge(x,y,n,color) {
-  return `<rect x="${x}" y="${y}" width="53" height="32" rx="12" fill="#101e34" stroke="${color}"/>
-  ${label(x+26.5,y+23,19,n,color,700,'text-anchor="middle"')}`;
+  return `<circle cx="${x+18}" cy="${y+18}" r="18" fill="${color}"/>
+  ${label(x+18,y+26,22,n,colors.ink,700,'text-anchor="middle"')}`;
 }
+
 function guide(lang,permission,tiles) {
-  const t=guides[lang], top=permission?t.perm:t.setup, palette=["#67efe1","#b7a1ff","#70d8ff"];
+  const t=guides[lang], top=permission?t.perm:t.setup, palette=[colors.mint,colors.coral,colors.lilac];
   const block=(x,y,w,h,fill,stroke,rx=22)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" stroke="${stroke}"/>`;
-  // 淡化小插画的四条边，让卡片与深蓝背景衔接。
   const tile=(i,x,y,size)=>`<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="0 0 100 100"><g mask="url(#mx)"><image width="100" height="100" mask="url(#my)" xlink:href="data:image/jpeg;base64,${tiles[i]}"/></g></svg>`;
   const body=[];
   if(!permission) {
     t.steps.forEach(([title,line1,line2],i)=>{
       const x=60+448*i;
-      body.push(block(x,222,424,411,"#060e20","#26394e"),
-        badge(x+25,247,"0"+(i+1),palette[i]),tile(i,x+113,259,198),
-        label(x+29,512,lang==="en"?28:32,title,"#f1f5ff",700),
-        label(x+29,565,23,line1,"#bdcbe0"),label(x+29,600,23,line2,"#bdcbe0"));
+      body.push(block(x,218,424,421,colors.panel,colors.border),
+        badge(x+24,241,String(i+1),palette[i]),tile(i,x+105,233,214),
+        label(x+27,504,lang==="en"?31:34,title,colors.cream,700),
+        label(x+28,558,27,line1,colors.body),label(x+28,597,27,line2,colors.body));
     });
   } else {
     [60,732].forEach((x,i)=>{
-      body.push(block(x,222,648,411,"#060e20","#26394e"),
-        badge(x+26,250,"0"+(i+1),palette[i]),label(x+98,279,lang==="en"?32:35,i?t.enable:t.manage,"#f1f5ff",700),
-        tile(i,x+527,231,90),block(x+29,330,590,164,"#0b192e","#30465c",13));
+      body.push(block(x,218,648,421,colors.panel,colors.border),
+        badge(x+25,249,String(i+1),palette[i]),label(x+80,279,lang==="en"?33:37,i?t.enable:t.manage,colors.cream,700),
+        tile(i,x+525,226,95),block(x+28,326,592,169,"#13263b","#40566b",15));
       if(!i) {
-        // 左卡：工具栏图标和菜单选项。两个标注连在一起，说明点击顺序。
-        body.push(label(x+53,377,24,"Tampermonkey","#e5edfb",650),
-          '<path d="M'+(x+52)+' 397h542" stroke="#30465c"/>',
-          block(x+51,415,542,59,"#122b3b","#356074",9),
-          label(x+75,454,26,t.menu,"#f1f5ff",600),
-          '<path d="m'+(x+550)+' 436 8 8-8 8" fill="none" stroke="#73eee2" stroke-width="3"/>');
+        body.push(label(x+52,376,25,"Tampermonkey",colors.body,650),
+          '<path d="M'+(x+50)+' 397h546" stroke="#40566b"/>',
+          block(x+50,414,546,60,"#193b42","#45796f",10),
+          label(x+72,453,28,t.menu,colors.cream,650),
+          '<path d="m'+(x+554)+' 435 9 9-9 9" fill="none" stroke="'+colors.mint+'" stroke-width="3"/>');
       } else {
-        body.push(label(x+52,373,20,"Tampermonkey","#a7b7ce"),
-          '<path d="M'+(x+52)+' 397h542" stroke="#30465c"/>',
-          label(x+52,453,27,t.toggle,"#f1f5ff",650),
-          label(x+481,450,19,t.on,"#6bf1dd",650,'text-anchor="end"'),
-          block(x+496,420,87,45,"#158478","#58e7d9",24),
-          '<circle cx="'+(x+560)+'" cy="442.5" r="15" fill="#f0fffe"/>');
+        body.push(label(x+52,374,24,"Tampermonkey",colors.body,650),
+          '<path d="M'+(x+50)+' 397h546" stroke="#40566b"/>',
+          label(x+52,454,30,t.toggle,colors.cream,650),
+          label(x+484,452,23,t.on,colors.mint,650,'text-anchor="end"'),
+          block(x+501,419,87,48,"#287767",colors.mint,24),
+          '<circle cx="'+(x+561)+'" cy="443" r="17" fill="#effff4"/>');
       }
-      body.push(label(x+29,550,23,t.hints[2*i],"#bdcbe0"),label(x+29,585,23,t.hints[2*i+1],"#bdcbe0"));
+      body.push(label(x+27,551,25,t.hints[2*i],colors.body),label(x+27,591,25,t.hints[2*i+1],colors.body));
     });
   }
   const [w,h]=permission?[1600,900]:[1672,941];
   return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 1440 810">
     <defs>
-      <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0b122e"/><stop offset="1" stop-color="#020715"/></linearGradient>
-      <linearGradient id="edge"><stop stop-color="black"/><stop offset=".14" stop-color="white"/><stop offset=".86" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
-      <linearGradient id="end" x2="0" y2="1"><stop stop-color="black"/><stop offset=".10" stop-color="white"/><stop offset=".93" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
+      <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#152741"/><stop offset=".7" stop-color="${colors.ink}"/><stop offset="1" stop-color="#111d33"/></linearGradient>
+      <linearGradient id="edge"><stop stop-color="black"/><stop offset=".035" stop-color="white"/><stop offset=".97" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
+      <linearGradient id="end" x2="0" y2="1"><stop stop-color="black"/><stop offset=".035" stop-color="white"/><stop offset=".97" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>
       <mask id="mx"><rect width="100" height="100" fill="url(#edge)"/></mask><mask id="my"><rect width="100" height="100" fill="url(#end)"/></mask>
     </defs>
     <rect width="1440" height="810" fill="url(#bg)"/><g font-family="${fonts}">
-    ${label(60,64,19,top[0],"#66edda",700,'letter-spacing="2"')}
-    ${label(1380,64,20,t.product,"#9eb4cc",600,'text-anchor="end"')}
-    ${label(55,145,61,top[1],"#f3f6ff",700)}${label(61,191,26,top[2],"#bdcbe0")}
+    ${label(60,61,23,top[0],colors.mint,700,'letter-spacing="1"')}
+    ${label(1380,61,23,t.product,colors.muted,600,'text-anchor="end"')}
+    ${label(56,140,67,top[1],colors.cream,700)}${label(61,186,29,top[2],colors.body)}
     ${body.join("")}
-    ${block(60,671,1320,77,"#0a2030","#2c5867",17)}
-    <circle cx="103" cy="709" r="15" stroke="#5de9d4" fill="none" stroke-width="2.4"/>
-    ${permission?'<path d="M103 708v9m0-16v2" stroke="#61ebd8" stroke-width="2.7"/>':'<path d="m96 709 5 5 9-11" fill="none" stroke="#61ebd8" stroke-width="2.7"/>'}
-    ${label(139,719,25,permission?t.fallback:t.ready,"#d7f4f1",600)}</g></svg>`);
+    ${block(60,672,1320,80,"#142d3b","#416d6e",18)}
+    <circle cx="104" cy="712" r="16" stroke="${colors.mint}" fill="none" stroke-width="2.6"/>
+    ${permission?'<path d="M104 710v10m0-19v2" stroke="'+colors.mint+'" stroke-width="3"/>':'<path d="m96 712 5 5 10-12" fill="none" stroke="'+colors.mint+'" stroke-width="3"/>'}
+    ${label(141,723,30,permission?t.fallback:t.ready,colors.cream,600)}</g></svg>`);
 }
 
 async function main() {
