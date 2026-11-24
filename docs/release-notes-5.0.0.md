@@ -1,5 +1,8 @@
 # 5.0.0 · 收藏批量管理
 
+> 历史版本，仅供查阅。安装或更新请使用[最新正式版](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/latest)。
+> Archived release. To install or update, use the [latest release](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/latest).
+
 本版开放收藏表情的批量管理。
 
 - **我的收藏**：搜索、放大预览、识别动图、跨页选择、查看已选、首页／末页和跳页。
@@ -10,7 +13,7 @@
 
 5.0.0 的收藏管理界面提供中文标签。
 
-**安装／升级 5.0.0：** [下载正式版脚本](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/download/v5.0.0/SeaTalk-Personal-GIF-Avatar-Helper.user.js)。[原 Greasy Fork 脚本页](https://greasyfork.org/zh-CN/scripts/588931) 继续保留，版本以该页面显示为准。先停用其他 beta／preview 版本，只启用一份助手，再刷新 SeaTalk。收藏管理需先打开 SeaTalk 爱心「收藏」页签，并保持其挂载。
+此版本的收藏管理需要先打开 SeaTalk 的爱心「收藏」页签，并保持面板打开。
 
 **使用提醒：** 浏览／分享无需先识别动图。分享和删除均包含跨页、跨筛选的全部已选；删除无法在助手撤销，口令不保证恢复。添加／删除结果不确定时先刷新核对。口令由用户自行发送，不自动发消息。
 
@@ -32,7 +35,7 @@ This release adds batch management for favorite stickers.
 
 The favorites workspace in 5.0.0 uses Chinese labels.
 
-**Install/upgrade to 5.0.0:** [Download the stable userscript](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/download/v5.0.0/SeaTalk-Personal-GIF-Avatar-Helper.user.js). The [original Greasy Fork page](https://greasyfork.org/en/scripts/588931) remains available; check its displayed version. Disable other beta/preview copies, enable one helper and reload SeaTalk. Favorites management requires the native heart Favorites tab to be open and mounted.
+In this version, favorites management required keeping SeaTalk’s heart-shaped Favorites tab open.
 
 **Before use:** Browsing/sharing needs no animation scan. Sharing/removal includes selections across pages and filters. The helper cannot undo removal and codes do not guarantee recovery. Reload to verify uncertain add/removal results. Users send codes themselves; no messages are sent automatically.
 

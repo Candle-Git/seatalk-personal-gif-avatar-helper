@@ -1,5 +1,8 @@
 # 5.2.1 · 收藏同步与交互优化 / Favorites sync and UI improvements
 
+> 历史版本，仅供查阅。安装或更新请使用[最新正式版](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/latest)。
+> Archived release. To install or update, use the [latest release](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/latest).
+
 - 修复打开助手后原生表情面板变成黑色空白；原生面板继续显示。
 - 自动每 1.5 秒读取当前账号的 SeaTalk 收藏状态，也可点击「同步收藏」。保留备注、筛选及仍在收藏中的选择；操作或弹窗期间暂停，结束后恢复。
 - 主动同步、备份导出、复制及批量操作增加完成、停止或失败反馈。导出显示条数和文件名，并提示查看浏览器下载。
@@ -16,9 +19,9 @@
 
 ## 升级 / Upgrade
 
-更新原 Greasy Fork 脚本 588931，或安装本 Release 附件；停用其他预览脚本后刷新 SeaTalk。保留原安装身份与已有备注。
+此版本沿用了原脚本的更新渠道和已保存的备注。
 
-Update the existing Greasy Fork script 588931 or install the attached userscript. Disable other previews and reload SeaTalk. Existing installation identity and saved notes are preserved.
+This version retained the existing update channel and saved notes.
 
 同步收藏只更新助手中的列表，不会重新请求服务器。结果不确定的添加或删除仍需刷新 SeaTalk 核对保存结果。
 

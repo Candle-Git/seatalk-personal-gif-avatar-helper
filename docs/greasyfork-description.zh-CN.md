@@ -1,6 +1,6 @@
 **简体中文** | [English](https://greasyfork.org/en/scripts/588931)
 
-![SeaTalk 表情助手](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.zh.png)
+![SeaTalk 表情助手：搜索、整理和分享收藏表情](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/seatalk-sticker-helper-banner.zh.png)
 
 # SeaTalk 表情助手 · 5.2.2
 
@@ -15,6 +15,8 @@
 **Chrome / Edge 授权路径：** 右键 Tampermonkey 图标 → 管理扩展程序 → 开启「允许运行用户脚本」。若没有该选项，在浏览器扩展管理页开启「开发者模式」。完成后返回 SeaTalk 刷新页面。
 
 ![安装三步](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/install-sticker-helper.zh.png)
+
+[找不到「允许用户脚本」？查看授权图解](https://raw.githubusercontent.com/Candle-Git/seatalk-personal-gif-avatar-helper/main/docs/images/allow-user-scripts.dark.zh.png)
 
 ## 可以做什么
 

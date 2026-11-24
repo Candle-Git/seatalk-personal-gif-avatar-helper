@@ -1,6 +1,6 @@
 [简体中文](README.md) | **English**
 
-![SeaTalk Sticker Helper](docs/images/seatalk-sticker-helper-banner.en.svg)
+![SeaTalk Sticker Helper: find, organize and share favorite stickers](docs/images/seatalk-sticker-helper-banner.en.svg)
 
 # SeaTalk Sticker Helper · 5.2.2
 
@@ -15,6 +15,8 @@
 **Chrome / Edge permission path:** Right-click the Tampermonkey icon → Manage extension → enable **Allow User Scripts**. If this option is unavailable, enable **Developer mode** on the browser extension-management page. Return to SeaTalk and reload.
 
 ![Installation](docs/images/install-sticker-helper.en.png)
+
+[Can’t find “Allow User Scripts”? See the illustrated permission guide](docs/images/allow-user-scripts.dark.en.png)
 
 ## What you can do
 

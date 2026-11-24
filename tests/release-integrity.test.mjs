@@ -91,7 +91,27 @@ function bannerMetadataText(bytes) {
 }
 
 // 公开横幅不能夹带本机路径、邮箱、带签名图片参数或聊天图片域名。
-for (const bannerPath of [bannerZh, bannerEn]) {
+// README 使用 SVG，脚本商店使用 PNG。两边的教程、双语封面都按同一隐私标准检查。
+const publishedPngs = new Map([["docs/images/seatalk-sticker-helper-social.png", [1280, 640]]]);
+for (const [lang, readme, listing] of [["zh", readmeZh, greasyForkZh], ["en", readmeEn, greasyForkEn]]) {
+  for (const [name, dimensions] of [
+    [`seatalk-sticker-helper-banner.${lang}.png`, [1200, 360]],
+    [`install-sticker-helper.${lang}.png`, [1672, 941]],
+    [`allow-user-scripts.dark.${lang}.png`, [1600, 900]],
+  ]) {
+    const assetPath = "docs/images/" + name;
+    publishedPngs.set(assetPath, dimensions);
+    assert.ok(listing.includes(assetPath), "脚本商店说明缺少图片：" + name);
+    if (!name.includes("banner")) assert.ok(readme.includes(assetPath), "README 缺少教程：" + name);
+  }
+}
+for (const [name, dimensions] of publishedPngs) {
+  const bytes = fs.readFileSync(path.join(projectDirectory, name));
+  assert.equal(bytes.toString("hex", 0, 8), "89504e470d0a1a0a", name + " 不是 PNG");
+  assert.deepEqual([bytes.readUInt32BE(16), bytes.readUInt32BE(20)], dimensions, name + " 尺寸不正确");
+  if (name.endsWith("-social.png")) assert.ok(bytes.length < 1000000, "GitHub 分享封面太大");
+}
+for (const bannerPath of [bannerZh, bannerEn, ...publishedPngs.keys()]) {
   const bannerBytes = fs.readFileSync(path.join(projectDirectory, bannerPath));
   const searchableBannerText = bannerMetadataText(bannerBytes);
   assert.doesNotMatch(searchableBannerText, /头像|avatar/i);

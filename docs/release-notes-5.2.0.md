@@ -1,5 +1,8 @@
 # 5.2.0 · 升级为 SeaTalk 表情助手 / Meet SeaTalk Sticker Helper
 
+> 历史版本，仅供查阅。安装或更新请使用[最新正式版](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/latest)。
+> Archived release. To install or update, use the [latest release](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/releases/latest).
+
 助手更名为 SeaTalk 表情助手，新增收藏表情的整理、搜索、分享和发送。
 
 ## 革新功能 / What’s new
@@ -14,9 +17,9 @@
 
 ## 升级 / Upgrade
 
-更新原 Greasy Fork 脚本 **588931**，或安装本 Release 附件。停用其他预览版后刷新 SeaTalk。保留原安装更新身份和已有备注；管理器内可能仍显示旧安装名称。
+此版本沿用了原脚本的更新渠道和已保存的备注。
 
-Update the existing Greasy Fork script **588931** or use the attached userscript. Disable other previews and reload SeaTalk. Installation identity and local notes are preserved; the manager may retain the legacy installation name.
+This version retained the existing update channel and saved notes.
 
 分享口令不含私人说明；个人备份含私人说明，请自行保管。
 
