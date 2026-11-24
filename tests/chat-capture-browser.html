@@ -1,0 +1,230 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="img-src data:; connect-src 'none'">
+<title>Chat capture · offline fixture</title>
+<style>
+  body { margin: 12px; font: 14px system-ui; }
+  .messages-message-list { position: relative; width: 100%; }
+  .messages-message-list-item { display: flex; align-items: center; height: 42px; padding: 0 12px; }
+  .messages-message-list img { width: 24px; height: 24px; }
+  .messages-message-editor { margin-top: 8px; }
+  .toolbar-left { display: flex; align-items: center; min-height: 32px; }
+  #result { white-space: pre-wrap; }
+</style>
+<div class="messages-message-detail-view">
+  <div class="messages-message-detail-view-header"><div class="title-wrap"><span class="title">Synthetic self</span></div></div>
+  <div class="messages-message-list"></div>
+  <div class="messages-message-editor"><div class="toolbar"><div class="toolbar-left"><button>Native stickers</button></div></div></div>
+</div>
+<pre id="result" data-test-result="running">Running</pre>
+<script>
+  window.__SPGA_TEST_MODE__ = true;
+  window.unsafeWindow = window;
+  window.GM_getValue = (_key, fallback) => ({...fallback, locale:'en'});
+  window.GM_setValue = () => {};
+</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<script>
+(async () => {
+  const result = document.getElementById('result');
+  const checks = [];
+  const check = (test, description) => {
+    if (!test) throw Error(description);
+    checks.push(description);
+  };
+  const wait = ms => new Promise(resolve => setTimeout(resolve,ms));
+  const until = async (predicate, description) => {
+    for (let i=0; i<150; i++) {
+      const found = predicate();
+      if (found) return found;
+      await wait(30);
+    }
+    throw Error('Timed out: '+description);
+  };
+  try {
+    const id = (number,type='b0705') => 'a'.repeat(33)+type+String(number).padStart(26,'0');
+    const saved=id(1), fresh=id(2,'b0702'), laterA=id(3),laterB=id(4), ungroupedFresh=id(5);
+    const fileUrl = id => 'https://f.haiserve.com/download/'+id+'_300';
+    const pixel = 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
+    const list = document.querySelector('.messages-message-list');
+    const rows=[];
+    function message(kind, name, imageId, wrapper) {
+      const row=document.createElement('div');
+      row.className='messages-message-list-item '+kind;row.append(name+' ');
+      if (imageId) {
+        const box=document.createElement('span');box.className=wrapper;
+        const img=new Image();img.alt=name;img.src=pixel;
+        // Decode a local pixel, presenting a synthetic SeaTalk resource identity without network access.
+        Object.defineProperty(img,'currentSrc',{get:()=>fileUrl(imageId)});
+        box.append(img);row.append(box);
+      }
+      list.append(row);rows.push(row);
+    }
+    message('text_c','Ordinary text');
+    message('sticker_c','Existing sticker',saved,'messages-message-list-item-sticker-content');
+    message('sticker_c','Same existing sticker',saved,'messages-message-list-item-sticker-content');
+    message('image_c','Ordinary photo',id(11,'b0905'),'messages-message-list-item-image-content');
+    message('text_c','Reaction on a text message',id(12),'messages-message-list-item-sticker-content');
+    message('image_c','Sticker in a native image row',fresh,'messages-message-list-item-image-content');
+    message('sticker_c','New sticker A',laterA,'messages-message-list-item-sticker-content');
+    message('sticker_c','New sticker B',laterB,'messages-message-list-item-sticker-content');
+    message('sticker_c','Collect without organizing',ungroupedFresh,'messages-message-list-item-sticker-content');
+    await Promise.all([...list.querySelectorAll('img')].map(img=>img.decode()));
+
+    const account=17, other=29;
+    let destination=account, completePending=null, pauseNext=false, writes=0;
+    const calls=[], subscribers=new Set();
+    let favorites=[{id:saved,name:'Original sticker',url:fileUrl(saved)}];
+    let snapshot={schema:2,revision:0,items:[{gifId:saved,name:'Mine',keywords:['demo'],note:'Keep my note'}],groups:[{name:'Desk',gifIds:[saved]}]};
+    const notify = () => { for(const callback of [...subscribers])callback(); };
+    window.__SPGA_PERSONAL_SETTINGS_FIXTURE__={request(req){
+      if(req.account!==account)throw Error('METADATA_ACCOUNT_CHANGED');
+      if(req.kind==='save'){
+        if(req.revision!==snapshot.revision)throw Error('METADATA_CHANGED');
+        snapshot={schema:2,revision:snapshot.revision+1,items:req.items,groups:req.groups};writes++;
+      }
+      return structuredClone(snapshot);
+    }};
+    window.__SPGA_SHARE_FIXTURE_SERVICES__={
+      accountId:()=>account,session:{loggedIn:true,userId:account},tag:'sticker',fileUrl,
+      store:{getState:()=>({messages:{selectedSession:{id:destination,type:'buddy'},customStickers:favorites,messages:{}},
+        contact:{userInfo:{[account]:{name:'Synthetic self'},[other]:{name:'Synthetic second chat'}}}}),
+        subscribe:fn=>{subscribers.add(fn);return ()=>subscribers.delete(fn);}},
+      sendSticker(){throw Error('Collecting from chat must not send messages');},
+      actions:{actionAddCustomStickerFromMessage:async({content})=>{
+        const fileId=content.fileId;calls.push(fileId);
+        if(pauseNext){pauseNext=false;await new Promise(resolve=>{completePending=resolve;});}
+        favorites=[...favorites,{id:fileId,name:'Fixture favorite',url:fileUrl(fileId)}];notify();
+      }}
+    };
+    window.__SPGA_TEST_API__.init();
+    async function collect() {
+      const toolbar=await until(()=>document.querySelector('.messages-message-editor .toolbar-left #spga-quick-toggle'),'real toolbar button');
+      toolbar.click();
+      const entry=await until(()=>{
+        const button=document.querySelector('#st-quick-stickers')?.shadowRoot.querySelector('#collect');
+        return button&&!button.disabled&&button;
+      },'Collect from chat in quick picker');
+      entry.click();
+      return until(()=>document.querySelector('#spga-chat-capture')?.shadowRoot,'capture panel');
+    }
+    let trustedMoves=0;
+    list.addEventListener('pointermove',event=>{if(event.isTrusted&&event.buttons)trustedMoves++;});
+    async function drag(from,to) {
+      const a=rows[from].getBoundingClientRect(),b=rows[to].getBoundingClientRect();
+      const x=Math.round(a.left+8),begin=Math.round(a.top+a.height/2),end=Math.round(b.top+b.height/2);
+      if(typeof window.driveFixtureMouse==='function'){
+        await window.driveFixtureMouse({x,begin,end});
+        return;
+      }
+      // --dump-dom has no device input. Only shim pointer capture for this synthetic fallback.
+      list.setPointerCapture=()=>{};
+      const pointer=(target,type,y)=>target.dispatchEvent(new PointerEvent(type,{
+        pointerId:7,pointerType:'mouse',isPrimary:true,button:0,buttons:type==='pointerup'?0:1,
+        clientX:x,clientY:y,bubbles:true,cancelable:true,composed:true
+      }));
+      try {pointer(rows[from],'pointerdown',begin);pointer(list,'pointermove',end);pointer(list,'pointerup',end);}
+      finally {delete list.setPointerCapture;}
+    }
+    const input=(view,selector,value)=>{
+      const node=view.querySelector(selector);node.value=value;
+      node.dispatchEvent(new Event('input',{bubbles:true}));
+    };
+    const closes=()=>until(()=>!document.querySelector('#spga-chat-capture'),'capture completes');
+    const groupOf=gifId=>snapshot.groups.find(group=>group.gifIds.includes(gifId))?.name;
+    function chooseGroup(view,value) {
+      const select=view.querySelector('select#group');
+      select.value=value;
+      check(select.value===value,'Group menu offers '+value);
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    async function reviewRange(from,to) {
+      const view=await collect();
+      await drag(from,to);
+      view.querySelector('#primary').click();
+      return view;
+    }
+
+    let view=await collect();
+    // A neighboring chat item may geometrically overlap the clicked text row without receiving its events.
+    rows[1].style.transform='translateY(-32px)';rows[1].style.pointerEvents='none';
+    await drag(0,0);
+    check(/0 selected/.test(view.querySelector('#stats').textContent)&&view.querySelector('#primary').disabled,'A stationary press on text does not select the adjacent overlapping sticker');
+    rows[1].style.transform='';rows[1].style.pointerEvents='';
+    await drag(0,5);
+    check(/2 selected.*1 new.*1 already saved/.test(view.querySelector('#stats').textContent),'Drag across mixed messages selects two unique stickers');
+    check(list.querySelectorAll('.spga-capture-picked').length===3,'Duplicate messages highlight together; text, photo and reaction stay unselected');
+    view.querySelector('#primary').click();
+    check(view.querySelectorAll('.images img').length===2,'Review shows each sticker once');
+    check(view.querySelector('#group').value==='' && !view.querySelector('#newGroupName').getClientRects().length,'Group selection starts at keep with the new-group field hidden');
+    chooseGroup(view,'saved:Desk');input(view,'#keywords','  ');
+    check(writes===0&&calls.length===0,'Drag, review, group selection and blank keywords make no changes before confirmation');
+    view.querySelector('#primary').click();
+    await closes();
+    check(writes===1&&calls.length===1&&calls[0]===fresh,'Only the missing sticker is added and organized in one metadata write');
+    check(snapshot.groups[0]?.name==='Desk'&&[saved,fresh].every(gifId=>snapshot.groups[0].gifIds.includes(gifId)),'Group includes both the already-saved and newly-added sticker');
+    check(snapshot.items.length===1&&snapshot.items[0].note==='Keep my note'&&snapshot.items[0].keywords.join()==='demo','Blank keywords preserve saved metadata without adding an empty record');
+    check(!list.querySelector('.spga-capture-picked'),'Exit clears message highlights');
+
+    view=await collect();await drag(0,5);
+    check(/2 selected.*0 new.*2 already saved/.test(view.querySelector('#stats').textContent),'Repeat capture recognizes both saved stickers');
+    view.querySelector('#primary').click();
+    check(!view.querySelector('#primary').disabled && view.querySelector('#primary').textContent==='Done','Already-saved selection can finish with all optional fields blank');
+    const beforeDone=JSON.stringify(snapshot);
+    view.querySelector('#primary').click();await closes();
+    check(writes===1 && calls.length===1 && JSON.stringify(snapshot)===beforeDone,'Done closes review without a native add, settings write or revision change');
+
+    view=await reviewRange(0,5);
+    const beforeConcurrentRemoval=favorites;
+    favorites=favorites.filter(row=>row.id!==fresh);notify();
+    view.querySelector('#primary').click();
+    check(view.host.isConnected && /1 new/.test(view.querySelector('#stats').textContent) && view.querySelector('#primary').textContent==='Add to favorites' && calls.length===1 && writes===1,'A favorite removed after review requires another confirmation before adding it again');
+    view.querySelector('#cancel').click();await closes();
+    favorites=beforeConcurrentRemoval;notify();
+
+    view=await reviewRange(0,5);chooseGroup(view,'new');
+    const newName=view.querySelector('#newGroupName');
+    check(newName.getClientRects().length && view.querySelector('#primary').disabled,'Choosing Create group reveals its required name field');
+    input(view,'#newGroupName','  '); view.querySelector('#primary').click();
+    check(view.host.isConnected && writes===1 && calls.length===1,'A blank new group never submits or ungroups existing favorites');
+    input(view,'#newGroupName','Weekend');
+    check(!view.querySelector('#primary').disabled,'Naming the new group enables confirmation');
+    view.querySelector('#primary').click();await closes();
+    check(writes===2 && calls.length===1 && [saved,fresh].every(gifId=>groupOf(gifId)==='Weekend'),'Create group moves existing favorites without re-adding them');
+
+    view=await reviewRange(0,5);input(view,'#keywords','Team greeting，ＴＥＡＭ greeting,Demo');
+    check(!view.querySelector('#primary').disabled && writes===2 && !/overwrite/i.test(view.querySelector('#impact').textContent),'Preview allows adding new keywords without altering saved metadata');
+    view.querySelector('#primary').click();await closes();
+    check(writes===3&&snapshot.items.length===2&&snapshot.items.every(row=>row.keywords.length===2 && row.keywords.includes('Team greeting')) &&
+      snapshot.items.find(row=>row.gifId===saved).keywords.includes('demo') && snapshot.items.find(row=>row.gifId===saved).note==='Keep my note','Capture appends deduplicated keywords to both stickers and preserves earlier keywords and private notes');
+    check(calls.length===1&&[saved,fresh].every(gifId=>groupOf(gifId)==='Weekend'),'Editing existing favorites preserves the group and does not add favorites again');
+    view=await reviewRange(0,5);input(view,'#keywords','Ｔｅａｍ greeting');
+    view.querySelector('#primary').click();await closes();
+    check(writes===3 && calls.length===1,'Submitting only an existing normalized keyword makes no write or native addition');
+
+    view=await reviewRange(1,1);chooseGroup(view,'ungrouped');
+    view.querySelector('#primary').click();await closes();
+    check(writes===4 && !groupOf(saved) && groupOf(fresh)==='Weekend' && snapshot.items.every(row=>row.keywords.includes('Team greeting')) && snapshot.items.find(row=>row.gifId===saved).note==='Keep my note','Explicit Ungrouped moves only the selected sticker and keeps its keywords and legacy note');
+
+    view=await reviewRange(8,8);
+    check(!view.querySelector('#primary').disabled,'A new sticker can be collected with all optional fields blank');
+    view.querySelector('#primary').click();await closes();
+    check(calls.length===2 && calls[1]===ungroupedFresh && favorites.some(row=>row.id===ungroupedFresh) && writes===4 && !groupOf(ungroupedFresh),'Blank fields add the new favorite without creating any local metadata');
+
+    view=await collect();await drag(6,7);view.querySelector('#primary').click();
+    chooseGroup(view,'new');input(view,'#newGroupName','Pending');pauseNext=true;view.querySelector('#primary').click();
+    await until(()=>completePending,'first native addition awaiting its response');
+    destination=other;notify();await closes();
+    check(!list.classList.contains('spga-capturing'),'A conversation switch closes capture even during an in-flight add');
+    completePending();await wait(1250);
+    check(calls.length===3&&calls[2]===laterA&&!favorites.some(row=>row.id===laterB),'A pending native action can settle but later additions stop');
+    check(writes===4&&!snapshot.groups.some(group=>group.name==='Pending'),'No unconfirmed group or note is saved after switching conversations');
+    if(typeof window.driveFixtureMouse==='function')check(trustedMoves>0,'Chrome dispatched physical-style pointer input through the message list');
+    result.dataset.testResult='passed';result.textContent='PASS '+checks.length+'\n'+checks.join('\n');
+    document.title='PASS · Chat capture';
+  } catch(error) {
+    result.dataset.testResult='failed';result.textContent='FAIL after '+checks.length+'\n'+(error.stack||error);
+    document.title='FAIL · Chat capture';
+  }
+})();
+</script>

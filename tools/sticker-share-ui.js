@@ -16,10 +16,13 @@
   const alreadySaved = id => savedStickerId(id) !== null;
   // Observe only the exact resource refresh performed by this confirmed native add.
   // Requests and responses pass through unchanged; no credentials or response bodies are stored.
-  function observeImportRefresh(item) {
+  function observeImportRefresh(item, capture = null) {
     if (globalThis.__SPGA_TEST_MODE__ === true) return () => {};
-    const originalFetch=window.fetch, account=importAccountId, generation=importGeneration;
-    const allowedHost=new URL(validPreviewUrl(importServices.fileUrl,item.gifId)).hostname;
+    const services=capture?.services || importServices;
+    const account=nativeWorkspaceAccountId(services), generation=importGeneration;
+    const contextActive=capture?.active || (()=>generation===importGeneration && account===importAccountId);
+    const originalFetch=window.fetch;
+    const allowedHost=new URL(validPreviewUrl(services.fileUrl,item.gifId)).hostname;
     let active=true;
     const wrapped=function(input,init) {
       let matching=false;
@@ -38,8 +41,8 @@
             const text=await result.clone().text();
             if(text.length<=65536) {
               const payload=JSON.parse(text);
-              if(active && generation===importGeneration && account===importAccountId &&
-                nativeWorkspaceAccountId(importServices)===account && host.isConnected &&
+              if(active && contextActive() &&
+                nativeWorkspaceAccountId(services)===account && host.isConnected &&
                 (!payload.ErrorCode || Number(payload.ErrorCode)===0) && validMetadataId(payload.FileName)) {
                 assertWorkspaceAccount(); importedResourceIds.set(item.gifId,payload.FileName);
               }
@@ -103,7 +106,7 @@
     const selected = items.filter(item => item.selected && !item.deleted);
     try {
       $('#shareCode').value = encodeStickerShare(selected.map((item,index) => $('#shareIncludeMetadata').checked ?
-        {gifId:item.gifId,label:item.label,keywords:item.metadata?.keywords || [],visibleText:item.metadata?.visibleText || ''} : {gifId:item.gifId,label:'Sticker '+(index+1)}));
+        {gifId:item.gifId,label:item.label,keywords:item.metadata?.keywords || []} : {gifId:item.gifId,label:'Sticker '+(index+1)}));
       $('#shareStatus').textContent = ui(`共 ${selected.length} 个表情${selectionOutside() ? `，其中 ${selectionOutside()} 个不在当前筛选中` : ''}。请复制完整口令；表情越多，口令越长。`, `${selected.length} stickers${selectionOutside() ? `, including ${selectionOutside()} outside the current filter` : ''}. Copy the complete code; more stickers make it longer.`);
       if (openDialog($('#sharing'))) $('#shareCopy').focus();
     } catch (error) { $('#scanStatus').textContent = tr(error.message); }
@@ -114,12 +117,18 @@
     catch (_) { $('#shareCode').focus(); $('#shareCode').select(); $('#shareStatus').textContent = tr('请按 ⌘C / Ctrl+C 复制完整口令。'); notifyAction($('#shareStatus').textContent, 'info'); }
   };
   $('#shareClose').onclick = () => closeDialog($('#sharing'));
+  const hasSharedDetails = item => Array.isArray(item.keywords);
+  const importDetails = item => hasSharedDetails(item) && $('#shareImportMetadata').checked;
+  const canSelectImport = item => item.saved ? importDetails(item) : item.ready;
   const updateImportButton = () => {
-    $('#importConfirm').disabled = importingBusy || importNeedsReview || !imported.some(item => item.selected && (item.ready && !item.saved || item.saved && $('#shareImportMetadata').checked));
+    $('#shareImportMetadata').closest('label').hidden = !imported.some(hasSharedDetails);
+    $('#shareImportMetadata').disabled = importingBusy;
+    $('#importConfirm').disabled = importingBusy || importNeedsReview || !imported.some(item => item.selected && canSelectImport(item));
   };
   $('#importOpen').onclick = () => {
     if (deleting || importingBusy || scanning) return;
     try { assertWorkspaceAccount(); } catch (error) { $('#scanStatus').textContent = tr(error.message); count(); return; }
+    updateImportButton();
     if (openDialog($('#importing'))) $('#importCode').focus();
   };
   function cancelImport() {
@@ -156,32 +165,40 @@
       ownList();
       imported = stickers.map(item => ({ ...item, ready: false, selected: false, saved: alreadySaved(item.gifId), metadataPolicy:'keep',
         url: validPreviewUrl(importServices.fileUrl, item.gifId) }));
+      updateImportButton();
       for (const item of imported) {
         const card = document.createElement('div'); card.className = 'import-card';
         const image = document.createElement('img'); image.alt = item.label; image.referrerPolicy = 'no-referrer';
         const label = document.createElement('label');
-        const check = document.createElement('input'); check.type = 'checkbox'; check.disabled = !(item.saved && $('#shareImportMetadata').checked);
+        const check = document.createElement('input'); check.type = 'checkbox'; check.disabled = !canSelectImport(item);
         check.setAttribute('aria-label', tr('添加 ') + item.label); item.check = check;
         const status = document.createElement('p'); status.style.fontSize = '12px';
-        status.textContent = item.saved ? ui('已收藏 · 可选择导入备注','Already saved · Can import notes') : tr('等待预览'); item.status = status;
+        const savedStatus = hasSharedDetails(item) ? ui('已收藏 · 可导入名称和关键字','Already saved · Can import name and keywords') : tr('已收藏');
+        status.textContent = item.saved ? savedStatus : tr('等待预览'); item.status = status;
         check.onchange = () => { item.selected = check.checked; updateImportButton(); };
         image.onload = () => {
           if (generation !== importGeneration) return;
           item.width = image.naturalWidth; item.height = image.naturalHeight;
           item.ready = item.width > 0 && item.height > 0 && item.width <= 20000 && item.height <= 20000;
-          check.disabled = importingBusy || !(item.saved ? $('#shareImportMetadata').checked : item.ready);
-          status.textContent = item.saved ? ui('已收藏 · 可选择导入备注','Already saved · Can import notes') : item.ready ? tr('预览就绪 · 可添加') : tr('图片尺寸无效');
+          check.disabled = importingBusy || !canSelectImport(item);
+          status.textContent = item.saved ? savedStatus : item.ready ? tr('预览就绪 · 可添加') : tr('图片尺寸无效');
           updateImportButton();
         };
         image.onerror = () => {
           if (generation !== importGeneration) return;
-          item.ready = false; if (!item.saved) { item.selected = false; check.checked = false; } check.disabled = !(item.saved && $('#shareImportMetadata').checked);
-          status.textContent = item.saved ? ui('已有收藏，可导入备注；预览不可用','Already saved; notes can be imported. Preview unavailable.') : tr('预览不可用 · 不可添加'); updateImportButton();
+          item.ready = false; if (!item.saved) { item.selected = false; check.checked = false; } check.disabled = importingBusy || !canSelectImport(item);
+          status.textContent = item.saved ? savedStatus : tr('预览不可用 · 不可添加'); updateImportButton();
         };
-        const policy=document.createElement('select');policy.setAttribute('aria-label',ui('备注冲突处理 ','Note conflict policy: ')+item.label);
-        for(const [value,zh,en] of [['keep','保留我的备注，合并关键词','Keep my note, merge keywords'],['replace','使用分享备注，合并关键词','Use shared note, merge keywords']]){const option=document.createElement('option');option.value=value;option.textContent=ui(zh,en);policy.append(option);}
-        policy.disabled=!personalRecords().has(item.gifId);policy.onchange=()=>item.metadataPolicy=policy.value;
-        label.append(check, item.label); card.append(image, label, status, policy); $('#importPreview').append(card);
+        label.append(check, item.label); card.append(image, label, status);
+        if (hasSharedDetails(item) && personalRecords().has(savedStickerId(item.gifId) || item.gifId)) {
+          const policy = document.createElement('select'); policy.setAttribute('aria-label',ui('重名处理 ','Name conflict for ')+item.label);
+          policy.append(new Option(ui('保留我的名称，合并关键字','Keep my name and merge keywords'),'keep'),
+            new Option(ui('使用分享名称，合并关键字','Use shared name and merge keywords'),'replace'));
+          policy.disabled = !importDetails(item);
+          policy.onchange = () => item.metadataPolicy = policy.value;
+          item.policy = policy; card.append(policy);
+        }
+        $('#importPreview').append(card);
         image.src = item.url;
       }
       $('#importStatus').textContent = ui(`共 ${imported.length} 个表情，已收藏 ${imported.filter(item => item.saved).length} 个。请勾选预览成功的表情，确认后添加。`, `${imported.length} stickers; ${imported.filter(item => item.saved).length} already saved. Select stickers with ready previews, then confirm adding them.`);
@@ -192,28 +209,37 @@
     }
   };
   $('#shareImportMetadata').onchange=()=>{
-    for(const item of imported){item.check.disabled=!(item.saved ? $('#shareImportMetadata').checked : item.ready);if(item.check.disabled){item.selected=false;item.check.checked=false;}}
+    for(const item of imported){
+      item.check.disabled=importingBusy || !canSelectImport(item);
+      if(item.check.disabled){item.selected=false;item.check.checked=false;}
+      if(item.policy)item.policy.disabled=importingBusy || !importDetails(item);
+    }
     updateImportButton();
   };
   $('#importConfirm').onclick = async () => {
     if (importingBusy || deleting || sendingBusy || metadataSaving || scanning || importNeedsReview) return;
     try { assertWorkspaceAccount(); } catch (error) { $('#importStatus').textContent = tr(error.message); return; }
-    const selected = imported.filter(item => item.selected && (item.ready && !item.saved || item.saved && $('#shareImportMetadata').checked));
+    const selected = imported.filter(item => item.selected && canSelectImport(item));
     if (!selected.length) return;
     const generation = importGeneration;
     const metadataRevision=personalSnapshot.revision,metadataPlan=new Map();
     try{
-      if($('#shareImportMetadata').checked){
-        for(const item of selected){
-          const incoming=normalizePersonalRecord({gifId:item.gifId,name:item.label,keywords:item.keywords || [],visibleText:item.visibleText || '',animationOverride:personalRecords().get(savedStickerId(item.gifId) || item.gifId)?.animationOverride || 'auto',source:'shared',updatedAt:new Date().toISOString()});
-          metadataPlan.set(item.gifId,mergePersonalRecord(personalRecords().get(savedStickerId(item.gifId) || item.gifId),incoming,item.metadataPolicy==='replace',true));
+      if(selected.some(importDetails)){
+        const current=personalRecords();
+        for(const item of selected.filter(importDetails)){
+          const savedId=savedStickerId(item.gifId) || item.gifId;
+          const shared={label:item.label,keywords:[...item.keywords]};
+          const replace=item.metadataPolicy==='replace', now=new Date().toISOString();
+          mergeSharedPersonalRecord(current.get(savedId),shared,savedId,replace,now);
+          metadataPlan.set(item.gifId,{shared,replace,now});
         }
       }
     }catch(error){$('#importStatus').textContent=metadataMessage(error.message);return;}
     importingBusy = true; importStopped = false;
     let stopObservingRefresh=()=>{};
     for (const id of ['importCode', 'importParse', 'importSelect', 'importConfirm', 'remove', 'scan']) $('#' + id).disabled = true;
-    imported.forEach(item => item.check.disabled = true);
+    imported.forEach(item => { item.check.disabled = true; if(item.policy)item.policy.disabled=true; });
+    $('#shareImportMetadata').disabled = true;
     $('#importStop').hidden = false; count();
     try {
       const newStickers=selected.filter(item=>!alreadySaved(item.gifId));
@@ -233,10 +259,16 @@
       if(metadataPlan.size && !result.stopped){
         assertWorkspaceAccount();if(personalSnapshot.revision!==metadataRevision)throw Error('METADATA_CHANGED');
         const records=personalRecords();
-        for(const [id,row] of metadataPlan){const savedId=savedStickerId(id);if(savedId){const mapped=normalizePersonalRecord({...row,gifId:savedId});const choice=selected.find(item=>item.gifId===id);records.set(savedId,mergePersonalRecord(records.get(savedId),mapped,choice?.metadataPolicy==='replace',true));notes++;}}
+        for(const [id,plan] of metadataPlan){
+          const savedId=savedStickerId(id);
+          if(!savedId)continue;
+          records.set(savedId,mergeSharedPersonalRecord(records.get(savedId),plan.shared,savedId,plan.replace,plan.now));
+          notes++;
+        }
         if(notes)await savePersonalRows([...records.values()]);
       }
-      $('#importStatus').textContent = ui(`已保存 ${notes} 条备注。`, `Saved ${notes} notes. `) + ui(`页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`, `Addition observed for ${result.added} stickers; ${result.skipped} skipped.${result.stopped ? ' Later additions stopped.' : ''} Reload SeaTalk to check saved results.`); notifyAction($('#importStatus').textContent, result.stopped ? 'info' : 'success');
+      const details = notes ? ui('已导入 ' + notes + ' 张表情的名称和关键字。', 'Imported names and keywords for ' + notes + (notes === 1 ? ' sticker. ' : ' stickers. ')) : '';
+      $('#importStatus').textContent = details + ui(`页面收藏已观察到添加 ${result.added} 个，跳过 ${result.skipped} 个${result.stopped ? '，已停止后续添加' : ''}。请刷新 SeaTalk 核对保存结果。`, `Addition observed for ${result.added} stickers; ${result.skipped} skipped.${result.stopped ? ' Later additions stopped.' : ''} Reload SeaTalk to check saved results.`); notifyAction($('#importStatus').textContent, result.stopped ? 'info' : 'success');
     } catch (error) { importNeedsReview = true; $('#importStatus').textContent = error.message.startsWith('METADATA_') ? metadataMessage(error.message) : tr(error.message); notifyAction($('#importStatus').textContent, 'error'); }
     finally {
       stopObservingRefresh();
@@ -249,9 +281,16 @@
           const canonicalId=savedStickerId(item.gifId);
           const existing = items.find(old => old.gifId === canonicalId);
           if (existing) existing.deleted = false;
-          else items.push({gifId:canonicalId,label:item.label,originalLabel:item.label,url:validPreviewUrl(importServices.fileUrl,canonicalId),existing:known.has(canonicalId),selected:false,animation:'unknown'});
+          else {
+            const native = ownList().find(entry => entry.id === canonicalId || entry.url === canonicalId);
+            const number = items.length+1, providedName = known.get(canonicalId) || native?.name;
+            const generatedName = providedName ? null : ui('收藏 '+number,'Favorite '+number);
+            const originalLabel = String(providedName || generatedName).slice(0,80);
+            items.push({gifId:canonicalId,label:originalLabel,originalLabel,generatedName,number,url:validPreviewUrl(importServices.fileUrl,canonicalId),existing:known.has(canonicalId),selected:false,animation:'unknown'});
+          }
         }
-        item.check.disabled = !(item.saved ? $('#shareImportMetadata').checked : item.ready);
+        item.check.disabled = !canSelectImport(item);
+        if(item.policy)item.policy.disabled=!importDetails(item);
       }
       refreshPersonalLabels(); updateImportButton(); render();
     }

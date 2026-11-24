@@ -1,0 +1,246 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src data:; style-src 'unsafe-inline';">
+<title>Quick stickers — offline browser fixture</title>
+<style>
+  body{font:16px system-ui}
+  .messages-message-editor{position:fixed;bottom:24px;left:22px}
+  .messages-message-editor .toolbar .toolbar-left{display:flex;align-items:center}
+  .messages-message-editor .toolbar .toolbar-left > * + *{margin-left:16px}
+  .messages-message-editor .toolbar.small-icon .toolbar-left > * + *{margin-left:12px}
+  .messages-message-editor .toolbar .icon-container{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+  .messages-message-editor .toolbar.small-icon .icon-container{width:28px;height:28px}
+  .icon-container svg{width:75%;height:75%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round}
+  .fixture-sticker{width:20px;height:20px}
+  #result{white-space:pre-wrap}
+</style>
+<div class="messages-message-detail-view-header"><div class="title-wrap"><span class="title">Self</span></div></div>
+<div class="messages-message-editor"><div class="toolbar"><div class="toolbar-left"><div class="icon-container" aria-label="Native stickers"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14c2 3 6 3 8 0M8.6 9.3h.4m6 0h.4"/></svg></div><div class="icon-container" aria-label="Files"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h7l2 3h9v10H3z"/></svg></div><div class="icon-container" aria-label="Images"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.3"/><path d="m4 17 5-5 3 3 3-4 5 6"/></svg></div></div></div><div class="seatalk-editor-content" contenteditable="true">Fixture draft</div></div>
+<pre id="result">Loading…</pre>
+<script>
+  window.__SPGA_TEST_MODE__=true; window.unsafeWindow=window;
+  const locale=new URLSearchParams(location.search).get('locale')==='zh'?'zh':'en';
+  window.GM_getValue=()=>({locale}); window.GM_setValue=()=>{};
+  const id=n=>'c'.repeat(33)+'b0705'+String(n).padStart(26,'0');
+  const saved=Array.from({length:115},(_,i)=>({id:id(i+1),name:'Saved '+(i+1)}));
+  const subscriptions=new Set(), messages={}, sent=[];
+  let chat=7, account=7, releaseDimensions=null, deferDimensions=false, holdReceipt=false, rejectReceipt=null;
+  function switchTo(next) {
+    chat=next; document.querySelector('.title-wrap>.title').textContent=next===7?'Self':'Second chat';
+    for(const fn of subscriptions) fn();
+  }
+  window.quickFixture={sent, switchTo,
+    setAccount(value){account=value;for(const fn of subscriptions) fn();},
+    holdPreview(){deferDimensions=true;}, resumePreview(){releaseDimensions?.();}, holdReceipt(){holdReceipt=true;}, rejectReceipt(){rejectReceipt?.(Error('Synthetic failure'));},
+    get receiptPending(){return !!rejectReceipt;},
+    get previewPending(){return !!releaseDimensions;},
+  };
+  window.__SPGA_SHARE_FIXTURE_SERVICES__={
+    store:{getState:()=>({messages:{customStickers:saved,selectedSession:{id:chat,type:'buddy'},messages},contact:{userInfo:{7:{name:'Self'},8:{name:'Second chat'}}}}),subscribe(fn){subscriptions.add(fn);return ()=>subscriptions.delete(fn);}},
+    session:{userId:7,loggedIn:true}, accountId:()=>account, fileUrl:value=>'https://f.haiserve.com/download/'+value,
+    tag:'sticker', actions:{actionRemoveCustomStickers(){throw Error('Unexpected remove');}},
+    previewDimensions(){
+      if(!deferDimensions)return {width:64,height:64};
+      deferDimensions=false; return new Promise(resolve=>releaseDimensions=()=>{releaseDimensions=null;resolve({width:64,height:64});});
+    },
+    sendSticker({session,customSticker}){
+      if(holdReceipt){holdReceipt=false;return new Promise((_,reject)=>{rejectReceipt=reject;});}
+      sent.push({chat:session.id,id:customSticker.url});
+      const cid=String(sent.length);
+      messages['buddy-'+session.id+'-'+cid]={cid,mid:cid.padStart(16,'0'),serverTimeStamp:1,senderId:account,tag:'sticker',content:{fileId:customSticker.url}};
+      for(const fn of subscriptions)fn();
+    }
+  };
+  const groupName=locale==='zh'?'常用':'Reactions';
+  const lastGroup=locale==='zh'?'问候':'Greetings';
+  const allLabel=locale==='zh'?'全部':'All';
+  const fixtureGroups=[
+    {name:groupName,gifIds:saved.slice(0,70).map(row=>row.id)},
+    {name:allLabel,gifIds:[id(99)]},
+    ...Array.from({length:9},(_,i)=>({name:(locale==='zh'?'备用分组 ':'Extra group ')+(i+1),gifIds:[]})),
+    {name:lastGroup,gifIds:[id(114)]},
+  ];
+  let loadSettings, firstLoad=true, settings={schema:2,revision:1,items:[],groups:fixtureGroups};
+  window.__SPGA_PERSONAL_SETTINGS_FIXTURE__={request({kind}){
+    if(kind!=='load')throw Error('Unexpected settings write');
+    if(!firstLoad)return Promise.resolve(settings);
+    firstLoad=false;
+    return new Promise(resolve=>{loadSettings=()=>resolve(settings);});
+  }};
+  function replaceGroups(groups){
+    settings={...settings,revision:settings.revision+1,groups};
+    window.dispatchEvent(new CustomEvent('spga:personal-settings-changed',{
+      detail:JSON.stringify({account,revision:settings.revision})
+    }));
+  }
+</script>
+<script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
+<script>
+(async()=>{
+  const result=document.getElementById('result'), checks=[];
+  function check(value,name){if(!value)throw Error(name);checks.push(name);}
+  const wait=async(fn)=>{const deadline=Date.now()+2500;while(!fn()&&Date.now()<deadline)await new Promise(r=>setTimeout(r,20));return fn();};
+  try {
+    window.__SPGA_TEST_API__.init();
+    const button=document.getElementById('spga-quick-toggle'), seal=button.querySelector('img');
+    const action=locale==='zh'?'表情快选':'Quick stickers';
+    check(button.title===action && button.getAttribute('aria-label')===action && button.tabIndex===0,
+      'the seal button is keyboard-focusable and named for its action');
+    check(seal?.getAttribute('alt')==='' && seal.getAttribute('aria-hidden')==='true' && !seal.draggable,
+      'the seal is decorative and cannot be dragged into a message');
+    await seal.decode();
+    const toolbar=button.parentElement;
+    const centerX=rect=>(rect.left+rect.right)/2, centerY=rect=>(rect.top+rect.bottom)/2;
+    const near=(a,b)=>Math.abs(a-b)<0.1;
+    const controls=[...toolbar.children];
+    check(controls.length===4 && controls[1]===button,'the seal occupies one slot immediately after native stickers');
+    const toolbarRow=toolbar.parentElement;
+    for (const [compactMode, size, gap] of [[false,32,16],[true,28,12]]) {
+      toolbarRow.classList.toggle('small-icon',compactMode);
+      const mode=compactMode?'compact':'normal';
+      const slots=controls.map(control=>control.getBoundingClientRect());
+      const glyph=seal.getBoundingClientRect();
+      const nativePitch=centerX(slots[3])-centerX(slots[2]);
+      check(near(nativePitch,size+gap) && near(centerX(slots[1])-centerX(slots[0]),nativePitch) &&
+        near(centerX(slots[2])-centerX(slots[1]),nativePitch),
+        mode+': equal center spacing before and after the seal matches the native pair');
+      check(near(slots[1].width,size) && near(slots[1].height,size) && near(centerY(slots[1]),centerY(slots[0])),
+        mode+': the seal button matches the native button dimensions and vertical alignment');
+      check(glyph.width>=size*.7 && glyph.width<=size && near(glyph.height,glyph.width) &&
+        near(centerX(glyph),centerX(slots[1])) && near(centerY(glyph),centerY(slots[1])),
+        mode+': the visible mascot is square and centered in its slot');
+    }
+    toolbarRow.classList.remove('small-icon');
+    let nativeClick=false, nativeMenu=false;
+    const native=controls[0];
+    native.addEventListener('click',()=>{nativeClick=true;},{once:true});
+    native.addEventListener('contextmenu',event=>{nativeMenu=!event.defaultPrevented;},{once:true});
+    native.click();
+    native.dispatchEvent(new MouseEvent('contextmenu',{button:2,bubbles:true,cancelable:true}));
+    check(nativeClick && nativeMenu && button.getAttribute('aria-expanded')==='false',
+      'neighboring native clicks and context-menu events still reach their original control');
+    button.click();
+    await wait(()=>typeof loadSettings==='function');
+    switchTo(8); await Promise.resolve();
+    check(!document.getElementById('st-quick-stickers'),'changing the chat during first load closes quick stickers');
+    loadSettings(); switchTo(7); await new Promise(r=>setTimeout(r,40));
+    button.click();
+    let root=document.getElementById('st-quick-stickers').shadowRoot;
+    const all=()=>root.querySelectorAll('.sticker');
+    check(await wait(()=>all().length===50),'toolbar loads 50 cards without the native Favorites picker');
+    check(root.querySelector('#target').textContent.includes('Self'),'current recipient is visible');
+    const text=(zh,en)=>locale==='zh'?zh:en;
+    const labeledIcon=(selector,label)=>{
+      const button=root.querySelector(selector);
+      return button.title===label && button.getAttribute('aria-label')===label && button.querySelector('svg[aria-hidden="true"]') && !button.textContent.trim();
+    };
+    check(labeledIcon('#close',text('关闭','Close')) && labeledIcon('#manage',text('管理表情','Manage stickers')), 'management and close icons have localized names and tooltips');
+    check(root.querySelector('#collect').textContent.trim()===text('从聊天收藏','Collect from chat'), 'chat collection keeps its visible label');
+    check(root.querySelector('input').getAttribute('aria-label')===text('搜索全部收藏','Search all favorites'), 'search announces its scope');
+    const sort=root.querySelector('#sort'), firstIcon=sort.innerHTML;
+    check(labeledIcon('#sort',text('最新在前，点击切换为最早在前','Newest first. Switch to oldest first')), 'sort shows the initial order and its action');
+    const scroller=root.querySelector('main');
+    scroller.scrollTop=scroller.scrollHeight;scroller.dispatchEvent(new Event('scroll'));
+    check(all().length>=100,'scrolling adds results without navigation');
+    sort.click();
+    check(all()[0].title==='Saved 115','reverse order starts with the last native favorite');
+    check(firstIcon!==sort.innerHTML && labeledIcon('#sort',text('最早在前，点击切换为最新在前','Oldest first. Switch to newest first')), 'reversing order also updates the icon and accessible action');
+    const search=root.querySelector('input');search.value='saved 99';search.dispatchEvent(new Event('input'));
+    check(all().length===1&&all()[0].title==='Saved 99','search reaches records beyond the first loaded page');
+    all()[0].click(); check(sent.length===0,'untrusted page clicks cannot send');
+    const pinned=()=>root.querySelector('#allGroups'), strip=()=>root.querySelector('#groupStrip');
+    const group=name=>[...strip().querySelectorAll('button')].find(tab=>tab.value===name);
+    const pressed=tab=>tab?.getAttribute('aria-pressed')==='true';
+    const setQuery=query=>{
+      const input=root.querySelector('input');
+      input.value=query;input.dispatchEvent(new Event('input'));
+    };
+    check(pressed(pinned()) && pinned().textContent.includes(allLabel) && !strip().contains(pinned()),
+      'All starts selected and stays outside the scrolling group list');
+    check(group('').textContent.includes(text('未分组','Ungrouped')) && group('').type==='button',
+      'Ungrouped is localized and keyboard-accessible');
+    check(strip().scrollWidth>strip().clientWidth,'many groups overflow the strip');
+    const pinnedLeft=pinned().getBoundingClientRect().left;
+    strip().scrollLeft=strip().scrollWidth;
+    check(strip().scrollLeft>0 && near(pinned().getBoundingClientRect().left,pinnedLeft),
+      'horizontal scrolling keeps All pinned');
+    group(groupName).click();
+    check(pressed(group(groupName)) && search.value==='saved 99' && !all().length,
+      'switching groups keeps the query and excludes other groups');
+    check(search.getAttribute('aria-label').includes(groupName),'search announces the selected group');
+    setQuery('');
+    check(all().length===50 && all()[0].title==='Saved 70','the selected group renders the first 50 in the chosen order');
+    scroller.scrollTop=scroller.scrollHeight;scroller.dispatchEvent(new Event('scroll'));
+    check(all().length===70 && all()[69].title==='Saved 1','scrolling loads only remaining items in this group');
+    sort.click();
+    check(all().length===50 && all()[0].title==='Saved 1' && scroller.scrollTop===0,
+      'sorting a group resets its page without leaving the group');
+    setQuery('saved 70');
+    check(all().length===1 && all()[0].title==='Saved 70','a group search finds a sticker outside its first page');
+    group(allLabel).click();setQuery('');
+    check(pressed(group(allLabel)) && !pressed(pinned()) && all().length===1 && all()[0].title==='Saved 99',
+      'a custom group with the same name as All has its own membership');
+    group('').click();
+    check(all().length===43 && ![...all()].some(cell=>cell.title==='Saved 99') && [...all()].some(cell=>cell.title==='Saved 100'),
+      'Ungrouped contains exactly the favorites absent from saved groups');
+    group(fixtureGroups[2].name).click();
+    check(pressed(group(fixtureGroups[2].name)) && !all().length && root.querySelector('#status').textContent.trim(),
+      'empty saved groups have a visible status');
+    group(lastGroup).click();
+    replaceGroups(fixtureGroups.map(row=>row.name===lastGroup?{...row,gifIds:[id(115)]}:row));
+    check(await wait(()=>all().length===1 && all()[0].title==='Saved 115'),
+      'a settings revision updates the open group when memberships change');
+    replaceGroups([]);
+    check(await wait(()=>pressed(pinned()) && all().length===50 && !group(lastGroup)),
+      'removing all custom groups falls back to All without stale membership');
+    replaceGroups(fixtureGroups);
+    check(await wait(()=>!!group(lastGroup)),'new saved groups are reflected in the open picker');
+    group(lastGroup).click();
+    check(pressed(group(lastGroup)) && sent.length===0,'choosing group controls never sends a sticker');
+    root.querySelector('#close').click();button.click();
+    root=document.getElementById('st-quick-stickers').shadowRoot;
+    check(await wait(()=>pressed(pinned()) && all().length===50),'each fresh open starts on All');
+    const editor=document.querySelector('.messages-message-editor');
+    const popup=root.host, input=root.querySelector('input');
+    const approx=(a,b)=>Math.abs(a-b)<1.25;
+    const initialInputHeight=input.getBoundingClientRect().height;
+    function fitsAtScale(scale){
+      const rect=popup.getBoundingClientRect(), anchor=button.getBoundingClientRect();
+      const viewport=window.visualViewport;
+      const minX=viewport.offsetLeft+8, maxX=viewport.offsetLeft+viewport.width-8;
+      const minY=viewport.offsetTop+8, maxY=viewport.offsetTop+viewport.height-8;
+      const width=Math.min(378*scale,maxX-minX);
+      const left=Math.max(minX,Math.min(anchor.left,maxX-width));
+      return approx(rect.width,width) && approx(rect.left,left) &&
+        approx(input.getBoundingClientRect().height,initialInputHeight*scale) &&
+        rect.top>=minY-1 && rect.bottom<=maxY+1 &&
+        (approx(rect.bottom,anchor.top-5*scale)||approx(rect.top,anchor.bottom+5*scale));
+    }
+    group(groupName).click();setQuery('saved 2');
+    const firstId=all()[0].dataset.id;
+    input.focus();
+    const targets=[editor,document.body,document.documentElement];
+    for(const [name,target,kind,scale] of [
+      ['chat zoom out',editor,'zoom',0.75],['chat zoom in',editor,'zoom',1.35],
+      ['chat transform',editor,'transform',1.25],['body zoom',document.body,'zoom',1.25],
+      ['root zoom',document.documentElement,'zoom',0.8],['body transform',document.body,'transform',0.8],
+    ]){
+      for(const node of targets){node.style.removeProperty('zoom');node.style.removeProperty('transform');}
+      editor.style.cssText='top:34px;left:22px;bottom:auto;transform-origin:top left';
+      target.style.transformOrigin='top left';
+      target.style[kind]=kind==='transform'?'scale('+scale+')':String(scale);
+      check(await wait(()=>fitsAtScale(scale)),name+' scales controls and keeps the popup anchored within the viewport');
+      check(root.activeElement===input && pressed(group(groupName)) && input.value==='saved 2' && all()[0]?.dataset.id===firstId,
+        name+' preserves focus, group, search and result');
+    }
+    for(const node of targets){node.style.removeProperty('zoom');node.style.removeProperty('transform');node.style.removeProperty('transform-origin');}
+    editor.style.cssText='right:4px;bottom:4px;left:auto;top:auto';
+    check(await wait(()=>fitsAtScale(1)),'restoring scale near the lower right keeps the whole panel inside the viewport');
+    check(sent.length===0,'zooming the open picker never sends');
+    editor.removeAttribute('style');
+    pinned().click();
+    root.querySelector('#sort').click();setQuery('saved 99');
+    result.textContent='PASS '+checks.length+'\n'+checks.join('\n');document.title='PASS · Quick stickers';
+  }catch(e){result.textContent='FAIL '+e.stack;document.title='FAIL · Quick stickers';}
+})();
+</script>

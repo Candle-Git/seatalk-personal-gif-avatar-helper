@@ -8,21 +8,41 @@ const { encodeStickerShare: encode, decodeStickerShare: decode, addSharedSticker
 const id = n => 'a'.repeat(33) + 'b0705' + String(n).padStart(26,'0');
 const sticker = n => ({gifId:id(n),label:'猫猫🐱 '+n});
 const data = value => JSON.parse(JSON.stringify(value));
-const raw = value => 'STGIF1.' + Buffer.from(JSON.stringify(value)).toString('base64url');
+const raw = value => 'STGIF3.' + Buffer.from(JSON.stringify(value)).toString('base64url');
 test('Unicode share code round trip contains only names and resource IDs',()=>{
  const code=encode([sticker(1),sticker(2)]);
- assert.match(code,/^STGIF1\.[A-Za-z0-9_-]+$/);
+ assert.match(code,/^STGIF3\.[A-Za-z0-9_-]+$/);
  assert.deepEqual(data(decode(code)),[sticker(1),sticker(2)]);
- assert.deepEqual(JSON.parse(Buffer.from(code.slice(7),'base64url').toString()),{v:1,stickers:[sticker(1),sticker(2)]});
+ assert.deepEqual(JSON.parse(Buffer.from(code.slice(7),'base64url').toString()),{v:3,stickers:[sticker(1),sticker(2)]});
+});
+test('keyword presence distinguishes an explicit shared name from a basic favorite',()=>{
+ const saved=[{...sticker(1),keywords:[]},{...sticker(2),keywords:[' 奶龙 ','奶龙','Work','ＷＯＲＫ']}];
+ assert.deepEqual(data(decode(encode(saved))),[{...sticker(1),keywords:[]},{...sticker(2),keywords:['奶龙','Work']}]);
+ assert.equal(Object.hasOwn(decode(encode([sticker(1)]))[0],'keywords'),false);
+});
+test('reject mixed and unsupported metadata fields during both encoding and decoding',()=>{
+ const tagged = {...sticker(1),keywords:[]};
+ for(const items of [[tagged,sticker(2)],[sticker(2),tagged],[tagged,{...tagged,extra:true}],
+   [{...tagged,visibleText:'ocr'}],[{...tagged,note:'private'}],[{...tagged,keywords:null}],
+   [{...tagged,keywords:Array(31).fill('word')}],[{...tagged,keywords:['x'.repeat(61)]}],[{...tagged,keywords:['a\nb']}]]){
+   assert.throws(()=>encode(items));assert.throws(()=>decode(raw({v:3,stickers:items})));
+ }
+});
+test('rejects previous versions even when the payload is otherwise valid',()=>{
+ for(const version of [1,2]){
+   const old='STGIF'+version+'.'+Buffer.from(JSON.stringify({v:version,stickers:[sticker(1)]})).toString('base64url');
+   assert.throws(()=>decode(old),/STGIF3/);
+   assert.throws(()=>decode(raw({v:version,stickers:[sticker(1)]})));
+ }
 });
 test('duplicate resource IDs are collapsed',()=>assert.equal(decode(encode([sticker(1),sticker(1)])).length,1));
 test('100 maximum-length Unicode names generate a readable code within the limit',()=>{
  const items=Array.from({length:100},(_,n)=>({...sticker(n),label:'猫'.repeat(80)}));
  const code=encode(items);assert.ok(code.length<65536);assert.equal(decode(code).length,100);
 });
-for(const value of ['', 'http://example.test', 'STGIF2.abc', 'STGIF1.%%%%', raw({v:2,stickers:[sticker(1)]}),
- raw({v:1,stickers:[sticker(1)],token:'secret'}), raw({v:1,stickers:[{...sticker(1),url:'https://example.test/?token=secret'}]}),
- raw({v:1,stickers:[{...sticker(1),gifId:'x'.repeat(64)}]}), raw({v:1,stickers:[]})]) {
+for(const value of ['', 'http://example.test', 'STGIF3.abc', 'STGIF3.%%%%', raw({v:4,stickers:[sticker(1)]}),
+ raw({v:3,stickers:[sticker(1)],token:'secret'}), raw({v:3,stickers:[{...sticker(1),url:'https://example.test/?token=secret'}]}),
+ raw({v:3,stickers:[{...sticker(1),gifId:'x'.repeat(64)}]}), raw({v:3,stickers:[]})]) {
  test('reject malformed or unsupported share data '+value.slice(0,30),()=>assert.throws(()=>decode(value)));
 }
 test('encoder rejects empty, excessive, signed or invalid input',()=>{

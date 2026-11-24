@@ -16,7 +16,9 @@
     try{
       assertWorkspaceAccount();
       if(nativeWorkspaceAccountId(draft.services)!==draft.account || !sameStickerSendTarget(draft.target,currentStickerSendTarget(draft.services,visibleSendEditor())))throw Error();
-      for(const item of draft.items)if(!liveSource().list.some(row=>row.id===item.gifId || row.url===item.gifId))throw Error();
+      const stored=draft.services.store.getState()?.messages?.customStickers;
+      const list=Array.isArray(stored)?stored:liveSource(false).list;
+      if(!draft.items.every(item=>list.some(row=>row.id===item.gifId || row.url===item.gifId)))throw Error();
     }catch(_){draft.invalid=true;throw Error('SEND_TARGET_CHANGED');}
   }
   async function openStickerSend(selected){
@@ -48,14 +50,11 @@
   $('#sendStop').onclick=()=>{sendStopped=true;$('#sendStatus').textContent=ui('等待当前发送结果后停止。','Waiting for the current send result before stopping.');};
   $('#sendConfirmation').addEventListener('cancel',event=>{if(sendingBusy){event.preventDefault();closeSend();}});
   $('#sendConfirmation').addEventListener('close',()=>{if(!$('#sendConfirmation').open)stopSendMonitor();});
-  $('#sendConfirm').onclick=async()=>{
-    if(busy() || sendUncertain || !sendDraft || sendDraft.invalid)return;
-    const draft=sendDraft;try{guardSend(draft);}catch(error){$('#sendStatus').textContent=sendMessage(error.message);return;}
-    sendingBusy=true;sendStopped=false;$('#sendConfirm').disabled=true;$('#sendStop').hidden=false;render();
-    let issued=0,completed=0,sendFailed=false;
-    try{
-      const result=await sendSelectedStickers(draft.items,{
-        guard:()=>guardSend(draft),stopped:()=>sendStopped,pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
+  async function transmitStickerDraft(draft, {stopped, beforeIssue = () => {}, progress}) {
+    let issued = 0, completed = 0;
+    try {
+      return await sendSelectedStickers(draft.items,{
+        guard:()=>guardSend(draft),stopped,pause:ms=>new Promise(resolve=>setTimeout(resolve,ms)),
         preview:async item=>{
           if(globalThis.__SPGA_TEST_MODE__===true && draft.services.previewDimensions)return draft.services.previewDimensions(item);
           const img=new Image();img.referrerPolicy='no-referrer';img.src=validPreviewUrl(draft.services.fileUrl,item.gifId);
@@ -63,7 +62,7 @@
           catch(_){throw Error('SEND_PREVIEW_FAILED');}finally{clearTimeout(timer);}
         },
         send:(item,dimensions)=>{
-          guardSend(draft);const ticket={before:new Set(Object.values(draft.services.store.getState().messages.messages||{}).map(message=>String(message.cid))),cid:null,rejected:false};
+          guardSend(draft);beforeIssue();const ticket={before:new Set(Object.values(draft.services.store.getState().messages.messages||{}).map(message=>String(message.cid))),cid:null,rejected:false};
           issued++;
           Promise.resolve(draft.services.sendSticker({session:{id:draft.target.id,type:draft.target.type},customSticker:{n:'',url:item.gifId,w:dimensions.width,h:dimensions.height}})).catch(()=>ticket.rejected=true);
           return ticket;
@@ -80,12 +79,55 @@
           }
           return 'pending';
         },
-        report:(done,total)=>{
-          completed=done;const item=items.find(item=>item.gifId===draft.items[done-1].gifId);if(item)item.selected=false;
-          $('#sendStatus').textContent=ui(`已观察到 SeaTalk 确认 ${done} / ${total} 张表情。`,`SeaTalk confirmation observed for ${done} / ${total} stickers.`);render();
-        },
+        report:(done,total)=>{ completed=done; progress(done,total); },
       });
-      $('#sendStatus').textContent=ui(`SeaTalk 已确认 ${result.sent} 张表情${result.stopped?'，已停止后续发送':''}。`,`SeaTalk confirmed ${result.sent} stickers.${result.stopped?' Later sends stopped.':''}`);
-    }catch(error){sendFailed=true;sendUncertain=issued>completed && error.message!=='SEND_FAILED';$('#sendStatus').textContent=sendMessage(error.message)+(sendUncertain && error.message!=='SEND_UNCONFIRMED'?' '+sendMessage('SEND_UNCONFIRMED'):'');}
-    finally{notifyAction($('#sendStatus').textContent,sendFailed || sendUncertain || issued>completed?'error':sendStopped?'info':'success');sendingBusy=false;$('#sendStop').hidden=true;$('#sendConfirm').disabled=true;stopSendMonitor();render();}
+    } catch(error) {
+      if (issued > completed && error.message !== 'SEND_FAILED') sendUncertain = true;
+      throw error;
+    }
+  }
+  $('#sendConfirm').onclick=async()=>{
+    const dialog = $('#sendConfirmation');
+    if(!dialog.open || $('#sendConfirm').disabled || busy() || sendUncertain || !sendDraft || sendDraft.invalid)return;
+    const draft=sendDraft;try{guardSend(draft);}catch(error){$('#sendStatus').textContent=sendMessage(error.message);return;}
+    sendingBusy=true;sendStopped=false;$('#sendConfirm').disabled=true;$('#sendStop').hidden=false;render();
+    let confirmed = 0, allConfirmed = false, tone = 'info', message;
+    try{
+      const result=await transmitStickerDraft(draft,{stopped:()=>sendStopped,progress:(done,total)=>{
+        confirmed = done;
+        const item=items.find(item=>item.gifId===draft.items[done-1].gifId);if(item)item.selected=false;
+        $('#sendStatus').textContent=ui(`已观察到 SeaTalk 确认 ${done} / ${total} 张表情。`,`SeaTalk confirmation observed for ${done} / ${total} stickers.`);render();
+      }});
+      allConfirmed = result.sent === draft.items.length && !result.stopped && !sendStopped;
+      if (allConfirmed) {
+        message = ui('已发送 ' + result.sent + ' 张表情。', 'Sent ' + result.sent + (result.sent === 1 ? ' sticker.' : ' stickers.'));
+        tone = 'success';
+      } else {
+        message = ui(`已停止，已确认 ${result.sent} / ${draft.items.length} 张。`, `Stopped. Confirmed ${result.sent} of ${draft.items.length}.`);
+      }
+    } catch (error) {
+      tone = 'error';
+      message = ui(`已确认 ${confirmed} / ${draft.items.length} 张。`, `Confirmed ${confirmed} of ${draft.items.length}. `) +
+        sendMessage(error.message) + (sendUncertain && error.message !== 'SEND_UNCONFIRMED' ? ' ' + sendMessage('SEND_UNCONFIRMED') : '');
+    } finally {
+      sendingBusy = false;
+      if (sendDraft === draft) {
+        stopSendMonitor();
+        $('#sendStop').hidden = true;
+        $('#sendConfirm').disabled = true;
+        $('#sendStatus').textContent = message;
+        render();
+        if (dialog.open) {
+          if (allConfirmed) {
+            // The send action may disappear with the cleared selection. Return to its sticker or the search field.
+            const nextFocus = root.querySelector('.grid [data-id="' + draft.items[0].gifId + '"]') || $('#search');
+            focusReturn.set(dialog, nextFocus);
+            closeDialog(dialog);
+            nextFocus.focus({preventScroll:true});
+            sendDraft = null;
+          }
+          notifyAction(message, tone);
+        }
+      }
+    }
   };

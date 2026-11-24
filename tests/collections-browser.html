@@ -1,6 +1,7 @@
 <!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="img-src data:;"><title>SeaTalk 收藏整合测试</title>
 <style>body{font:15px system-ui;background:#eef2f6;padding:24px}#result{white-space:pre-wrap;max-width:650px;background:white;padding:20px;border-radius:12px}</style>
 <h1>收藏整合 · 本地界面验证</h1><pre id="result">Running…</pre>
+<div class="messages-message-editor"><div class="toolbar"><div class="toolbar-left"><button class="icon-container">原生表情</button></div></div></div>
 <div class="sealabs-stickers-panel"><div class="sealabs-sticker"></div></div>
 <script>globalThis.__SPGA_TEST_MODE__=true;globalThis.GM_setValue=()=>{};globalThis.unsafeWindow=window;</script>
 <script src="../SeaTalk-Personal-GIF-Avatar-Helper.user.js"></script>
@@ -11,7 +12,11 @@ const check=(ok,name)=>{if(!ok)throw Error(name);checks.push(name)};
 const id=n=>'a'.repeat(33)+'b0705'+String(n).padStart(26,'0');
 const tinyGif='R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 const stickers=Array.from({length:100},(_,n)=>({id:id(n),url:'https://f.haiserve.com/download/'+id(n)+'_300',name:'测试表情 '+n}));
-let calls=0, additions=0;
+let calls=0, additions=0, snapshot={schema:2,revision:0,items:[],groups:[]};
+window.__SPGA_PERSONAL_SETTINGS_FIXTURE__={request(request){
+ if (request.kind==='save') { if(snapshot.revision!==request.revision)throw Error('METADATA_CHANGED'); snapshot={schema:2,revision:request.revision+1,items:request.items,groups:request.groups}; }
+ return structuredClone(snapshot);
+}};
 window.__SPGA_SHARE_FIXTURE_SERVICES__={session:{loggedIn:true,userId:1},store:{getState:()=>({messages:{customStickers:stickers}})},tag:'fixture',fileUrl:id=>'https://f.haiserve.com/download/'+id+'_300',actions:{actionAddCustomStickerFromMessage({content}){additions++;stickers.push({id:content.fileId,url:'https://f.haiserve.com/download/'+content.fileId+'_300',name:'Shared'});}}};
 document.querySelector('.sealabs-sticker').__reactFiber$fixture={memoizedProps:{stickers,isCustomTab:true},return:{memoizedProps:{actions:{actionRemoveCustomStickers:()=>calls++}}}};
 const wait=()=>new Promise(r=>setTimeout(r,20));
@@ -25,12 +30,20 @@ const pointer=(element,type,pointerId,x,y)=>element.dispatchEvent(new PointerEve
 const closeEnough=(first,second)=>Math.abs(first-second)<2;
 const sameRect=(first,second)=>['left','top','width','height'].every(key=>closeEnough(first[key],second[key]));
 try{
-a.state.locale='zh';a.injectStyles();a.createPanel();a.bindPanelEvents();
-window.addEventListener('spga:collections-back',()=>document.querySelector('#seatalk-personal-gif-avatar-panel').classList.add('spga-open'));
-const favorites=()=>[...document.querySelectorAll('nav button')].find(b=>b.textContent==='我的收藏');
-check(!!favorites(),'avatar panel has My favorites entry');favorites().click();await wait();
-check(q('.card')&&q('#summary').textContent==='我的收藏 100 个','page-realm bridge reads collection snapshot without technical metadata');
+window.GM_getValue=()=>({locale:'zh',lastSeenUpdateNoticeVersion:'5.3.0-beta.6'});a.init();
+const openManager=async()=>{
+ document.getElementById('spga-quick-toggle').click();
+ const manage=document.getElementById('st-quick-stickers').shadowRoot.querySelector('#manage');manage.click();
+ for(let i=0;i<100&&q('#personalExport').disabled;i++)await wait();
+};
+check(!!document.getElementById('spga-quick-toggle'),'composer toolbar exposes sticker quick pick');await openManager();
+check(q('.card')&&q('#summary').textContent==='我的表情 100 个','page-realm bridge reads collection snapshot without technical metadata');
 const host=document.getElementById('st-favorites-curator'),bounds=host.getBoundingClientRect();
+const iconActions=all('button[data-icon-only]');
+check(iconActions.length > 10 && iconActions.every(button => button.title && button.getAttribute('aria-label') && button.querySelector('svg[aria-hidden="true"] path,svg[aria-hidden="true"] circle')), 'icon-only actions have artwork, tooltips and accessible labels');
+host.__setLocale('en');
+check(q('#toolsToggle').title === 'Tools' && q('#first').getAttribute('aria-label') === 'First' && q('#sendSelected').getAttribute('aria-label') === 'Send selected', 'icon labels and hover text follow the workspace language');
+host.__setLocale('zh');
 check(bounds.width<=821&&bounds.left>=10&&bounds.right<=innerWidth-10,'floating workspace fits the viewport and leaves page visible');
 check(innerWidth<=1000||closeEnough(bounds.right,innerWidth-24),'wide-screen floating workspace starts at the right edge');
 check(getComputedStyle(q('#close')).backgroundColor==='rgb(198, 40, 40)'&&getComputedStyle(q('#close')).color==='rgb(255, 255, 255)','close button is red with white text');
@@ -41,13 +54,13 @@ check(q('#shareOpen').title.includes('先选择')&&q('#remove').title.includes('
 check(all('.name').every(input=>input.hidden&&!input.getClientRects().length)&&all('.card-name').every(name=>name.getClientRects().length),'cards initially show names instead of editable fields');
 check(q('#guideOpen').getClientRects().length>0&&!q('#guideDialog').open,'guide has permanent button and starts closed');
 q('#guideOpen').click();
-check(q('#guideDialog').open&&all('.guide section').length===6,'guide opens six task-oriented sections');
-check(q('.guide').textContent.includes('浏览和分享无需先识别')&&q('.guide').textContent.includes('每次最多分享 100 个'),'guide distinguishes optional detection from browsing and sharing');
-check(q('.guide').textContent.includes('筛选之外的已选表情')&&q('.guide').textContent.includes('无法撤销')&&q('.guide').textContent.includes('已收藏的表情会自动跳过'),'guide explains retained selection, irreversible deletion and duplicate imports');
+check(q('#guideDialog').open&&q('.guide').textContent.includes('分组与批量整理') && q('.guide').textContent.includes('选择和查看表情'),'guide covers bulk grouping and range selection');
+check(q('.guide').textContent.includes('未检测或识别失败不影响备注、搜索或分享')&&q('.guide').textContent.includes('最多分享 100 张表情'),'guide distinguishes optional detection from browsing and sharing');
+check(q('.guide').textContent.includes('筛选之外的已选表情')&&q('.guide').textContent.includes('无法撤销')&&q('.guide').textContent.includes('已收藏的表情不会重复添加'),'guide explains retained selection, irreversible deletion and duplicate imports');
 q('#importOpen').click();check(all('dialog[open]').length===1&&q('#guideDialog').open&&!q('#importing').open,'opening another popup while guide is active never stacks dialogs');
 q('#guideClose').click();check(!q('#guideDialog').open,'guide closes without leaving management');
-check(getComputedStyle(document.querySelector('.sealabs-stickers-panel')).visibility==='hidden'&&getComputedStyle(document.getElementById('seatalk-personal-gif-avatar-panel')).display==='none','native picker and avatar window are visually hidden while management is open');
-check(q('.badge').dataset.kind==='unknown'&&getComputedStyle(q('.badge')).color==='rgb(102, 112, 133)','unclassified images use a neutral badge');
+check(getComputedStyle(document.querySelector('.sealabs-stickers-panel')).visibility!=='hidden'&&getComputedStyle(document.getElementById('seatalk-personal-gif-avatar-panel')).display==='none','native picker stays visible while the separate avatar window stays closed');
+q('#toolsToggle').click();q('.card').click();check(q('#selectionDetails').textContent.includes('未检测'),'Tools shows the selected uninspected sticker');q('#clear').click();
 
 // Untrusted pointer events exercise the handlers without requiring native pointer capture.
 const handle=q('#dragHandle'),beforeDrag=host.getBoundingClientRect();mockCapture(handle);
@@ -72,23 +85,24 @@ q('#first').click();check(q('#page').textContent.includes('1 / 3')&&q('#first').
 check(q('#hiddenTools').hidden&&!q('#export').getClientRects().length,'JSON export stays hidden from normal controls');
 change('#jump','3');q('#jumpGo').click();check(q('#page').textContent.includes('3 / 3'),'page input jumps to last page');
 q('#selectPage').click();check(q('#count').textContent==='已选择 4 个'&&!q('#shareOpen').disabled&&!q('#remove').disabled,'select entire last page enables sharing and deletion');
-q('.edit-name').click();check(!q('.name').hidden&&q('.card-name').hidden&&root().activeElement===q('.name'),'name editor opens only after an explicit edit action');
-change('.name','不会保存的名称','input');q('.name').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
-check(q('.name').hidden&&q('.card-name').textContent==='测试表情 96','Escape cancels inline editing without closing workspace');
-q('.edit-name').click();change('.name','导出名称测试','input');q('.name').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
-check(q('.name').hidden&&q('.card-name').textContent==='导出名称测试','Enter saves inline share name and returns to compact card display');
+q('.card').click();q('#editSelected').click();check(q('#personalEditor').open && root().activeElement===q('#personalName'),'name editor opens after explicit edit');
+change('#personalName','不会保存的名称','input');q('#personalEditor .dialog-actions [data-close]').click();
+check(!q('#personalEditor').open && q('.card-name').textContent==='测试表情 96','cancel leaves the displayed favorite name unchanged');
+q('#editSelected').click();change('#personalName','导出名称测试','input');q('#personalSave').click();await wait();
+check(!q('#personalEditor').open && q('.card-name').textContent==='导出名称测试','saving a personal name returns to the compact card');q('#selectPage').click();
 check(stickers[96].name==='测试表情 96','editing a share label never changes native collection name');
 
-// A minimized capsule restores the existing task rather than recreating its state.
+// The toolbar restores the minimized task with its selection and geometry.
 resize.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}));
 const beforeMinimize=host.getBoundingClientRect(),pageBeforeMinimize=q('#page').textContent;
 q('#minimize').click();const capsule=document.getElementById('st-favorites-minimized');
-check(host.style.display==='none'&&!capsule.hidden&&capsule.textContent.includes('已选 4 个'),'minimize replaces workspace with a selection-aware capsule');
-check(getComputedStyle(document.querySelector('.sealabs-stickers-panel')).visibility!=='hidden','minimize restores native picker visibility');capsule.click();
-check(!host.style.display&&capsule.hidden&&q('#count').textContent==='已选择 4 个'&&q('#page').textContent===pageBeforeMinimize,'capsule restores current selection and page');
-check(sameRect(beforeMinimize,host.getBoundingClientRect())&&q('.card-name').textContent==='导出名称测试','capsule preserves custom position, size and edited labels');
+check(host.style.display==='none'&&capsule.hidden&&document.getElementById('spga-quick-toggle').isConnected,'minimize returns to the composer toolbar without a floating button');
+check(getComputedStyle(document.querySelector('.sealabs-stickers-panel')).visibility!=='hidden','minimize restores native picker visibility');await openManager();
+check(!host.style.display&&capsule.hidden&&q('#count').textContent==='已选择 4 个'&&q('#page').textContent===pageBeforeMinimize,'toolbar restores current selection and page');
+check(sameRect(beforeMinimize,host.getBoundingClientRect())&&q('.card-name').textContent==='导出名称测试','toolbar preserves custom position, size and edited labels');
 q('#viewSelected').click();check(q('#filter').value==='selected'&&q('#page').textContent.includes('4 个')&&q('#viewSelected').textContent==='返回筛选','view selected gathers selections across pages');
-q('.card input[type=checkbox]').checked=false;q('.card input[type=checkbox]').dispatchEvent(new Event('change'));
+check(q('#viewSelected svg') && q('#viewSelected').getAttribute('aria-pressed')==='true' && q('#viewSelected').getAttribute('aria-label')==='返回筛选', 'selection toggle retains its icon and announces how to return');
+q('.card').dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}));
 check(all('.card').length===3&&q('#count').textContent==='已选择 3 个','unchecking selected view immediately removes that card');
 q('#viewSelected').click();check(q('#filter').value==='all'&&q('#page').textContent.includes('3 / 3'),'return from selected view restores previous page and filters');
 q('#selectPage').click();change('#search','测试表情 97','input');
@@ -98,13 +112,15 @@ q('#viewSelected').click();check(q('#search').value==='测试表情 97'&&all('.c
 q('#remove').click();check(q('#deletion').open&&q('#deletePreview').children.length===4&&q('#deleteSummary').textContent.includes('其中 3 个不在当前筛选中'),'deletion confirmation previews every selection including hidden items');
 q('#deleteCancel').click();check(calls===0,'cancel never invokes native deletion');
 change('#search','','input');change('#jump','3');q('#jumpGo').click();
-q('#backAvatar').click();check(host.style.display==='none','back to avatar hides workspace');
-check(getComputedStyle(document.querySelector('.sealabs-stickers-panel')).visibility!=='hidden'&&getComputedStyle(document.getElementById('seatalk-personal-gif-avatar-panel')).display!=='none','leaving restores native picker and avatar helper');
-favorites().click();check(q('#count').textContent==='已选择 4 个'&&q('.name').value==='导出名称测试','switch preserves selections and labels');
-q('#shareOpen').click();const code=q('#shareCode').value;
-const decoded=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(code.slice(7).replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))));
-check(code.startsWith('STGIF1.')&&decoded.stickers.length===4&&decoded.stickers[0].label==='导出名称测试','share code contains selected stickers and edited name');
-check(decoded.stickers.every(item=>Object.keys(item).sort().join(',')==='gifId,label'),'share code excludes signed URLs and account data');
+q('#close').click();check(host.style.display==='none','close hides management');
+check(getComputedStyle(document.querySelector('.sealabs-stickers-panel')).visibility!=='hidden','closing leaves the native picker visible');
+await openManager();check(q('#count').textContent==='已选择 4 个'&&q('.card-name').textContent==='导出名称测试','reopening preserves selections and labels');
+q('#shareOpen').click();
+const decode = code => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(code.slice(7).replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))));
+const annotated=decode(q('#shareCode').value);
+check(annotated.v===3&&annotated.stickers.length===4&&annotated.stickers[0].label==='导出名称测试','sharing metadata includes selected stickers and edited name');
+q('#shareIncludeMetadata').click();const decoded=decode(q('#shareCode').value);
+check(decoded.v===3&&decoded.stickers.length===4&&decoded.stickers.every(item=>Object.keys(item).sort().join(',')==='gifId,label')&&decoded.stickers[0].label==='Sticker 1','the add-only share excludes resource URLs, account data, search keywords and personal names');
 q('#guideOpen').click();check(all('dialog[open]').length===1&&q('#sharing').open,'guide never stacks above active sharing popup');q('#shareClose').click();
 q('#export').click();const exported=JSON.parse(q('#output textarea').value);
 check(exported.length===4&&exported[0].label==='导出名称测试'&&exported.every(item=>Object.keys(item).join(',')==='label,gifId'),'hidden export contains selected safe fields only');
@@ -115,29 +131,29 @@ change('#jump','1');q('#jumpGo').click();
 
 // Detection uses locally constructed bytes; all account actions remain fake fixture functions.
 change('#animation','animated');
-check(!q('#emptyState').hidden&&!q('#emptyScan').hidden&&q('#emptyMessage').textContent.includes('浏览和分享不受影响'),'unclassified animation filter explains detection without blocking browsing and sharing');
+check(!q('#emptyState').hidden&&!q('#emptyScan').hidden&&q('#emptyMessage').textContent.includes('备注、搜索和分享不依赖检测'),'unclassified animation filter explains detection without blocking browsing and sharing');
 change('#animation','all');const nativeFetch=window.fetch;
 window.fetch=async()=>new Response(Uint8Array.from(atob(tinyGif),c=>c.charCodeAt(0)),{headers:{'Content-Type':'image/gif'}});
 q('#scan').click();await finishScan();
 check(q('#summary').textContent.includes('静态 100')&&q('#scanStatus').textContent==='识别完成。','frame detector classifies static fixtures with separate completion status');
-check(all('.badge').every(badge=>badge.dataset.kind==='static'),'successful detection updates visible badges');
+q('.card').click();check(q('#selectionDetails').textContent.includes('静态图'),'successful detection updates the selected sticker details in Tools');q('#clear').click();
 for(let click=0;click<20;click++){q('#scan').click();await finishScan();}
 check(q('#scanStatus').textContent.length<120&&!q('#scanStatus').textContent.includes('检测结束')&&q('#scanStatus').textContent.includes('无需重复检测'),'20 repeated scans replace status instead of appending');
 change('#animation','static');check(q('#page').textContent.includes('100 个'),'static filter includes classified static images');
 change('#animation','animated');check(all('.card').length===0,'animated filter excludes single-frame GIF');
 check(q('#first').disabled&&q('#last').disabled,'empty filtered results disable first and last page');
-change('#animation','all');q('#backAvatar').click();host.remove();favorites().click();await wait();
-check(q('.badge').dataset.kind==='unknown'&&q('#summary').textContent==='我的收藏 100 个','fresh workspace initially distinguishes unclassified images');
+change('#animation','all');q('#close').click();host.remove();await openManager();q('#toolsToggle').click();q('.card').click();
+check(q('#selectionDetails').textContent.includes('未检测')&&q('#summary').textContent==='我的表情 100 个','fresh workspace initially distinguishes unclassified images');
 window.fetch=async()=>{throw Error('fixture failure')};q('#scan').click();await finishScan();
 check(q('#summary').textContent.includes('未能识别 100')&&q('#scanStatus').textContent.includes('可再次点击重试'),'failed reads are reported as retryable failures');
-check(all('.badge').every(badge=>badge.dataset.kind==='failed'&&badge.textContent==='未能识别'),'failed detection never classifies images as static or merely untested');
-change('#animation','unknown');check(all('.card').length===0,'untested filter excludes completed detection failures');
-change('#animation','failed');check(q('#page').textContent.includes('100 个'),'failed filter independently includes failed images');window.fetch=nativeFetch;
+check(q('#selectionDetails').textContent.includes('识别失败')&&!q('#selectionDetails').textContent.includes('静态图'),'failed detection never classifies images as static or merely untested');
+change('#detectionFilter','unknown');check(all('.card').length===0,'untested filter excludes completed detection failures');
+change('#detectionFilter','failed');check(q('#page').textContent.includes('100 个'),'failed filter independently includes failed images');window.fetch=nativeFetch;
 
-q('#importOpen').click();change('#importCode','bad code','input');q('#importParse').click();await wait();
+q('#importOpen').click();q('#shareImportMetadata').click();change('#importCode','bad code','input');q('#importParse').click();await wait();
 check(q('#importStatus').textContent.includes('完整')&&additions===0,'invalid share code never mutates collection');
-const incoming={v:1,stickers:[{gifId:id(0),label:'Existing'},{gifId:id(500),label:'Shared'}]};
-change('#importCode','STGIF1.'+btoa(JSON.stringify(incoming)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),'input');
+const incoming={v:3,stickers:[{gifId:id(0),label:'Existing'},{gifId:id(500),label:'Shared'}]};
+change('#importCode','STGIF3.'+btoa(JSON.stringify(incoming)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),'input');
 q('#importParse').click();await wait();
 check(q('#importPreview').children.length===2&&q('#importStatus').textContent.includes('已收藏 1'),'import preview marks existing favorite for skipping');
 check(additions===0&&q('#importConfirm').disabled,'parsing alone never adds stickers');

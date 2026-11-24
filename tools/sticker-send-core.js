@@ -1,4 +1,4 @@
-/* The caller must obtain explicit confirmation for this exact account, target and frozen selection. */
+/* The caller binds the current account and chat to the confirmed batch or individual quick-picker click. */
 async function sendSelectedStickers(selected, adapters) {
   if (!Array.isArray(selected) || !selected.length || selected.length > 100 || selected.some(item=>!validMetadataId(item.gifId))) throw Error('SEND_SELECTION_INVALID');
   const pending = selected.map(item=>Object.freeze({...item}));

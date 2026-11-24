@@ -1,0 +1,8 @@
+    #organizeImpact{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 16px;margin:8px 0;font-size:13px;line-height:1.5}
+    #organizeImpact:empty{display:none}
+    .impact-metric{display:inline-grid;align-items:baseline;grid-template-columns:1fr auto;gap:3px 6px;font-variant-numeric:tabular-nums}
+    .impact-metric:has(.impact-track){min-width:7em}
+    .impact-metric strong{color:#344054;font-weight:650}
+    .impact-track{display:block;grid-column:1/-1;height:3px;border-radius:2px;overflow:hidden;background:#dce4ee}
+    .impact-track>span{display:block;height:100%;background:#2872b8}
+    .impact-warning{width:100%;padding:6px 10px;color:#843d0a;background:#fff5e7;border-inline-start:3px solid #c67725;border-radius:4px}
