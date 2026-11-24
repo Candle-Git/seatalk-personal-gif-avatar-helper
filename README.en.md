@@ -1,16 +1,16 @@
 [简体中文](README.md) | **English**
 
-# SeaTalk Sticker Helper · v5.3.0
+# SeaTalk Sticker Helper · v5.3.1
 
 ![Find, send and organize favorite stickers in a chat](docs/images/seatalk-sticker-helper-banner.en.svg)
 
 - **Looking for a laughing sticker?** Click the seal wearing a mint-green scarf beside the chat input and search for “laugh.” Quick stickers opens on **All** and searches names and keywords. Choose **Ungrouped** or one of your groups to narrow the results. Check the chat name at the top, then click a sticker to send it.
-- **Want to keep a few stickers from a group chat?** Choose **Collect from chat**, drag across the messages and review your selection. Pick a group and confirm to save them together. Text is skipped and repeated stickers count once.
+- **Want to keep a few stickers from a group chat?** Choose **Collect from chat**, then drag across the messages. The chat toolbar shows how many stickers you selected. Choose **Preview** to review them, optionally pick a group or add keywords, then confirm.
 
 ## Install and find the picker
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) and enable **Allow User Scripts** in its Chrome or Edge extension settings. If the switch is unavailable, enable **Developer mode** on the extensions page.
-2. Install or update [SeaTalk Sticker Helper · v5.3.0](https://greasyfork.org/en/scripts/588931). If you have a 5.2 backup to restore, read [Upgrading from 5.2](#upgrading-from-52) first.
+2. Install or update [SeaTalk Sticker Helper · v5.3.1](https://greasyfork.org/en/scripts/588931). If you have a 5.2 backup to restore, read [Upgrading from 5.2](#upgrading-from-52) first.
 3. Reload [SeaTalk Web](https://seatalkweb.com/) and open a direct or group chat. Look for **Quick stickers** in the chat toolbar. If the panel asks you to load favorites, open the heart-shaped **Favorites** tab in SeaTalk’s own sticker picker once, then reopen Quick stickers.
 
 <details>
@@ -41,4 +41,4 @@ Updating in place keeps your local settings. To restore an old personal backup, 
 
 Previously saved sticker text and private notes remain searchable in the original browser. New backups and share codes omit these two fields. Keep your original 5.2 backup if you need an archive.
 
-[5.3.0 release notes](docs/release-notes-5.3.0.md) · [Report an issue](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues)
+[5.3.1 release notes](docs/release-notes-5.3.1.md) · [Report an issue](https://github.com/Candle-Git/seatalk-personal-gif-avatar-helper/issues)

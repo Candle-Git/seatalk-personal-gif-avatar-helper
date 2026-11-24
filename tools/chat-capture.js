@@ -44,66 +44,84 @@
       return;
     }
 
+    const detail = list.closest('.messages-message-detail-view');
+    const toolbarLeft = document.getElementById('spga-quick-toggle')?.closest('.toolbar-left');
+    const toolbar = toolbarLeft?.parentElement;
+    const editor = toolbar?.closest('.messages-message-editor');
+    if (!editor || !detail.contains(editor)) {
+      notifyAction(ui('请重新打开当前聊天的表情快选。','Reopen Quick stickers in the current chat.'),'info');
+      return;
+    }
+    dismissActionNotice();
     captureActive = true;
     host.dataset.open = host.dataset.managed = 'false';
     host.style.display = 'none'; mini.hidden = true;
     window.dispatchEvent(new CustomEvent('spga:layout-change'));
     const panel = document.createElement('aside');
     panel.id = 'spga-chat-capture';
-    panel.style.cssText = 'position:fixed;z-index:2147483646;max-width:calc(100vw - 24px);';
     const box = panel.attachShadow({mode:'open'});
     box.innerHTML = `<style>
-      :host{font:14px/1.45 system-ui;color:#17243b}*{box-sizing:border-box}
-      section{padding:12px;background:white;border:1px solid #bdd3ec;border-radius:12px;box-shadow:0 5px 26px #19315030;min-width:min(330px,90vw);max-width:min(430px,90vw)}
-      section{overflow-y:auto;overscroll-behavior:contain}
-      .bar,.buttons{display:flex;gap:8px;align-items:center}.bar strong{flex:1}
-      button,input,textarea,select{font:inherit}button{border:1px solid #cbd5e1;background:white;border-radius:6px;padding:5px 10px;cursor:pointer}
-      button.primary{background:#1263b1;color:white;border-color:#1263b1}button:disabled{opacity:.5;cursor:default}
-      p{margin:7px 0;color:#45566a}label,input,textarea,select{display:block;width:100%}label{margin:8px 0}
-      input,textarea,select{border:1px solid #cbd5e1;border-radius:5px;padding:5px;background:white;color:inherit}textarea{resize:vertical}
-      .images{display:flex;gap:4px;overflow:auto;max-height:58px}.images img{width:44px;height:44px;object-fit:contain}
-      [hidden]{display:none!important}.buttons{justify-content:flex-end;margin-top:8px}
-    </style><section role="region"><div class="bar"><strong></strong><button id="cancel" type="button"></button></div>
-    <p id="help"></p><p id="stats" role="status"></p><div id="review" hidden><div class="images"></div>
-    <label><span id="groupLabel"></span><select id="group"></select></label>
-    <label id="newGroupField" hidden><span id="newGroupLabel"></span><input id="newGroupName" maxlength="60"></label>
-    <label><span id="keywordsLabel"></span><input id="keywords" maxlength="2000"></label><p id="impact"></p></div>
-    <div class="buttons"><button id="back" type="button" hidden></button><button class="primary" type="button" id="primary"></button></div></section>`;
-    document.body.append(panel);
+      :host{display:block;min-width:0;max-width:100%;margin:0!important;color:inherit;font:13px/1.4 system-ui,sans-serif}
+      *{box-sizing:border-box}[hidden]{display:none!important}
+      .bar{display:flex;gap:8px;align-items:center;min-width:0}
+      button,input,select,summary{font:inherit;color:inherit}button,summary{cursor:pointer}
+      button{border:0;border-radius:7px;background:transparent;min-height:30px;padding:4px 9px;font-weight:550}
+      .icon{display:inline-grid;place-items:center;width:30px;flex:none;padding:0}
+      button:hover,summary:hover{background:color-mix(in srgb,currentColor 10%,transparent)}
+      :focus-visible{outline:2px solid #438ed6;outline-offset:-2px}
+      #primary{background:#196c61;color:white;white-space:nowrap}#primary:disabled{opacity:.5;cursor:default}
+      #hint{display:inline-flex;align-items:center;gap:6px;flex:1;min-width:0}
+      #stats{font-variant-numeric:tabular-nums}
+      :host([data-review]){flex:1 1 auto;align-self:stretch;min-height:0;max-height:min(48vh,360px);overflow:auto;overscroll-behavior:contain;padding:6px 10px}
+      :host([data-review]) .bar{flex-wrap:wrap;gap:4px 8px}
+      .images{display:flex;gap:5px;overflow-x:auto;padding:5px 0}.images img{width:44px;height:44px;object-fit:contain;flex:none}
+      details{margin-top:2px}summary{width:max-content;max-width:100%;border-radius:5px;padding:3px}
+      .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:8px;padding:5px 0}
+      label{display:grid;gap:3px}input,select{width:100%;min-width:0;padding:4px;border:1px solid color-mix(in srgb,currentColor 35%,transparent);border-radius:5px;background:transparent}
+      select option{background:Canvas;color:CanvasText}#impact{margin:3px 0}#impact:empty{display:none}
+    </style><section role="region"><div class="bar">
+      <button id="back" class="icon" type="button" hidden>${stickerIcon('prev')}</button>
+      <span id="hint">${stickerIcon('collect')}<span id="stats" role="status"></span></span>
+      <button type="button" id="primary"></button><button id="cancel" class="icon" type="button">${stickerIcon('x')}</button></div>
+      <div id="review" hidden><div class="images"></div><details><summary></summary><div class="fields">
+      <label><span id="groupLabel"></span><select id="group"></select></label>
+      <label id="newGroupField" hidden><span id="newGroupLabel"></span><input id="newGroupName" maxlength="60"></label>
+      <label><span id="keywordsLabel"></span><input id="keywords" maxlength="2000"></label></div></details><p id="impact" role="status"></p></div></section>`;
     const el = selector => box.querySelector(selector);
-    el('strong').textContent = ui('从聊天收藏','Collect from chat');
-    el('#cancel').textContent = ui('退出','Close');
-    el('#help').textContent = ui('拖过消息选取表情（最多 100 张），单击已选表情可取消。','Drag across messages to select up to 100 stickers. Click a selected sticker to deselect it.');
-    el('#groupLabel').textContent = tr('移到分组');
+    function nameButton(selector, label) {
+      const button = el(selector);
+      button.title = label; button.setAttribute('aria-label',label);
+    }
+    el('section').setAttribute('aria-label',ui('从聊天收藏','Collect from chat'));
+    const hint = ui('拖过消息选择表情，点已选表情可取消。最多 100 张。','Drag across stickers to select up to 100. Click a selected sticker to deselect it.');
+    el('#hint').title = hint;
+    el('section').setAttribute('aria-description',hint);
+    nameButton('#cancel',ui('退出收藏 (Esc)','Exit collection (Esc)'));
+    nameButton('#back',ui('继续选择','Keep selecting'));
+    el('summary').textContent = ui('分组与关键字','Group and keywords');
+    el('#groupLabel').textContent = ui('分组','Group');
     el('#newGroupLabel').textContent = tr('新分组名称');
-    el('#keywordsLabel').textContent = tr('追加搜索关键字');
-    el('#keywords').placeholder = tr('用逗号分隔，例如：工作，上班，打工人');
-    el('#back').textContent = ui('继续选择','Keep selecting');
+    el('#keywordsLabel').textContent = ui('关键字','Keywords');
+    el('#keywords').placeholder = ui('用逗号分隔','Separate with commas');
+    toolbarLeft.append(panel);
     const chosen = new Map(), marks = new Map(), listeners = new AbortController();
     const signal = listeners.signal;
     let drag = null, mode = 'select', revision = null, reviewedFresh = new Set();
     let saving = false, stopRequested = false, issued = false, ended = false, unsubscribe;
     function validContext() {
-      try { return !ended && list.isConnected && assertWorkspaceAccount() === account &&
+      try { return !ended && list.isConnected && toolbarLeft.isConnected && editor.contains(panel) && detail.contains(editor) && assertWorkspaceAccount() === account &&
         sameStickerSendTarget(target,currentStickerSendTarget(services,visibleSendEditor())); } catch (_) { return false; }
-    }
-    function position() {
-      const rect = list.getBoundingClientRect();
-      const form = el('section'), edge = 8;
-      const top = Math.max(edge, Math.min(rect.top + edge, innerHeight - edge - form.offsetHeight));
-      panel.style.top = top + 'px';
-      form.style.maxHeight = Math.max(0, innerHeight - top - edge) + 'px';
-      panel.style.right = Math.max(8,window.innerWidth-rect.right+8)+'px';
     }
     function finish() {
       if (ended) return;
       ended = true;
       listeners.abort(); unsubscribe?.(); observer.disconnect();
       if (drag && list.hasPointerCapture?.(drag.id)) list.releasePointerCapture(drag.id);
+      editor.classList.remove('spga-capture-positioned');
       selectionStyle.remove(); list.classList.remove('spga-capturing');
       for (const row of marks.keys()) row.classList.remove('spga-capture-picked');
       captureActive = false; panel.remove(); count();
-      if (validReturnFocus()) document.getElementById('spga-quick-toggle')?.focus();
+      if (validReturnFocus()) document.getElementById('spga-quick-toggle')?.focus({preventScroll:true});
     }
     function validReturnFocus() { return host.isConnected && list.isConnected; }
     function changed() {
@@ -115,7 +133,16 @@
       } else if (mode === 'select') paint();
     }
     const selectionStyle = document.createElement('style');
-    selectionStyle.textContent = '.spga-capturing{cursor:crosshair!important;user-select:none!important}.spga-capturing .spga-capture-picked :is(.messages-message-list-item-sticker-content,.messages-message-list-item-image-content){outline:3px solid #1675c9;outline-offset:1px;border-radius:6px}';
+    selectionStyle.textContent = `
+      .spga-capturing{cursor:crosshair!important;user-select:none!important}
+      .spga-capturing .spga-capture-picked :is(.messages-message-list-item-sticker-content,.messages-message-list-item-image-content){outline:3px solid #1675c9;outline-offset:1px;border-radius:6px}
+      .toolbar-left:has(>#spga-chat-capture){flex:1 1 auto;min-width:0}
+      .toolbar-left>#spga-chat-capture{width:100%}
+      .toolbar:has(>.toolbar-left>#spga-chat-capture)>:not(.toolbar-left),.toolbar-left:has(>#spga-chat-capture)>:not(#spga-chat-capture){display:none!important}
+      .spga-capture-positioned{position:relative!important}
+      .messages-message-editor:has(>#spga-chat-capture[data-review]){display:flex!important;flex-direction:column!important}
+      .messages-message-editor:has(>#spga-chat-capture[data-review])>:not(#spga-chat-capture){position:absolute!important;visibility:hidden!important;pointer-events:none!important}
+    `;
     document.head.append(selectionStyle); list.classList.add('spga-capturing');
     const rows = () => [...list.querySelectorAll('.messages-message-list-item')];
     function paint() {
@@ -140,12 +167,14 @@
       return group === undefined ? {keywords} : {group,keywords};
     }
     function update() {
-      const total = chosen.size, freshIds = [...chosen.keys()].filter(id=>!saved(id)), fresh = freshIds.length;
-      el('#stats').textContent = ui(`已选 ${total} 张 · 待新增 ${fresh} 张 · 已收藏 ${total-fresh} 张`,`${total} selected · ${fresh} new · ${total-fresh} already saved`);
+      const total = chosen.size;
       if (mode === 'select') {
-        el('#primary').textContent = ui('预览所选','Review selection'); el('#primary').disabled = !total;
+        el('#stats').textContent = ui(`已选 ${total}`,`${total} selected`);
+        el('#primary').textContent = ui('预览','Preview'); el('#primary').disabled = !total;
         return;
       }
+      const freshIds = [...chosen.keys()].filter(id=>!saved(id)), fresh = freshIds.length;
+      el('#stats').textContent = ui(`新增 ${fresh} · 已收藏 ${total-fresh}`,`${fresh} new · ${total-fresh} already saved`);
       reviewedFresh = new Set(freshIds);
       el('#newGroupField').hidden = el('#group').value !== 'new';
       try {
@@ -196,14 +225,22 @@
       if (!validContext()) { changed(); return; }
       mode = on?'review':'select'; revision = on?personalSnapshot.revision:null;
       el('#review').hidden = el('#back').hidden = on===false;
-      el('#help').hidden = on;
+      panel.toggleAttribute('data-review',on);
+      el('#hint').title = on ? '' : hint;
+      if (on) {
+        if (getComputedStyle(editor).position === 'static') editor.classList.add('spga-capture-positioned');
+        editor.prepend(panel);
+      } else {
+        toolbarLeft.append(panel);
+        editor.classList.remove('spga-capture-positioned');
+      }
       el('.images').replaceChildren();
       if (on) {
         const select = el('#group');
         populateOrganizationGroups(select, personalGroupNames(), select.value);
         for (const item of chosen.values()) { const img=document.createElement('img');img.alt='';img.referrerPolicy='no-referrer';img.src=item.url;el('.images').append(img); }
       }
-      update(); if (on) el('#group').focus();
+      update(); (on ? el('#back') : el('#primary')).focus({preventScroll:true});
     }
     async function confirm() {
       if (saving || !validContext() || !chosen.size || mode!=='review' || el('#primary').disabled) return;
@@ -214,7 +251,7 @@
         const pending=[...chosen.values()].filter(item=>!saved(item.gifId)).map((item,i)=>({...item,label:'Sticker '+(i+1)}));
         if (pending.some(item=>!reviewedFresh.has(item.gifId))) { update(); return; }
         saving=true; el('#primary').disabled=true;el('#back').disabled=true;
-        el('#cancel').textContent=ui('停止后续收藏','Stop remaining');
+        nameButton('#cancel',ui('停止后续收藏','Stop remaining'));
         el('#group').disabled=el('#newGroupName').disabled=el('#keywords').disabled=true;
         const requireContext = () => { if (!validContext()) throw Error('CAPTURE_CHANGED'); };
         requireContext();
@@ -274,11 +311,12 @@
       if (el('#group').value === 'new') el('#newGroupName').focus();
     };
     el('#keywords').oninput=el('#newGroupName').oninput=update;
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();cancel();}},{capture:true,signal});
-    window.addEventListener('resize',position,{signal});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape' && !e.isComposing){e.preventDefault();e.stopPropagation();cancel();}},{capture:true,signal});
     const observer=new MutationObserver(changed);
     observer.observe(list,{childList:true,subtree:true});
-    const detail=list.closest('.messages-message-detail-view'); if(detail?.parentElement) observer.observe(detail.parentElement,{childList:true,subtree:false});
+    for (const node of [detail.parentElement,editor.parentElement,editor,toolbar,toolbarLeft]) {
+      if (node) observer.observe(node,{childList:true});
+    }
     if(typeof services.store.subscribe==='function') unsubscribe=services.store.subscribe(changed);
-    position(); update(); el('#cancel').focus();
+    update(); el('#cancel').focus({preventScroll:true});
   }

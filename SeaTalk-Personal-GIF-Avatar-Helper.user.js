@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         SeaTalk 表情助手
-// @name:zh-CN   SeaTalk 表情助手 · v5.3.0
-// @name:en      SeaTalk Sticker Helper · v5.3.0
+// @name:zh-CN   SeaTalk 表情助手 · v5.3.1
+// @name:en      SeaTalk Sticker Helper · v5.3.1
 // @namespace    https://seatalkweb.com/
-// @version      5.3.0
+// @version      5.3.1
 // @description  从聊天工具栏点选发送表情，拖选收藏，按组整理、搜索和备份个人备注。
 // @description:en Send a sticker from the chat toolbar, collect stickers from messages, and organize, search and back up your notes.
 // @author       Yixin.Zhong × Codex
@@ -36,9 +36,9 @@
   const DIAGNOSTIC_REPORT_ID = "seatalk-personal-gif-avatar-report";
   const UPDATE_MODAL_ID = "seatalk-personal-gif-avatar-update-modal";
   const EASTER_EGG_LAYER_ID = "seatalk-personal-gif-avatar-easter-egg";
-  // 所有界面版本号和更新提示都读取同一个常量，避免以后只改到其中一处。
-  const SCRIPT_VERSION = "5.3.0";
-  const UPDATE_NOTICE_VERSION = SCRIPT_VERSION;
+  // 界面显示已安装的脚本版本，更新提示单独记录已读状态。
+  const SCRIPT_VERSION = "5.3.1";
+  const UPDATE_NOTICE_VERSION = "5.3.0";
 
   // 动图验证只读取 SeaTalk 图片域名中的候选文件，不会上传、保存或打印带签名参数的地址。
   // 20 MB 上限和 8 秒超时用于避免异常大文件或失效链接让页面一直等待。
@@ -2748,7 +2748,7 @@
       createElement("span", { className: "spga-update-badge", textContent: t("updateBadge") }),
       createElement("span", {
         className: "spga-update-version",
-        textContent: t("updateVersion", { version: UPDATE_NOTICE_VERSION }),
+        textContent: t("updateVersion", { version: SCRIPT_VERSION }),
       })
     );
 
@@ -4940,7 +4940,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
   let locale = initialLocale === 'en' ? 'en' : 'zh';
   const labels = {
     "从聊天收藏": "Collect from chat",
-    "打开「表情快选 → 从聊天收藏」，拖过消息选择表情。可选分组、追加搜索关键字，或直接确认收藏。按 Esc 可取消。": "Choose Quick stickers → Collect from chat and drag across messages. Pick a group or add search keywords if you like, then confirm. Press Esc to cancel.",
+    "打开「表情快选 → 从聊天收藏」，拖过消息选表情。点工具栏的「预览」核对，可选分组或加关键字，再确认收藏。按 Esc 退出。": "Choose Quick stickers → Collect from chat and drag across messages. Choose Preview in the chat toolbar, optionally pick a group or add keywords, then confirm. Press Esc to exit.",
     "工具": "Tools",
     "生效的筛选条件": "Active filters",
     "收藏分组": "Sticker groups",
@@ -5242,7 +5242,7 @@ function createFavoritesLocalizer(initialLocale = 'zh') {
 
   const language = createFavoritesLocalizer(initialLocale);
   const { ui, tr } = language;
-  const helperVersion = "5.3.0";
+  const helperVersion = "5.3.1";
 /* Metadata only. This module never stores preview URLs, credentials or account identifiers in exports. */
 function validMetadataId(id) { return typeof id === 'string' && /^[a-zA-Z0-9]{64}$/.test(id) && ['b0701','b0702','b0705'].includes(id.slice(33,38)); }
 function metadataText(value, max, multiline = false) {
@@ -5839,7 +5839,7 @@ function getFavoritesAccountModuleUrl() {
     <div class="dialog-actions"><button data-close="organizeDialog">取消</button><button id="organizeApply" class="primary" disabled>保存整理</button></div></dialog>
   <dialog id="guideDialog" aria-labelledby="guideTitle"><div class="dialog-header"><h2 id="guideTitle">我的表情使用指南</h2><button data-close="guideDialog" aria-label="关闭使用指南">×</button></div><div class="dialog-body guide"><p>整理、搜索和分享你的 SeaTalk 收藏表情。</p>
     <section><h3>开始前</h3><p>点击聊天输入框工具栏的「表情快选」。点击表情可直接发送，点「管理表情」可整理收藏。若收藏尚未载入，先在 SeaTalk 原生表情面板打开一次爱心收藏。</p></section>
-    <section><h3>从聊天收藏</h3><p>打开「表情快选 → 从聊天收藏」，拖过消息选择表情。可选分组、追加搜索关键字，或直接确认收藏。按 Esc 可取消。</p></section>
+    <section><h3>从聊天收藏</h3><p>打开「表情快选 → 从聊天收藏」，拖过消息选表情。点工具栏的「预览」核对，可选分组或加关键字，再确认收藏。按 Esc 退出。</p></section>
     <section><h3>收藏同步</h3><p>助手打开时，每 1.5 秒读取 SeaTalk 当前账号的收藏状态，自动同步新增和移除；也可点击「同步收藏」。原生表情面板关闭后仍可同步。这只更新右侧列表，保留备注、筛选和仍在收藏中的勾选，不会刷新网页或重新请求服务器。发送、添加、删除、识别或弹窗打开期间暂停同步，结束后恢复。操作结果不确定时，仍需刷新网页核对服务器保存结果。</p></section>
     <section><h3>分组与批量整理</h3><p>管理页搜索当前分组。聊天工具栏的「表情快选」默认搜索全部收藏，切换分组后只搜索该组。两处都可以点最左侧的「全部」跨组搜索。</p><p>多选后点「批量整理」，可改名、选分组或追加搜索关键字。重复的关键字会合并。留空可保留原值，覆盖已有名称前会显示数量。</p></section>
     <section><h3>选择和查看表情</h3><p>单击选一张，Ctrl 或 ⌘ 加单击可增减选择，Shift 加单击可连续选择。从网格空白处拖动可框选，按住 Shift 拖动可追加。选中一张后可放大预览或编辑名称、搜索关键字和分组。在「工具」内可全选本页或筛选。</p><p>「图片形式」按生效的动图、静态图或未知筛选；「备注状态」筛选已备注、未备注或需复核；「检测状态」单独查看未检测、已识别或识别失败。可先识别动图，也可在「编辑表情」中手动指定图片形式；手动标注优先，选择「自动识别」可恢复检测结果。未检测或识别失败不影响备注、搜索或分享。</p></section>
@@ -7253,66 +7253,84 @@ function getFavoritesAccountModuleUrl() {
       return;
     }
 
+    const detail = list.closest('.messages-message-detail-view');
+    const toolbarLeft = document.getElementById('spga-quick-toggle')?.closest('.toolbar-left');
+    const toolbar = toolbarLeft?.parentElement;
+    const editor = toolbar?.closest('.messages-message-editor');
+    if (!editor || !detail.contains(editor)) {
+      notifyAction(ui('请重新打开当前聊天的表情快选。','Reopen Quick stickers in the current chat.'),'info');
+      return;
+    }
+    dismissActionNotice();
     captureActive = true;
     host.dataset.open = host.dataset.managed = 'false';
     host.style.display = 'none'; mini.hidden = true;
     window.dispatchEvent(new CustomEvent('spga:layout-change'));
     const panel = document.createElement('aside');
     panel.id = 'spga-chat-capture';
-    panel.style.cssText = 'position:fixed;z-index:2147483646;max-width:calc(100vw - 24px);';
     const box = panel.attachShadow({mode:'open'});
     box.innerHTML = `<style>
-      :host{font:14px/1.45 system-ui;color:#17243b}*{box-sizing:border-box}
-      section{padding:12px;background:white;border:1px solid #bdd3ec;border-radius:12px;box-shadow:0 5px 26px #19315030;min-width:min(330px,90vw);max-width:min(430px,90vw)}
-      section{overflow-y:auto;overscroll-behavior:contain}
-      .bar,.buttons{display:flex;gap:8px;align-items:center}.bar strong{flex:1}
-      button,input,textarea,select{font:inherit}button{border:1px solid #cbd5e1;background:white;border-radius:6px;padding:5px 10px;cursor:pointer}
-      button.primary{background:#1263b1;color:white;border-color:#1263b1}button:disabled{opacity:.5;cursor:default}
-      p{margin:7px 0;color:#45566a}label,input,textarea,select{display:block;width:100%}label{margin:8px 0}
-      input,textarea,select{border:1px solid #cbd5e1;border-radius:5px;padding:5px;background:white;color:inherit}textarea{resize:vertical}
-      .images{display:flex;gap:4px;overflow:auto;max-height:58px}.images img{width:44px;height:44px;object-fit:contain}
-      [hidden]{display:none!important}.buttons{justify-content:flex-end;margin-top:8px}
-    </style><section role="region"><div class="bar"><strong></strong><button id="cancel" type="button"></button></div>
-    <p id="help"></p><p id="stats" role="status"></p><div id="review" hidden><div class="images"></div>
-    <label><span id="groupLabel"></span><select id="group"></select></label>
-    <label id="newGroupField" hidden><span id="newGroupLabel"></span><input id="newGroupName" maxlength="60"></label>
-    <label><span id="keywordsLabel"></span><input id="keywords" maxlength="2000"></label><p id="impact"></p></div>
-    <div class="buttons"><button id="back" type="button" hidden></button><button class="primary" type="button" id="primary"></button></div></section>`;
-    document.body.append(panel);
+      :host{display:block;min-width:0;max-width:100%;margin:0!important;color:inherit;font:13px/1.4 system-ui,sans-serif}
+      *{box-sizing:border-box}[hidden]{display:none!important}
+      .bar{display:flex;gap:8px;align-items:center;min-width:0}
+      button,input,select,summary{font:inherit;color:inherit}button,summary{cursor:pointer}
+      button{border:0;border-radius:7px;background:transparent;min-height:30px;padding:4px 9px;font-weight:550}
+      .icon{display:inline-grid;place-items:center;width:30px;flex:none;padding:0}
+      button:hover,summary:hover{background:color-mix(in srgb,currentColor 10%,transparent)}
+      :focus-visible{outline:2px solid #438ed6;outline-offset:-2px}
+      #primary{background:#196c61;color:white;white-space:nowrap}#primary:disabled{opacity:.5;cursor:default}
+      #hint{display:inline-flex;align-items:center;gap:6px;flex:1;min-width:0}
+      #stats{font-variant-numeric:tabular-nums}
+      :host([data-review]){flex:1 1 auto;align-self:stretch;min-height:0;max-height:min(48vh,360px);overflow:auto;overscroll-behavior:contain;padding:6px 10px}
+      :host([data-review]) .bar{flex-wrap:wrap;gap:4px 8px}
+      .images{display:flex;gap:5px;overflow-x:auto;padding:5px 0}.images img{width:44px;height:44px;object-fit:contain;flex:none}
+      details{margin-top:2px}summary{width:max-content;max-width:100%;border-radius:5px;padding:3px}
+      .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:8px;padding:5px 0}
+      label{display:grid;gap:3px}input,select{width:100%;min-width:0;padding:4px;border:1px solid color-mix(in srgb,currentColor 35%,transparent);border-radius:5px;background:transparent}
+      select option{background:Canvas;color:CanvasText}#impact{margin:3px 0}#impact:empty{display:none}
+    </style><section role="region"><div class="bar">
+      <button id="back" class="icon" type="button" hidden>${stickerIcon('prev')}</button>
+      <span id="hint">${stickerIcon('collect')}<span id="stats" role="status"></span></span>
+      <button type="button" id="primary"></button><button id="cancel" class="icon" type="button">${stickerIcon('x')}</button></div>
+      <div id="review" hidden><div class="images"></div><details><summary></summary><div class="fields">
+      <label><span id="groupLabel"></span><select id="group"></select></label>
+      <label id="newGroupField" hidden><span id="newGroupLabel"></span><input id="newGroupName" maxlength="60"></label>
+      <label><span id="keywordsLabel"></span><input id="keywords" maxlength="2000"></label></div></details><p id="impact" role="status"></p></div></section>`;
     const el = selector => box.querySelector(selector);
-    el('strong').textContent = ui('从聊天收藏','Collect from chat');
-    el('#cancel').textContent = ui('退出','Close');
-    el('#help').textContent = ui('拖过消息选取表情（最多 100 张），单击已选表情可取消。','Drag across messages to select up to 100 stickers. Click a selected sticker to deselect it.');
-    el('#groupLabel').textContent = tr('移到分组');
+    function nameButton(selector, label) {
+      const button = el(selector);
+      button.title = label; button.setAttribute('aria-label',label);
+    }
+    el('section').setAttribute('aria-label',ui('从聊天收藏','Collect from chat'));
+    const hint = ui('拖过消息选择表情，点已选表情可取消。最多 100 张。','Drag across stickers to select up to 100. Click a selected sticker to deselect it.');
+    el('#hint').title = hint;
+    el('section').setAttribute('aria-description',hint);
+    nameButton('#cancel',ui('退出收藏 (Esc)','Exit collection (Esc)'));
+    nameButton('#back',ui('继续选择','Keep selecting'));
+    el('summary').textContent = ui('分组与关键字','Group and keywords');
+    el('#groupLabel').textContent = ui('分组','Group');
     el('#newGroupLabel').textContent = tr('新分组名称');
-    el('#keywordsLabel').textContent = tr('追加搜索关键字');
-    el('#keywords').placeholder = tr('用逗号分隔，例如：工作，上班，打工人');
-    el('#back').textContent = ui('继续选择','Keep selecting');
+    el('#keywordsLabel').textContent = ui('关键字','Keywords');
+    el('#keywords').placeholder = ui('用逗号分隔','Separate with commas');
+    toolbarLeft.append(panel);
     const chosen = new Map(), marks = new Map(), listeners = new AbortController();
     const signal = listeners.signal;
     let drag = null, mode = 'select', revision = null, reviewedFresh = new Set();
     let saving = false, stopRequested = false, issued = false, ended = false, unsubscribe;
     function validContext() {
-      try { return !ended && list.isConnected && assertWorkspaceAccount() === account &&
+      try { return !ended && list.isConnected && toolbarLeft.isConnected && editor.contains(panel) && detail.contains(editor) && assertWorkspaceAccount() === account &&
         sameStickerSendTarget(target,currentStickerSendTarget(services,visibleSendEditor())); } catch (_) { return false; }
-    }
-    function position() {
-      const rect = list.getBoundingClientRect();
-      const form = el('section'), edge = 8;
-      const top = Math.max(edge, Math.min(rect.top + edge, innerHeight - edge - form.offsetHeight));
-      panel.style.top = top + 'px';
-      form.style.maxHeight = Math.max(0, innerHeight - top - edge) + 'px';
-      panel.style.right = Math.max(8,window.innerWidth-rect.right+8)+'px';
     }
     function finish() {
       if (ended) return;
       ended = true;
       listeners.abort(); unsubscribe?.(); observer.disconnect();
       if (drag && list.hasPointerCapture?.(drag.id)) list.releasePointerCapture(drag.id);
+      editor.classList.remove('spga-capture-positioned');
       selectionStyle.remove(); list.classList.remove('spga-capturing');
       for (const row of marks.keys()) row.classList.remove('spga-capture-picked');
       captureActive = false; panel.remove(); count();
-      if (validReturnFocus()) document.getElementById('spga-quick-toggle')?.focus();
+      if (validReturnFocus()) document.getElementById('spga-quick-toggle')?.focus({preventScroll:true});
     }
     function validReturnFocus() { return host.isConnected && list.isConnected; }
     function changed() {
@@ -7324,7 +7342,16 @@ function getFavoritesAccountModuleUrl() {
       } else if (mode === 'select') paint();
     }
     const selectionStyle = document.createElement('style');
-    selectionStyle.textContent = '.spga-capturing{cursor:crosshair!important;user-select:none!important}.spga-capturing .spga-capture-picked :is(.messages-message-list-item-sticker-content,.messages-message-list-item-image-content){outline:3px solid #1675c9;outline-offset:1px;border-radius:6px}';
+    selectionStyle.textContent = `
+      .spga-capturing{cursor:crosshair!important;user-select:none!important}
+      .spga-capturing .spga-capture-picked :is(.messages-message-list-item-sticker-content,.messages-message-list-item-image-content){outline:3px solid #1675c9;outline-offset:1px;border-radius:6px}
+      .toolbar-left:has(>#spga-chat-capture){flex:1 1 auto;min-width:0}
+      .toolbar-left>#spga-chat-capture{width:100%}
+      .toolbar:has(>.toolbar-left>#spga-chat-capture)>:not(.toolbar-left),.toolbar-left:has(>#spga-chat-capture)>:not(#spga-chat-capture){display:none!important}
+      .spga-capture-positioned{position:relative!important}
+      .messages-message-editor:has(>#spga-chat-capture[data-review]){display:flex!important;flex-direction:column!important}
+      .messages-message-editor:has(>#spga-chat-capture[data-review])>:not(#spga-chat-capture){position:absolute!important;visibility:hidden!important;pointer-events:none!important}
+    `;
     document.head.append(selectionStyle); list.classList.add('spga-capturing');
     const rows = () => [...list.querySelectorAll('.messages-message-list-item')];
     function paint() {
@@ -7349,12 +7376,14 @@ function getFavoritesAccountModuleUrl() {
       return group === undefined ? {keywords} : {group,keywords};
     }
     function update() {
-      const total = chosen.size, freshIds = [...chosen.keys()].filter(id=>!saved(id)), fresh = freshIds.length;
-      el('#stats').textContent = ui(`已选 ${total} 张 · 待新增 ${fresh} 张 · 已收藏 ${total-fresh} 张`,`${total} selected · ${fresh} new · ${total-fresh} already saved`);
+      const total = chosen.size;
       if (mode === 'select') {
-        el('#primary').textContent = ui('预览所选','Review selection'); el('#primary').disabled = !total;
+        el('#stats').textContent = ui(`已选 ${total}`,`${total} selected`);
+        el('#primary').textContent = ui('预览','Preview'); el('#primary').disabled = !total;
         return;
       }
+      const freshIds = [...chosen.keys()].filter(id=>!saved(id)), fresh = freshIds.length;
+      el('#stats').textContent = ui(`新增 ${fresh} · 已收藏 ${total-fresh}`,`${fresh} new · ${total-fresh} already saved`);
       reviewedFresh = new Set(freshIds);
       el('#newGroupField').hidden = el('#group').value !== 'new';
       try {
@@ -7405,14 +7434,22 @@ function getFavoritesAccountModuleUrl() {
       if (!validContext()) { changed(); return; }
       mode = on?'review':'select'; revision = on?personalSnapshot.revision:null;
       el('#review').hidden = el('#back').hidden = on===false;
-      el('#help').hidden = on;
+      panel.toggleAttribute('data-review',on);
+      el('#hint').title = on ? '' : hint;
+      if (on) {
+        if (getComputedStyle(editor).position === 'static') editor.classList.add('spga-capture-positioned');
+        editor.prepend(panel);
+      } else {
+        toolbarLeft.append(panel);
+        editor.classList.remove('spga-capture-positioned');
+      }
       el('.images').replaceChildren();
       if (on) {
         const select = el('#group');
         populateOrganizationGroups(select, personalGroupNames(), select.value);
         for (const item of chosen.values()) { const img=document.createElement('img');img.alt='';img.referrerPolicy='no-referrer';img.src=item.url;el('.images').append(img); }
       }
-      update(); if (on) el('#group').focus();
+      update(); (on ? el('#back') : el('#primary')).focus({preventScroll:true});
     }
     async function confirm() {
       if (saving || !validContext() || !chosen.size || mode!=='review' || el('#primary').disabled) return;
@@ -7423,7 +7460,7 @@ function getFavoritesAccountModuleUrl() {
         const pending=[...chosen.values()].filter(item=>!saved(item.gifId)).map((item,i)=>({...item,label:'Sticker '+(i+1)}));
         if (pending.some(item=>!reviewedFresh.has(item.gifId))) { update(); return; }
         saving=true; el('#primary').disabled=true;el('#back').disabled=true;
-        el('#cancel').textContent=ui('停止后续收藏','Stop remaining');
+        nameButton('#cancel',ui('停止后续收藏','Stop remaining'));
         el('#group').disabled=el('#newGroupName').disabled=el('#keywords').disabled=true;
         const requireContext = () => { if (!validContext()) throw Error('CAPTURE_CHANGED'); };
         requireContext();
@@ -7483,13 +7520,14 @@ function getFavoritesAccountModuleUrl() {
       if (el('#group').value === 'new') el('#newGroupName').focus();
     };
     el('#keywords').oninput=el('#newGroupName').oninput=update;
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();cancel();}},{capture:true,signal});
-    window.addEventListener('resize',position,{signal});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape' && !e.isComposing){e.preventDefault();e.stopPropagation();cancel();}},{capture:true,signal});
     const observer=new MutationObserver(changed);
     observer.observe(list,{childList:true,subtree:true});
-    const detail=list.closest('.messages-message-detail-view'); if(detail?.parentElement) observer.observe(detail.parentElement,{childList:true,subtree:false});
+    for (const node of [detail.parentElement,editor.parentElement,editor,toolbar,toolbarLeft]) {
+      if (node) observer.observe(node,{childList:true});
+    }
     if(typeof services.store.subscribe==='function') unsubscribe=services.store.subscribe(changed);
-    position(); update(); el('#cancel').focus();
+    update(); el('#cancel').focus({preventScroll:true});
   }
 
   async function detect(item) {
