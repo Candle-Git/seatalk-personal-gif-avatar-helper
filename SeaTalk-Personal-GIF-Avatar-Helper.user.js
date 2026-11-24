@@ -6893,7 +6893,7 @@ function getFavoritesAccountModuleUrl() {
     quickView = null;
     view.unsubscribe?.();
     view.cleanup();
-    view.panel.remove();
+    view.layer.remove();
     view.anchor.setAttribute('aria-expanded','false');
     if (returnFocus && view.anchor.isConnected) view.anchor.focus();
   }
@@ -6954,6 +6954,9 @@ function getFavoritesAccountModuleUrl() {
     if (!anchor?.isConnected || !anchor.getClientRects().length) return;
     if (host.dataset.open === 'true' && !hideWorkspace()) return;
     if (!mini.hidden) mini.hidden = true;
+    // The chat and our body-mounted overlay may have different CSS zoom or transforms.
+    const layer = document.createElement('div');
+    layer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483646;margin:0;padding:0;border:0';
     const panel = document.createElement('section');
     panel.id = 'st-quick-stickers';
     panel.lang = language.locale;
@@ -6961,9 +6964,9 @@ function getFavoritesAccountModuleUrl() {
     panel.setAttribute('aria-label', ui('表情快选','Quick stickers'));
     const quickRoot = panel.attachShadow({mode:'open'});
     quickRoot.innerHTML = `<style>
-      :host{display:block;position:fixed;z-index:2147483646;width:min(378px,calc(100vw - 16px));font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#263447}
-      *{box-sizing:border-box}.picker{display:flex;flex-direction:column;max-height:inherit;border:1px solid #d7e0ea;border-radius:12px;background:#fff;box-shadow:0 9px 32px #24364d2e;overflow:hidden}
-      header,.searchbar,footer{display:flex;align-items:center;gap:8px;padding:8px 12px}header{background:#f3f6fa}header strong{font-size:15px}#target{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#667085;font-size:12px}
+      :host{display:block;position:absolute;pointer-events:auto;margin:0;transform-origin:top left;font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#263447}
+      *{box-sizing:border-box}.picker{display:flex;flex-direction:column;max-height:inherit;border:1px solid #d7e0ea;border-radius:12px;background:#fff;box-shadow:0 9px 32px #24364d2e;overflow:auto;overscroll-behavior:contain}
+      header,.searchbar,footer{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px}header{background:#f3f6fa}header strong{font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#target{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#667085;font-size:12px}
       button,input{font:inherit;color:inherit}button{background:transparent;border:0;border-radius:6px;padding:5px;cursor:pointer}button:hover,button:focus-visible{background:#edf4fd;color:#0866c6}button:focus-visible,input:focus-visible{outline:2px solid #3783cc;outline-offset:1px}
       .icon-action,#collect{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:34px;min-height:34px}.st-icon{flex:none;pointer-events:none}
       .search-field{position:relative;flex:1;min-width:0}.search-field>.st-icon{position:absolute;inset-inline-start:9px;top:50%;transform:translateY(-50%);color:#667085}
@@ -6973,7 +6976,7 @@ function getFavoritesAccountModuleUrl() {
       #groupTabs button{flex:none;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid #e1e7ee;border-radius:16px;background:white;color:#46556b;font-size:12px;min-height:28px;padding:3px 9px}
       #groupTabs button:hover,#groupStrip [aria-pressed=true]{background:#eaf3ff;color:#0757a6;border-color:#a9c9ee}
       #groupTabs #allGroups{background:#edf7f5;border-color:#acd6cf;color:#176258;font-weight:600}#groupTabs #allGroups[aria-pressed=true]{background:#14695e;border-color:#14695e;color:white}
-      main{min-height:0;overflow:auto;overscroll-behavior:contain;padding:3px 10px;scrollbar-gutter:stable}#stickers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.sticker{min-width:0;aspect-ratio:1;display:grid;place-items:center;touch-action:manipulation}.sticker img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+      main{min-height:0;overflow:auto;overscroll-behavior:contain;padding:3px 10px;scrollbar-gutter:stable}main:has(.sticker){min-height:68px}#stickers{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,60px),1fr));gap:4px}.sticker{min-width:0;aspect-ratio:1;display:grid;place-items:center;touch-action:manipulation}.sticker img{width:100%;height:100%;object-fit:contain;pointer-events:none}
       #status{flex:1;min-width:0;margin:0;color:#53657a;font-size:12px;overflow-wrap:anywhere}footer{flex-wrap:wrap;border-top:1px solid #e8edf2}footer button{color:#0866c6;font-weight:550}#collect{gap:5px}#collect:disabled{opacity:.5;cursor:default}
     </style><div class="picker"><header><strong></strong><span id="target"></span><button id="manage" class="icon-action" type="button">${stickerIcon('grid')}</button><button id="close" class="icon-action" type="button">${stickerIcon('x')}</button></header>
     <div class="searchbar"><label class="search-field">${stickerIcon('search')}<input type="search"></label><button id="sort" class="icon-action" type="button"></button></div>
@@ -7013,20 +7016,44 @@ function getFavoritesAccountModuleUrl() {
         openingAccount = nativeWorkspaceAccountId(openingServices);
       } catch (_) { /* Management remains available without a sendable chat. */ }
     }
-    const view = {panel,anchor,toolbar:anchor.parentElement,grid,status,services:null,account:0,target:null,unsubscribe:null,cleanup:()=>{}};
+    const view = {layer,anchor,toolbar:anchor.parentElement,grid,status,services:null,account:0,target:null,unsubscribe:null,cleanup:()=>{}};
     quickView = view;
     anchor.setAttribute('aria-expanded','true');
-    document.body.append(panel);
+    layer.append(panel);
+    document.body.append(layer);
 
+    const viewport = window.visualViewport;
+    let positionFrame = 0;
     function position() {
       if (!anchor.isConnected || !anchor.getClientRects().length) { closeQuickPicker(); return; }
       const rect = anchor.getBoundingClientRect();
-      const below = innerHeight - rect.bottom, above = rect.top;
+      const frame = layer.getBoundingClientRect();
+      const frameScaleX = frame.width / layer.offsetWidth, frameScaleY = frame.height / layer.offsetHeight;
+      const scale = rect.width / anchor.offsetWidth;
+      if (!(scale > 0 && frameScaleX > 0 && frameScaleY > 0)) return;
+      // DOMRects and the visual viewport use layout CSS pixels, even at browser zoom.
+      const x = viewport?.offsetLeft ?? 0, y = viewport?.offsetTop ?? 0;
+      const width = viewport?.width ?? innerWidth, height = viewport?.height ?? innerHeight;
+      const margin = 8, gap = 5 * scale;
+      const popupWidth = Math.min(378 * scale, Math.max(0, width - 2 * margin));
+      const left = Math.max(x + margin, Math.min(rect.left, x + width - popupWidth - margin));
+      const above = rect.top - gap - y - margin, below = y + height - margin - rect.bottom - gap;
       const placeAbove = above >= below;
-      panel.style.maxHeight = Math.max(100, Math.min(440, (placeAbove ? above : below) - 12)) + 'px';
-      panel.style.left = Math.max(8,Math.min(innerWidth - panel.offsetWidth - 8,rect.left)) + 'px';
-      if (placeAbove) { panel.style.bottom = (innerHeight - rect.top + 5) + 'px'; panel.style.top = 'auto'; }
-      else { panel.style.top = (rect.bottom + 5) + 'px'; panel.style.bottom = 'auto'; }
+      const edge = placeAbove ? Math.min(rect.top - gap, y + height - margin) : Math.max(rect.bottom + gap, y + margin);
+      const room = placeAbove ? edge - y - margin : y + height - margin - edge;
+      panel.style.width = popupWidth / scale + 'px';
+      panel.style.maxHeight = Math.min(440, Math.max(0, room) / scale) + 'px';
+      panel.style.left = (left - frame.left) / frameScaleX + 'px';
+      panel.style.top = (edge - frame.top) / frameScaleY + 'px';
+      // Translate in local coordinates so async content stays attached above the icon.
+      panel.style.transform = 'scale(' + scale / frameScaleX + ',' + scale / frameScaleY + ')' +
+        (placeAbove ? ' translateY(-100%)' : '');
+    }
+    function schedulePosition() {
+      if (!positionFrame) positionFrame = requestAnimationFrame(() => {
+        positionFrame = 0;
+        if (quickView === view) position();
+      });
     }
     function outside(event) {
       const path = event.composedPath();
@@ -7037,8 +7064,18 @@ function getFavoritesAccountModuleUrl() {
     }
     document.addEventListener('pointerdown',outside,true);
     document.addEventListener('keydown',escape,true);
-    window.addEventListener('resize',position);
-    window.addEventListener('scroll',position,true);
+    window.addEventListener('resize',schedulePosition);
+    window.addEventListener('scroll',schedulePosition,true);
+    viewport?.addEventListener('resize',schedulePosition);
+    viewport?.addEventListener('scroll',schedulePosition);
+    const sizeWatch = new ResizeObserver(schedulePosition);
+    sizeWatch.observe(anchor); sizeWatch.observe(layer);
+    const styleWatch = new MutationObserver(schedulePosition);
+    for (let node = anchor; node; node = node.parentElement) styleWatch.observe(node,{attributes:true});
+    function onTransitionEnd(event) {
+      if (event.target instanceof Element && event.target.contains(anchor)) schedulePosition();
+    }
+    document.addEventListener('transitionend',onTransitionEnd,true);
     function openingChatChanged() {
       return !anchor.isConnected || anchor.parentElement !== view.toolbar ||
         (openingTitle && (!openingTitle.isConnected || openingTitle.textContent.trim() !== openingText));
@@ -7049,7 +7086,10 @@ function getFavoritesAccountModuleUrl() {
     remount.observe(document.body,{childList:true,subtree:true});
     view.cleanup = () => {
       document.removeEventListener('pointerdown',outside,true); document.removeEventListener('keydown',escape,true);
-      window.removeEventListener('resize',position); window.removeEventListener('scroll',position,true); remount.disconnect(); titleWatch.disconnect();
+      window.removeEventListener('resize',schedulePosition); window.removeEventListener('scroll',schedulePosition,true);
+      viewport?.removeEventListener('resize',schedulePosition); viewport?.removeEventListener('scroll',schedulePosition);
+      document.removeEventListener('transitionend',onTransitionEnd,true);
+      cancelAnimationFrame(positionFrame); sizeWatch.disconnect(); styleWatch.disconnect(); remount.disconnect(); titleWatch.disconnect();
     };
     el('#close').onclick = () => closeQuickPicker(true);
     el('#manage').onclick = () => { if (!busy()) { closeQuickPicker(); revealWorkspace(); } };

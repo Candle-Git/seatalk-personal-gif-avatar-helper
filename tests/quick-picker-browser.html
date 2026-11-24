@@ -200,6 +200,45 @@
     root.querySelector('#close').click();button.click();
     root=document.getElementById('st-quick-stickers').shadowRoot;
     check(await wait(()=>pressed(pinned()) && all().length===50),'each fresh open starts on All');
+    const editor=document.querySelector('.messages-message-editor');
+    const popup=root.host, input=root.querySelector('input');
+    const approx=(a,b)=>Math.abs(a-b)<1.25;
+    const initialInputHeight=input.getBoundingClientRect().height;
+    function fitsAtScale(scale){
+      const rect=popup.getBoundingClientRect(), anchor=button.getBoundingClientRect();
+      const viewport=window.visualViewport;
+      const minX=viewport.offsetLeft+8, maxX=viewport.offsetLeft+viewport.width-8;
+      const minY=viewport.offsetTop+8, maxY=viewport.offsetTop+viewport.height-8;
+      const width=Math.min(378*scale,maxX-minX);
+      const left=Math.max(minX,Math.min(anchor.left,maxX-width));
+      return approx(rect.width,width) && approx(rect.left,left) &&
+        approx(input.getBoundingClientRect().height,initialInputHeight*scale) &&
+        rect.top>=minY-1 && rect.bottom<=maxY+1 &&
+        (approx(rect.bottom,anchor.top-5*scale)||approx(rect.top,anchor.bottom+5*scale));
+    }
+    group(groupName).click();setQuery('saved 2');
+    const firstId=all()[0].dataset.id;
+    input.focus();
+    const targets=[editor,document.body,document.documentElement];
+    for(const [name,target,kind,scale] of [
+      ['chat zoom out',editor,'zoom',0.75],['chat zoom in',editor,'zoom',1.35],
+      ['chat transform',editor,'transform',1.25],['body zoom',document.body,'zoom',1.25],
+      ['root zoom',document.documentElement,'zoom',0.8],['body transform',document.body,'transform',0.8],
+    ]){
+      for(const node of targets){node.style.removeProperty('zoom');node.style.removeProperty('transform');}
+      editor.style.cssText='top:34px;left:22px;bottom:auto;transform-origin:top left';
+      target.style.transformOrigin='top left';
+      target.style[kind]=kind==='transform'?'scale('+scale+')':String(scale);
+      check(await wait(()=>fitsAtScale(scale)),name+' scales controls and keeps the popup anchored within the viewport');
+      check(root.activeElement===input && pressed(group(groupName)) && input.value==='saved 2' && all()[0]?.dataset.id===firstId,
+        name+' preserves focus, group, search and result');
+    }
+    for(const node of targets){node.style.removeProperty('zoom');node.style.removeProperty('transform');node.style.removeProperty('transform-origin');}
+    editor.style.cssText='right:4px;bottom:4px;left:auto;top:auto';
+    check(await wait(()=>fitsAtScale(1)),'restoring scale near the lower right keeps the whole panel inside the viewport');
+    check(sent.length===0,'zooming the open picker never sends');
+    editor.removeAttribute('style');
+    pinned().click();
     root.querySelector('#sort').click();setQuery('saved 99');
     result.textContent='PASS '+checks.length+'\n'+checks.join('\n');document.title='PASS · Quick stickers';
   }catch(e){result.textContent='FAIL '+e.stack;document.title='FAIL · Quick stickers';}

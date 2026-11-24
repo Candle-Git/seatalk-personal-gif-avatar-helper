@@ -1,6 +1,6 @@
 # SeaTalk 表情助手 5.3.0 · 在聊天中快选，在分组里整理
 
-打开一个单聊或群聊，点输入框工具栏里戴薄荷绿围巾的小海豹。**表情快选**默认打开「全部」。切到「未分组」或自己的分组，可以在组内搜索、排序和连续滚动。核对面板顶部的接收人，点一张直接发送。要一次发送多张，进入**管理表情**，选好后核对接收人和图片，再确认发送。
+打开一个单聊或群聊，点输入框工具栏里戴薄荷绿围巾的小海豹。**表情快选**默认打开「全部」，面板会跟随聊天页缩放。切到「未分组」或自己的分组，可以在组内搜索、排序和连续滚动。核对面板顶部的接收人，点一张直接发送。要一次发送多张，进入**管理表情**，选好后核对接收人和图片，再确认发送。
 
 - **从聊天收藏**。拖过多条消息，预览要收藏的表情，选好分组或输入搜索关键字后一起保存。纯文字会跳过，同一张表情只计一次。
 - **批量整理**。按 Ctrl／⌘ 逐张增减，按 Shift 连选，或在空白处拖动框选。选中的表情可以统一改名、移组或追加关键字。覆盖旧名称前会显示影响张数。
@@ -12,7 +12,7 @@
 
 ## SeaTalk Sticker Helper 5.3.0 · Quick stickers and groups
 
-Open a direct or group chat and click the seal wearing a mint-green scarf beside the chat input. **Quick stickers** opens on **All**. Choose **Ungrouped** or one of your groups to search, sort and scroll within it. Check the recipient at the top, then click a sticker to send it immediately. For a batch, open **Manage stickers**, select the stickers, then check the recipient and images before confirming.
+Open a direct or group chat and click the seal wearing a mint-green scarf beside the chat input. **Quick stickers** opens on **All** and scales with the chat page. Choose **Ungrouped** or one of your groups to search, sort and scroll within it. Check the recipient at the top, then click a sticker to send it immediately. For a batch, open **Manage stickers**, select the stickers, then check the recipient and images before confirming.
 
 - **Collect from chat.** Drag across messages, review the stickers and save them together with an optional group or search keywords. Text messages are skipped and duplicate stickers count once.
 - **Organize a selection.** Ctrl-click or ⌘-click to add or remove individual stickers, Shift-click to select a range, or drag from empty space to select an area. Rename the batch, move it to a group or append keywords. The helper shows how many custom names a rename would replace.
