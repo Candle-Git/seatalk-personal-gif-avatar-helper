@@ -7,6 +7,7 @@ const sharp = require("sharp");
 const images = fs.realpathSync(path.join(__dirname, "..", "docs", "images"));
 const stem = "seatalk-sticker-helper-banner.";
 const coverName = "seatalk-sticker-helper-social.png";
+const sealIcon = fs.readFileSync(path.join(__dirname, "quick-picker-seal.png")).toString("base64");
 const fonts = "'Inter','Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif";
 const colors = {
   ink:"#0d1830", panel:"#050b21", border:"#34455c", cream:"#fff4e5",
@@ -40,11 +41,8 @@ function quickControls(x, y, query, manage) {
   </g>`;
 }
 
-function stickerIcon(x, y) {
-  return `<g transform="translate(${x} ${y})" fill="none" stroke="${colors.mint}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M18 28H8a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5h15a5 5 0 0 1 5 5v10L18 28Z"/><path d="M18 28v-6a4 4 0 0 1 4-4h6M9 16q4 5 9 0"/>
-    <circle cx="10" cy="11" r=".8" fill="${colors.mint}"/><circle cx="18" cy="11" r=".8" fill="${colors.mint}"/>
-  </g>`;
+function quickPickerIcon(x, y, size) {
+  return `<image x="${x}" y="${y}" width="${size}" height="${size}" xlink:href="data:image/png;base64,${sealIcon}"/>`;
 }
 
 function drawing(art, lang, social = false) {
@@ -67,7 +65,7 @@ function drawing(art, lang, social = false) {
     <rect width="${w}" height="${h}" fill="url(#ink)"/>
     <g mask="url(#side)"><image mask="url(#end)" x="${ax}" y="${ay}" width="${aw}" height="${ah}" xlink:href="data:image/jpeg;base64,${art}"/></g>
     <g font-family="${fonts}">
-      ${stickerIcon(social?65:55,social?78:42)}
+      ${quickPickerIcon(social?63:53,social?76:40,34)}
       ${label(social?111:101,social?103:66,21,social?"聊天工具栏  /  CHAT TOOLBAR":section,colors.mint,700,'letter-spacing="1"')}
       ${social ? [
         label(60,215,69,labels.zh[0],colors.cream,700),
@@ -89,7 +87,7 @@ const guides = {
   zh: {
     product:"SeaTalk 表情助手", setup:["安装指南","三步装好表情助手","适用于电脑上的 SeaTalk 网页版。"],
     steps:[["安装 Tampermonkey","从官网安装扩展，","并确认扩展已启用。"],["开启运行权限","打开扩展详情，开启","「允许用户脚本」。"],["安装表情助手","在 Greasy Fork 安装，","然后刷新 SeaTalk。"]],
-    ready:"打开一个聊天，点输入框旁的「表情快选」。",
+    ready:"打开聊天，点输入框旁戴围巾的海豹。",
     perm:["浏览器设置","允许用户脚本","在 Chrome 或 Edge 中，为 Tampermonkey 打开这项权限。"],
     manage:"打开扩展详情", enable:"开启运行权限", menu:"管理扩展程序", toggle:"允许用户脚本", on:"已开启",
     hints:["右键点击工具栏上的 Tampermonkey 图标，","选择「管理扩展程序」。","开启「允许用户脚本」，","然后刷新 SeaTalk。"],
@@ -98,7 +96,7 @@ const guides = {
   en: {
     product:"SeaTalk Sticker Helper", setup:["SETUP GUIDE","Install Sticker Helper","For SeaTalk Web on desktop."],
     steps:[["Get Tampermonkey","Install the extension","from its official site."],["Allow user scripts","Open extension settings.","Enable Allow User Scripts."],["Install Sticker Helper","Install from Greasy Fork,","then reload SeaTalk."]],
-    ready:"Open a chat and click Quick stickers beside the message box.",
+    ready:"Open a chat and click the seal with a scarf beside the message box.",
     perm:["BROWSER SETTINGS","Allow user scripts","Give Tampermonkey permission in Chrome or Edge."],
     manage:"Open extension settings", enable:"Turn on the permission", menu:"Manage extension", toggle:"Allow User Scripts", on:"On",
     hints:["Right-click the Tampermonkey toolbar icon.","Choose Manage extension.","Enable Allow User Scripts,","then reload SeaTalk."],
@@ -160,8 +158,9 @@ function guide(lang,permission,tiles) {
     ${label(56,140,67,top[1],colors.cream,700)}${label(61,186,29,top[2],colors.body)}
     ${body.join("")}
     ${block(60,672,1320,80,"#142d3b","#416d6e",18)}
-    <circle cx="104" cy="712" r="16" stroke="${colors.mint}" fill="none" stroke-width="2.6"/>
-    ${permission?'<path d="M104 710v10m0-19v2" stroke="'+colors.mint+'" stroke-width="3"/>':'<path d="m96 712 5 5 10-12" fill="none" stroke="'+colors.mint+'" stroke-width="3"/>'}
+    ${permission
+      ? `<circle cx="104" cy="712" r="16" stroke="${colors.mint}" fill="none" stroke-width="2.6"/><path d="M104 710v10m0-19v2" stroke="${colors.mint}" stroke-width="3"/>`
+      : quickPickerIcon(81,689,46)}
     ${label(141,723,30,permission?t.fallback:t.ready,colors.cream,600)}</g></svg>`);
 }
 

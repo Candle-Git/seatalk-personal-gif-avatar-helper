@@ -72,7 +72,7 @@
     const credit = () => workspace().querySelector('#helperCredit');
     const tap = times => { for (let i = 0; i < times; i++) credit().click(); };
     check(!panel.classList.contains('spga-open') && workspace().querySelector('.workspace-tabs').hidden && !apply(), 'fresh document opens the sticker manager with no optional navigation');
-    check(!document.querySelector('img') && !/头像|avatar/i.test(panel.innerText), 'even a saved selection and stale unlock flag do not reveal avatar controls or load a preview');
+    check([...document.images].every(image=>image===quickButton().querySelector('img')) && !/头像|avatar/i.test(panel.innerText), 'even a saved selection and stale unlock flag do not reveal avatar controls or load a preview');
     window.dispatchEvent(new CustomEvent('spga:credit-celebrate'));
     window.dispatchEvent(new CustomEvent('spga:collections-back'));
     check(!apply() && !document.getElementById('seatalk-personal-gif-avatar-easter-egg'), 'older navigation and celebration events cannot unlock');

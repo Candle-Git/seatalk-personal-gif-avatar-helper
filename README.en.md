@@ -4,7 +4,7 @@
 
 ![Find, send and organize favorite stickers in a chat](docs/images/seatalk-sticker-helper-banner.en.svg)
 
-- **Looking for a laughing sticker?** Click the folded-corner smiley beside the chat input and search for “laugh.” Quick stickers searches names and keywords across all your favorites. Check the chat name at the top, then click a sticker to send it.
+- **Looking for a laughing sticker?** Click the seal wearing a mint-green scarf beside the chat input and search for “laugh.” Quick stickers searches names and keywords across all your favorites. Check the chat name at the top, then click a sticker to send it.
 - **Want to keep a few stickers from a group chat?** Choose **Collect from chat**, drag across the messages and review your selection. Pick a group and confirm to save them together. Text is skipped and repeated stickers count once.
 
 ## Install and find the picker

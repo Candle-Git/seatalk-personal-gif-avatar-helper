@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src data:; style-src 'unsafe-inline'">
 <title>Quick sticker hints · offline test</title>
 <style>.home-main-window{min-height:200px}.toolbar-left{display:flex}</style>
 <div id="root"><input id="login" aria-label="Mock login"></div>
@@ -61,8 +61,11 @@
     } else {
       check(await wait(()=>hint('home')),'a new visible signed-in home shows the welcome hint');
       const current=hint('home');
-      const iconPath=current.querySelector('svg[aria-hidden="true"] path')?.getAttribute('d');
-      check(!!iconPath,'the home hint includes a decorative sticker icon');
+      const homeIcon=current.querySelector('img[aria-hidden="true"]');
+      check(homeIcon?.getAttribute('alt')==='' && !homeIcon.draggable && homeIcon.src.startsWith('data:image/png;base64,'),
+        'the home hint uses an embedded, decorative mascot');
+      await homeIcon.decode();
+      check(homeIcon.naturalWidth>0,'the mascot decodes without loading a remote image');
       check(current.textContent.includes(locale==='en'?'Sticker Helper loaded':'表情助手已加载') &&
         getComputedStyle(current).pointerEvents==='none' && document.activeElement===input && input.value==='Untouched draft',
         'welcome copy follows the language and the hint passes clicks through and preserves focus');
@@ -79,7 +82,8 @@
       }
       const composer=mountChat(home);
       check(await wait(()=>hint('toolbar')) && hints()===1 && !hint('home'),'the anchored hint takes over without overlapping the home hint');
-      check(document.querySelector('#spga-quick-toggle svg path').getAttribute('d')===iconPath,'the toolbar and home hint use the same sticker silhouette');
+      const toolbarIcon=document.querySelector('#spga-quick-toggle img');
+      check(toolbarIcon && toolbarIcon.src===homeIcon.src,'the toolbar and home hint show the same mascot');
       composer.remove();await sleep(75);mountChat(home);
       check(await wait(()=>document.getElementById('spga-quick-toggle')) && !hints() && writes.length===1,
         'switching back and remounting the editor does not repeat either hint');

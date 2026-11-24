@@ -51,7 +51,17 @@
   const wait=async(fn)=>{const deadline=Date.now()+2500;while(!fn()&&Date.now()<deadline)await new Promise(r=>setTimeout(r,20));return fn();};
   try {
     window.__SPGA_TEST_API__.init();
-    const button=document.getElementById('spga-quick-toggle');
+    const button=document.getElementById('spga-quick-toggle'), seal=button.querySelector('img');
+    const action=locale==='zh'?'表情快选':'Quick stickers';
+    check(button.title===action && button.getAttribute('aria-label')===action && button.tabIndex===0,
+      'the seal button is keyboard-focusable and named for its action');
+    check(seal?.getAttribute('alt')==='' && seal.getAttribute('aria-hidden')==='true' && !seal.draggable,
+      'the seal is decorative and cannot be dragged into a message');
+    await seal.decode();
+    const target=button.getBoundingClientRect(), image=seal.getBoundingClientRect();
+    check(target.width===32 && target.height===32 && image.width>=24 && image.width===image.height &&
+      image.left>=target.left && image.right<=target.right && image.top>=target.top && image.bottom<=target.bottom,
+      'the square seal fits inside the original 32px toolbar target');
     button.click();
     await wait(()=>typeof loadSettings==='function');
     switchTo(8); await Promise.resolve();

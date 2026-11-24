@@ -8,7 +8,14 @@ function installQuickPickerToolbar(onOpen, getLocale) {
   button.setAttribute('aria-haspopup', 'dialog');
   button.setAttribute('aria-expanded', 'false');
   button.style.cssText = 'display:inline-grid;place-items:center;flex:none;width:32px;height:32px;padding:0;margin:0 2px;border:0;border-radius:6px;color:#426182;background:transparent;cursor:pointer;vertical-align:middle';
-  button.innerHTML = '<svg aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M13.8 21H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v6.8L13.8 21Z"/><path d="M14 21v-4a3 3 0 0 1 3-3h4M7.8 12.2a4.4 4.4 0 0 0 6.9.5"/><circle cx="8.5" cy="8.2" r=".7"/><circle cx="14" cy="8.2" r=".7"/></svg>';
+  const mascot = document.createElement('img');
+  mascot.src = 'data:image/png;base64,__QUICK_PICKER_SEAL__';
+  mascot.alt = '';
+  mascot.setAttribute('aria-hidden', 'true');
+  mascot.draggable = false;
+  mascot.width = mascot.height = 28;
+  mascot.style.cssText = 'display:block;object-fit:contain;pointer-events:none';
+  button.append(mascot);
   const title = () => getLocale() === 'en' ? 'Quick stickers' : '表情快选';
   const homeCopy = () => getLocale() === 'en'
     ? 'Sticker Helper loaded · Find this icon beside the chat input'
@@ -37,7 +44,7 @@ function installQuickPickerToolbar(onOpen, getLocale) {
     tip.dataset.hint = kind;
     tip.setAttribute('role', 'status');
     if (kind === 'home') {
-      const icon = button.firstElementChild.cloneNode(true);
+      const icon = mascot.cloneNode(false);
       icon.style.flex = 'none';
       tip.append(icon);
     }

@@ -12,7 +12,7 @@
 
 1. 安装 [Tampermonkey](https://www.tampermonkey.net/)，在 Chrome 或 Edge 的扩展详情页开启「允许用户脚本」。如果没有此项，可在扩展管理页开启「开发者模式」。
 2. 点本页上方 **安装此脚本**，在 Tampermonkey 中确认。若要恢复 5.2 的旧备份，请先在 5.2 中导入，再升级。
-3. 刷新 [SeaTalk Web](https://seatalkweb.com/) 并打开单聊或群聊。点击聊天工具栏里的折角笑脸即可。若收藏尚未载入，先打开一次 SeaTalk 自带表情面板的爱心「收藏」。
+3. 刷新 [SeaTalk Web](https://seatalkweb.com/) 并打开单聊或群聊。点聊天工具栏里戴薄荷绿围巾的小海豹，打开「表情快选」。若收藏尚未载入，先打开一次 SeaTalk 自带表情面板的爱心「收藏」。
 
 ## 在快选中点「管理表情」
 

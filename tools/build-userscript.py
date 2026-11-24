@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 import sys
 import argparse
+import base64
 import tempfile
 
 root = Path(__file__).resolve().parent.parent
@@ -66,7 +67,11 @@ workspace = workspace.replace('  /* SHARE_UI */', (root / 'tools/sticker-share-u
 split_source = (root / 'tools/helper-split-layout.js').read_text()
 plan = split_source[:split_source.index('function installHelperLayout()')]
 installer = split_source[split_source.index('function installHelperLayout()'):].replace('  /* SPLIT_PLAN */', plan)
-source = source[:start] + workspace + '\n' + installer + '\n' + (root / 'tools/quick-picker-toolbar.js').read_text() + source[end:]
+toolbar = (root / 'tools/quick-picker-toolbar.js').read_text()
+seal = base64.b64encode((root / 'tools/quick-picker-seal.png').read_bytes()).decode('ascii')
+assert toolbar.count('__QUICK_PICKER_SEAL__') == 1
+toolbar = toolbar.replace('__QUICK_PICKER_SEAL__', seal)
+source = source[:start] + workspace + '\n' + installer + '\n' + toolbar + source[end:]
 source = source.replace('  function init() {', (root / 'tools/personal-settings-core.js').read_text() + '\n' + (root / 'tools/personal-settings-bridge.js').read_text().replace('  /* FAVORITES_ACCOUNT_MODULE */', account_module) + '\n  function init() {', 1)
 source = source.replace('  function activateHelperPanel(panel) {', '  function activateHelperPanel(panel) {\n    installPersonalSettingsBridge();\n    startHelperLayout();', 1)
 source = source.replace(

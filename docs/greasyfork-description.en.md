@@ -12,7 +12,7 @@ Found a few you like in a group chat? Choose **Collect from chat**, drag across 
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) and enable **Allow User Scripts** in its Chrome or Edge extension settings. If the switch is unavailable, enable **Developer mode** on the extensions page.
 2. Click **Install this script** at the top of this page and confirm in Tampermonkey. To restore a 5.2 backup, import it in 5.2 before upgrading.
-3. Reload [SeaTalk Web](https://seatalkweb.com/) and open a direct or group chat. Click the folded-corner smiley in the chat toolbar. If favorites haven’t loaded, open the heart-shaped **Favorites** tab in SeaTalk’s own sticker picker once.
+3. Reload [SeaTalk Web](https://seatalkweb.com/) and open a direct or group chat. Click the seal wearing a mint-green scarf in the chat toolbar to open **Quick stickers**. If favorites haven’t loaded, open the heart-shaped **Favorites** tab in SeaTalk’s own sticker picker once.
 
 ## Choose Manage stickers in the picker
 
